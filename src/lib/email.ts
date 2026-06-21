@@ -1,5 +1,6 @@
 import path from "node:path";
 import nodemailer, { type Transporter } from "nodemailer";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   LOGO_CID,
   adminInviteMailSubject,
@@ -52,12 +53,62 @@ export interface MailInput {
   attachments?: Array<{ filename: string; path: string; cid?: string }>;
 }
 
+function parseRecipients(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(/[\s,;]+/)
+    .map((s) => s.trim().toLowerCase())
+    .filter((s) => s.length > 0);
+}
+
+/**
+ * Lädt den Test-Modus aus app_settings. Im Test-Modus werden ausgehende
+ * Mails nur an die explizit freigegebenen Adressen zugestellt.
+ */
+async function loadTestModeFilter(): Promise<{ enabled: boolean; allow: Set<string> }> {
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("app_settings")
+      .select("email_test_mode, email_test_recipients")
+      .eq("id", 1)
+      .maybeSingle();
+    if (!data) return { enabled: false, allow: new Set() };
+    return {
+      enabled: data.email_test_mode !== false,
+      allow: new Set(parseRecipients(data.email_test_recipients)),
+    };
+  } catch (err) {
+    // Im Zweifel sperren: nichts versenden, statt Kunden anzuschreiben.
+    console.error("email test-mode lookup failed, blocking send:", err);
+    return { enabled: true, allow: new Set() };
+  }
+}
+
 /**
  * Versendet eine E-Mail über das konfigurierte SMTP-Postfach.
  * Wirft bei Fehler — der Aufrufer entscheidet, ob das den Flow abbricht.
+ *
+ * Test-Modus: ist in app_settings `email_test_mode` aktiv, werden nur die
+ * unter `email_test_recipients` aufgeführten Adressen tatsächlich angeschrieben.
  */
 export async function sendMail({ to, subject, text, html, replyTo, attachments }: MailInput) {
   const from = process.env.MAIL_FROM || process.env.SMTP_USER;
+
+  const filter = await loadTestModeFilter();
+  if (filter.enabled) {
+    const requested = parseRecipients(to);
+    const allowed = requested.filter((addr) => filter.allow.has(addr));
+    if (allowed.length === 0) {
+      console.info(
+        `[email test-mode] dropped mail to "${to}" (subject: "${subject}") — no recipient on allow-list`,
+      );
+      return;
+    }
+    to = allowed.join(", ");
+    subject = `[TEST] ${subject}`;
+  }
+
   await getTransporter().sendMail({ from, to, subject, text, html, replyTo, attachments });
 }
 

@@ -12,6 +12,9 @@ export async function saveSettings(formData: FormData) {
   const membership_email = String(formData.get("membership_email") || "").trim() || null;
   const admin_notification_email =
     String(formData.get("admin_notification_email") || "").trim() || null;
+  const email_test_mode = formData.get("email_test_mode") === "on";
+  const email_test_recipients =
+    String(formData.get("email_test_recipients") || "").trim() || null;
 
   const { error } = await supabase
     .from("app_settings")
@@ -19,6 +22,8 @@ export async function saveSettings(formData: FormData) {
       mitwirken_email,
       membership_email,
       admin_notification_email,
+      email_test_mode,
+      email_test_recipients,
       updated_at: new Date().toISOString(),
     })
     .eq("id", 1);

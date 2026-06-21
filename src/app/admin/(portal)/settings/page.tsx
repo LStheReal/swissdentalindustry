@@ -77,6 +77,47 @@ export default async function SettingsPage() {
           />
         </label>
 
+        <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <div>
+            <h2 className="text-sm font-semibold text-amber-900">
+              Test-Modus E-Mail-Versand
+            </h2>
+            <p className="text-xs text-amber-800">
+              Solange aktiv, werden ausgehende Mails nur an die unten
+              aufgeführten Adressen zugestellt. Alle anderen Empfänger werden
+              stillschweigend verworfen. So lange einlassen, bis die Webseite
+              produktiv ist.
+            </p>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm font-medium text-amber-900">
+            <input
+              type="checkbox"
+              name="email_test_mode"
+              defaultChecked={data?.email_test_mode ?? true}
+              className="h-4 w-4 rounded border-amber-400"
+            />
+            Test-Modus aktiv (keine Mails an echte Empfänger)
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-medium text-amber-900">
+              Erlaubte Empfänger
+            </span>
+            <span className="block text-xs text-amber-800">
+              Eine oder mehrere Adressen, getrennt mit Komma, Semikolon oder
+              Zeilenumbruch.
+            </span>
+            <textarea
+              name="email_test_recipients"
+              rows={3}
+              defaultValue={data?.email_test_recipients ?? ""}
+              placeholder="mael.ilai@gmail.com"
+              className="mt-1 w-full rounded-lg border border-amber-300 bg-white px-3 py-2 font-mono text-sm"
+            />
+          </label>
+        </div>
+
         <button
           type="submit"
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"

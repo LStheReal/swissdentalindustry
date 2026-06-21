@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Swiss Dental Industry — Admin-Portal & Backend
 
-## Getting Started
+Next.js + Supabase Backend für **swissdentalindustry.ch**. Diese Phase enthält
+das **Superadmin-Portal** und alle **Funktionen** (Mitglieder, News, Self-Service
+mit Freigabe-Workflow, Formulare, Auto-Übersetzung, Geocoding). Die gestaltete
+öffentliche Website folgt in einer späteren Phase.
 
-First, run the development server:
+## Funktionsumfang
 
+- **`/admin`** — Superadmin-Portal (Login nötig), mehrsprachig (DE/FR/IT/EN):
+  - **Mitglieder** anlegen/bearbeiten/löschen, Logo-Upload, Beschreibung wird
+    automatisch in 4 Sprachen übersetzt, Kartenstandort wird aus der Adresse
+    berechnet (Geocoding). Pro Firma ein **permanenter, widerrufbarer Edit-Link**.
+    Zusätzlich können Firmen per Spreadsheet-Import gesammelt als Entwürfe
+    angelegt werden.
+  - **News** mit Bild + Auto-Übersetzung; sofort live.
+  - **Änderungs-Feed** — Vorschläge von Firmen mit Diff „aktuell ↔ vorgeschlagen",
+    Freigeben/Ablehnen. Bei Freigabe E-Mail an die Firma.
+  - **Anträge** — „Mitglied werden"-Einsendungen, per Klick in Mitglied umwandelbar.
+  - **Einstellungen** — Portal-Sprache, Empfänger-E-Mails der Formulare.
+- **`/edit/[token]`** — Self-Service ohne Login: Firma ändert Logo/Beschreibung/
+  Kontakt; Änderungen gehen als Vorschlag in den Feed (nicht direkt live).
+- **Öffentliche Website** — statische Inhalte in DE/FR/IT/EN; dynamische News-
+  und Mitgliedertexte kommen weiterhin aus den mehrsprachigen Datenfeldern.
+- **`/api/forms/mitwirken`**, **`/api/forms/mitglied-werden`** — Formular-Endpoints
+  (E-Mail-Versand; „Mitglied werden" zusätzlich gespeichert). Dev-Testseite: `/forms-test`.
+
+## Setup
+
+### 1. Abhängigkeiten
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Supabase-Projekt
+1. Projekt auf [supabase.com](https://supabase.com) anlegen.
+2. SQL-Editor öffnen und **`supabase/migrations/0001_init.sql`** ausführen
+   (legt Tabellen, RLS-Policies und Storage-Buckets an).
+3. Optional Beispieldaten: **`supabase/seed.sql`** ausführen.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Ersten Superadmin anlegen
+1. Supabase → **Authentication → Users → Add user** (E-Mail + Passwort).
+2. Im SQL-Editor die User-ID in die `admins`-Tabelle eintragen:
+   ```sql
+   insert into public.admins (user_id, email)
+   select id, email from auth.users where email = 'DEINE@EMAIL.ch';
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Umgebungsvariablen
+`.env.example` nach `.env.local` kopieren und ausfüllen:
+```bash
+cp .env.example .env.local
+```
+Benötigt: Supabase URL + anon + service-role Key, DeepSeek API-Key,
+SMTP-Zugangsdaten, `NEXT_PUBLIC_APP_URL`.
 
-## Learn More
+### 5. Starten
+```bash
+npm run dev
+```
+Portal: <http://localhost:3000/admin>
 
-To learn more about Next.js, take a look at the following resources:
+## Übersetzung & Geocoding
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Übersetzung:** DeepSeek (OpenAI-kompatibel) via `src/lib/translate.ts`.
+  Verwendet `DEEPSEEK_API_KEY` beim Erstellen von News sowie beim Anlegen oder
+  Ändern von Mitgliederbeschreibungen. Schlägt der Aufruf fehl, wird der
+  Originaltext als Fallback gespeichert.
+- **Geocoding:** OpenStreetMap Nominatim via `src/lib/geocode.ts` (kostenlos,
+  kein Key). Liefert Koordinaten + Kanton aus der Adresse.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architektur (Kurz)
 
-## Deploy on Vercel
+- `src/lib/` — wiederverwendbare Bausteine: `translate`, `geocode`, `email`,
+  `diff`, `storage`, `auth`, `i18n-admin`, `supabase/*`, `types`.
+- `src/app/admin/(portal)/` — geschütztes Portal (Layout prüft Superadmin).
+- `src/app/admin/login/` — Login (Supabase Auth).
+- `src/app/edit/[token]/` — Self-Service.
+- `src/app/api/forms/` — Formular-Endpoints.
+- `src/proxy.ts` — schützt `/admin`-Routen (Next.js 16 „proxy").
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Schreibvorgänge laufen serverseitig über den **Service-Role-Key**; Lesezugriff
+ist per **Row-Level-Security** geregelt (öffentlich nur veröffentlichte Daten,
+Superadmins sehen alles).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Noch offen (spätere Phase)
+
+- Gestaltete öffentliche Website (Startseite, Verzeichnis + Schweizer Karte,
+  News-Anzeige, designte Formular-Seiten, Browser-Sprach-Erkennung).
+- Genaue Formularfelder + finale Empfänger-E-Mail-Adressen.

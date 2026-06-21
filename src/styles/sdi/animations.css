@@ -1,0 +1,13 @@
+/* Pre-hide elements that GSAP animates in, so users don't see them flash
+   before the (dynamically-loaded) animation runs. Reduced motion: stay visible. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.gsap-ready) main h1,
+  html:not(.gsap-ready) main h1 ~ p,
+  html:not(.gsap-ready) main h1 ~ div,
+  html:not(.gsap-ready) main h2,
+  html:not(.gsap-ready) main h3,
+  html:not(.gsap-ready) [data-gsap-fade],
+  html:not(.gsap-ready) [data-gsap-stagger] > * {
+    opacity: 0;
+  }
+}

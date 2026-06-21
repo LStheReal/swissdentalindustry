@@ -1,0 +1,7 @@
+/* SDI design-system entry — load this once in the public layout. */
+@import './fonts.css';
+@import './colors.css';
+@import './typography.css';
+@import './spacing.css';
+@import './base.css';
+@import './animations.css';

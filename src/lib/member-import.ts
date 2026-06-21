@@ -1,0 +1,522 @@
+import OpenAI from "openai";
+import * as XLSX from "xlsx";
+import {
+  normalizeMemberInternalProfile,
+  type MemberInternalProfileFields,
+} from "./types";
+
+type ImportFieldKey =
+  | "name"
+  | "address"
+  | "website_url"
+  | "member_number"
+  | "contact_title"
+  | "contact_first_name"
+  | "contact_last_name"
+  | "contact_job_title"
+  | "street_name"
+  | "street_number"
+  | "postal_code"
+  | "city"
+  | "country"
+  | "direct_phone"
+  | "direct_email";
+
+export interface ImportedMemberRow {
+  rowNumber: number;
+  name: string;
+  address: string | null;
+  email: string | null;
+  phone: string | null;
+  websiteUrl: string | null;
+  internalProfile: MemberInternalProfileFields;
+}
+
+export interface ParsedMemberImport {
+  rows: ImportedMemberRow[];
+  headers: string[];
+  mappedHeaders: Partial<Record<ImportFieldKey, string>>;
+  skippedRows: string[];
+  deepSeekApplied: boolean;
+}
+
+interface DeepSeekRowEnrichment {
+  name: string | null;
+  website_url: string | null;
+  address: string | null;
+  member_number: string | null;
+  contact_title: string | null;
+  contact_first_name: string | null;
+  contact_last_name: string | null;
+  contact_job_title: string | null;
+  street_name: string | null;
+  street_number: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country: string | null;
+  direct_phone: string | null;
+  direct_email: string | null;
+  membership_fee: string | null;
+  internal_notes: string | null;
+}
+
+const IMPORT_FIELD_LABELS: Record<ImportFieldKey, string> = {
+  name: "Firmenname",
+  address: "Adresse",
+  website_url: "Website",
+  member_number: "Mitgliedsnummer",
+  contact_title: "Anrede / Titel",
+  contact_first_name: "Vorname",
+  contact_last_name: "Nachname",
+  contact_job_title: "Funktion",
+  street_name: "Strasse",
+  street_number: "Hausnummer",
+  postal_code: "PLZ",
+  city: "Ort",
+  country: "Land",
+  direct_phone: "Direkttelefon",
+  direct_email: "Direkt-E-Mail",
+};
+
+const HEADER_ALIASES: Record<ImportFieldKey, string[]> = {
+  name: [
+    "company",
+    "company name",
+    "firma",
+    "firmenname",
+    "unternehmen",
+    "member company",
+    "organization",
+    "organisation",
+  ],
+  address: ["address", "adresse", "anschrift", "full address"],
+  website_url: ["website", "website url", "web", "url", "homepage"],
+  member_number: ["members", "member", "member number", "mitglied", "mitgliedsnummer", "nr"],
+  contact_title: ["title", "anrede", "salutation"],
+  contact_first_name: ["first name", "firstname", "vorname", "given name"],
+  contact_last_name: ["last name", "lastname", "surname", "nachname", "family name"],
+  contact_job_title: ["job title", "position", "funktion", "role", "job", "title function"],
+  street_name: ["street name", "street", "strasse", "straße", "rue", "via"],
+  street_number: ["street number", "house number", "hausnummer", "nummer", "no", "nr."],
+  postal_code: ["postal code", "zip", "zip code", "plz", "npa"],
+  city: ["city", "ort", "town", "ville"],
+  country: ["country", "land", "pays"],
+  direct_phone: [
+    "direct phone number",
+    "phone",
+    "phone number",
+    "telephone",
+    "telefon",
+    "direct phone",
+    "tel",
+  ],
+  direct_email: ["e-mail", "email", "mail", "direct email", "e mail"],
+};
+
+let client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) {
+    throw new Error("DEEPSEEK_API_KEY is missing.");
+  }
+  if (!client) {
+    client = new OpenAI({
+      apiKey,
+      baseURL: process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com",
+    });
+  }
+  return client;
+}
+
+function normalizeHeader(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function normalizeCell(value: unknown): string {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function normalizeCompanyName(value: string): string {
+  return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function scoreAliasMatch(header: string, alias: string): number {
+  if (header === alias) return 100;
+  if (header.startsWith(alias) || header.endsWith(alias)) return 80;
+  if (header.includes(alias) || alias.includes(header)) return 60;
+  return 0;
+}
+
+function buildAddress(parts: {
+  address: string | null;
+  streetName: string | null;
+  streetNumber: string | null;
+  postalCode: string | null;
+  city: string | null;
+  country: string | null;
+}): string | null {
+  if (parts.address) return parts.address;
+
+  const street = [parts.streetName, parts.streetNumber].filter(Boolean).join(" ").trim();
+  const locality = [parts.postalCode, parts.city].filter(Boolean).join(" ").trim();
+  const lines = [street || null, locality || null, parts.country].filter(Boolean);
+
+  return lines.length ? lines.join("\n") : null;
+}
+
+function nullable(value: string | null | undefined): string | null {
+  const trimmed = String(value ?? "").trim();
+  return trimmed || null;
+}
+
+function rowSnapshot(cells: Map<string, string>) {
+  return Object.fromEntries(
+    [...cells.entries()].map(([key, value]) => [key, nullable(value)]),
+  );
+}
+
+function readSpreadsheet(fileName: string, buffer: Buffer) {
+  const workbook = XLSX.read(buffer, {
+    type: "buffer",
+    dense: true,
+    raw: false,
+  });
+
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) {
+    throw new Error(`Die Datei "${fileName}" enthält kein Tabellenblatt.`);
+  }
+
+  const sheet = workbook.Sheets[firstSheetName];
+  const rows = XLSX.utils.sheet_to_json<(string | number | boolean | null)[]>(sheet, {
+    header: 1,
+    raw: false,
+    defval: "",
+  });
+
+  if (!rows.length) {
+    throw new Error(`Die Datei "${fileName}" ist leer.`);
+  }
+
+  return rows;
+}
+
+async function inferHeadersWithDeepSeek(
+  headers: string[],
+): Promise<{
+  mappedHeaders: Partial<Record<ImportFieldKey, string>>;
+  used: boolean;
+}> {
+  if (!headers.length || !process.env.DEEPSEEK_API_KEY) {
+    return { mappedHeaders: {}, used: false };
+  }
+
+  try {
+    const completion = await getClient().chat.completions.create({
+      model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You map spreadsheet headers to structured company import fields. " +
+            "Respond only with JSON. Each key must be one of the allowed target keys. " +
+            "Each value must be an original spreadsheet header or null if unclear. " +
+            "Prefer semantically best matches, even across German, French, Italian, and English labels.",
+        },
+        {
+          role: "user",
+          content:
+            `Headers: ${JSON.stringify(headers)}\n` +
+            `Allowed target keys: ${JSON.stringify(Object.keys(IMPORT_FIELD_LABELS))}\n` +
+            `Field descriptions: ${JSON.stringify(IMPORT_FIELD_LABELS)}\n` +
+            "Return a JSON object like {\"name\":\"Company\",\"contact_first_name\":\"First Name\"}. Use null when not confident.",
+        },
+      ],
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw) as Partial<Record<ImportFieldKey, string | null>>;
+    const next: Partial<Record<ImportFieldKey, string>> = {};
+
+    for (const field of Object.keys(IMPORT_FIELD_LABELS) as ImportFieldKey[]) {
+      const header = parsed[field];
+      if (!header || !headers.includes(header)) continue;
+      if (Object.values(next).includes(header)) continue;
+      next[field] = header;
+    }
+
+    return { mappedHeaders: next, used: true };
+  } catch (error) {
+    console.error("inferHeadersWithDeepSeek failed:", error);
+    return { mappedHeaders: {}, used: false };
+  }
+}
+
+async function mapHeaders(headers: string[]): Promise<{
+  mappedHeaders: Partial<Record<ImportFieldKey, string>>;
+  deepSeekApplied: boolean;
+}> {
+  const normalized = headers.map((header) => ({
+    original: header,
+    normalized: normalizeHeader(header),
+  }));
+  const deepSeekResult = await inferHeadersWithDeepSeek(headers);
+  const mapped: Partial<Record<ImportFieldKey, string>> = { ...deepSeekResult.mappedHeaders };
+
+  for (const field of Object.keys(HEADER_ALIASES) as ImportFieldKey[]) {
+    if (mapped[field]) continue;
+    let bestMatch: { header: string; score: number } | null = null;
+
+    for (const candidate of normalized) {
+      const score = Math.max(
+        ...HEADER_ALIASES[field].map((alias) =>
+          scoreAliasMatch(candidate.normalized, normalizeHeader(alias)),
+        ),
+      );
+
+      if (!score) continue;
+      if (!bestMatch || score > bestMatch.score) {
+        bestMatch = { header: candidate.original, score };
+      }
+    }
+
+    if (bestMatch && !Object.values(mapped).includes(bestMatch.header)) {
+      mapped[field] = bestMatch.header;
+    }
+  }
+
+  return { mappedHeaders: mapped, deepSeekApplied: deepSeekResult.used };
+}
+
+async function enrichRowWithDeepSeek(args: {
+  rowNumber: number;
+  cells: Map<string, string>;
+  heuristic: DeepSeekRowEnrichment;
+}): Promise<{
+  values: DeepSeekRowEnrichment;
+  used: boolean;
+}> {
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return { values: args.heuristic, used: false };
+  }
+
+  try {
+    const completion = await getClient().chat.completions.create({
+      model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You extract structured member-company admin data from a spreadsheet row. " +
+            "Respond only with JSON. Clean whitespace. Keep company names exactly as written except trimming. " +
+            "Split people and addresses into the requested fields when possible. " +
+            "If a value is unknown, return null. Never invent facts.",
+        },
+        {
+          role: "user",
+          content:
+            `Spreadsheet row number: ${args.rowNumber}\n` +
+            `Raw row data: ${JSON.stringify(rowSnapshot(args.cells))}\n` +
+            `Heuristic extraction: ${JSON.stringify(args.heuristic)}\n` +
+            "Return a JSON object with exactly these keys: " +
+            JSON.stringify([
+              "name",
+              "website_url",
+              "address",
+              "member_number",
+              "contact_title",
+              "contact_first_name",
+              "contact_last_name",
+              "contact_job_title",
+              "street_name",
+              "street_number",
+              "postal_code",
+              "city",
+              "country",
+              "direct_phone",
+              "direct_email",
+              "membership_fee",
+              "internal_notes",
+            ]) +
+            ". Prefer raw spreadsheet values over heuristic guesses when they conflict.",
+        },
+      ],
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw) as Partial<Record<keyof DeepSeekRowEnrichment, string | null>>;
+    const values: DeepSeekRowEnrichment = {
+      name: nullable(parsed.name) ?? args.heuristic.name,
+      website_url: nullable(parsed.website_url) ?? args.heuristic.website_url,
+      address: nullable(parsed.address) ?? args.heuristic.address,
+      member_number: nullable(parsed.member_number) ?? args.heuristic.member_number,
+      contact_title: nullable(parsed.contact_title) ?? args.heuristic.contact_title,
+      contact_first_name:
+        nullable(parsed.contact_first_name) ?? args.heuristic.contact_first_name,
+      contact_last_name:
+        nullable(parsed.contact_last_name) ?? args.heuristic.contact_last_name,
+      contact_job_title:
+        nullable(parsed.contact_job_title) ?? args.heuristic.contact_job_title,
+      street_name: nullable(parsed.street_name) ?? args.heuristic.street_name,
+      street_number: nullable(parsed.street_number) ?? args.heuristic.street_number,
+      postal_code: nullable(parsed.postal_code) ?? args.heuristic.postal_code,
+      city: nullable(parsed.city) ?? args.heuristic.city,
+      country: nullable(parsed.country) ?? args.heuristic.country,
+      direct_phone: nullable(parsed.direct_phone) ?? args.heuristic.direct_phone,
+      direct_email: nullable(parsed.direct_email) ?? args.heuristic.direct_email,
+      membership_fee: nullable(parsed.membership_fee) ?? args.heuristic.membership_fee,
+      internal_notes: nullable(parsed.internal_notes) ?? args.heuristic.internal_notes,
+    };
+
+    return { values, used: true };
+  } catch (error) {
+    console.error("enrichRowWithDeepSeek failed:", error);
+    return { values: args.heuristic, used: false };
+  }
+}
+
+export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMemberImport> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const matrix = readSpreadsheet(file.name, buffer);
+  const rawHeaders = (matrix[0] ?? []).map((cell) => normalizeCell(cell));
+  const headers = rawHeaders.filter(Boolean);
+
+  if (!headers.length) {
+    throw new Error("Die erste Zeile der Datei enthält keine Spaltenüberschriften.");
+  }
+
+  const { mappedHeaders, deepSeekApplied } = await mapHeaders(headers);
+
+  if (!mappedHeaders.name) {
+    throw new Error(
+      "Keine Firmen-Spalte erkannt. Erwartet wird z.B. eine Spalte wie Company, Firma oder Firmenname.",
+    );
+  }
+
+  const rows: ImportedMemberRow[] = [];
+  const skippedRows: string[] = [];
+  let rowDeepSeekApplied = false;
+
+  for (let index = 1; index < matrix.length; index += 1) {
+    const values = matrix[index] ?? [];
+    const rowNumber = index + 1;
+    const cells = new Map<string, string>();
+
+    rawHeaders.forEach((header, columnIndex) => {
+      if (!header) return;
+      cells.set(header, normalizeCell(values[columnIndex]));
+    });
+
+    const allValues = [...cells.values()];
+    if (!allValues.some(Boolean)) continue;
+
+    const read = (field: ImportFieldKey) => {
+      const header = mappedHeaders[field];
+      return header ? cells.get(header) || "" : "";
+    };
+
+    const heuristic: DeepSeekRowEnrichment = {
+      name: nullable(read("name")),
+      website_url: nullable(read("website_url")),
+      address: buildAddress({
+        address: read("address") || null,
+        streetName: read("street_name") || null,
+        streetNumber: read("street_number") || null,
+        postalCode: read("postal_code") || null,
+        city: read("city") || null,
+        country: read("country") || null,
+      }),
+      member_number: nullable(read("member_number")),
+      contact_title: nullable(read("contact_title")),
+      contact_first_name: nullable(read("contact_first_name")),
+      contact_last_name: nullable(read("contact_last_name")),
+      contact_job_title: nullable(read("contact_job_title")),
+      street_name: nullable(read("street_name")),
+      street_number: nullable(read("street_number")),
+      postal_code: nullable(read("postal_code")),
+      city: nullable(read("city")),
+      country: nullable(read("country")),
+      direct_phone: nullable(read("direct_phone")),
+      direct_email: nullable(read("direct_email")),
+      membership_fee: null,
+      internal_notes: `Importiert aus Spreadsheet, Zeile ${rowNumber}.`,
+    };
+
+    const enrichment = await enrichRowWithDeepSeek({
+      rowNumber,
+      cells,
+      heuristic,
+    });
+    if (enrichment.used) {
+      rowDeepSeekApplied = true;
+    }
+
+    const name = enrichment.values.name ?? heuristic.name ?? null;
+    if (!name) {
+      skippedRows.push(`Zeile ${rowNumber}: Firmenname fehlt.`);
+      continue;
+    }
+
+    const directEmail = enrichment.values.direct_email;
+    const directPhone = enrichment.values.direct_phone;
+    const websiteUrl = enrichment.values.website_url;
+    const address =
+      enrichment.values.address ??
+      buildAddress({
+        address: enrichment.values.address,
+        streetName: enrichment.values.street_name,
+        streetNumber: enrichment.values.street_number,
+        postalCode: enrichment.values.postal_code,
+        city: enrichment.values.city,
+        country: enrichment.values.country,
+      });
+
+    rows.push({
+      rowNumber,
+      name,
+      address,
+      email: directEmail,
+      phone: directPhone,
+      websiteUrl,
+      internalProfile: normalizeMemberInternalProfile({
+        member_number: enrichment.values.member_number,
+        contact_title: enrichment.values.contact_title,
+        contact_first_name: enrichment.values.contact_first_name,
+        contact_last_name: enrichment.values.contact_last_name,
+        contact_job_title: enrichment.values.contact_job_title,
+        street_name: enrichment.values.street_name,
+        street_number: enrichment.values.street_number,
+        postal_code: enrichment.values.postal_code,
+        city: enrichment.values.city,
+        country: enrichment.values.country,
+        direct_phone: directPhone,
+        direct_email: directEmail,
+        membership_fee: enrichment.values.membership_fee,
+        internal_notes: enrichment.values.internal_notes,
+      }),
+    });
+  }
+
+  return {
+    rows,
+    headers,
+    mappedHeaders,
+    skippedRows,
+    deepSeekApplied: deepSeekApplied || rowDeepSeekApplied,
+  };
+}
+
+export function getImportedMemberKey(name: string): string {
+  return normalizeCompanyName(name);
+}

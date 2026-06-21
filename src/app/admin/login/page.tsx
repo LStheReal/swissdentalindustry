@@ -2,6 +2,7 @@
 
 import { Suspense, useActionState } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { login, type LoginState } from "./actions";
 
 export default function LoginPage() {
@@ -28,20 +29,18 @@ function LoginForm() {
       >
         <div className="h-[3px] bg-[#e1000f]" />
         <div className="space-y-5 p-8">
-        <div className="flex items-center gap-2.5">
-          <svg width="26" height="26" viewBox="0 0 100 100" aria-hidden="true">
-            <rect width="100" height="100" rx="3" fill="#e1000f" />
-            <rect x="42" y="20" width="16" height="60" fill="#fff" />
-            <rect x="20" y="42" width="60" height="16" fill="#fff" />
-          </svg>
-          <div>
-            <h1 className="text-[15px] font-extrabold leading-tight tracking-[-0.01em]">
-              Swiss Dental Industry
-            </h1>
-            <p className="font-sdi-mono mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
-              Superadmin-Anmeldung
-            </p>
-          </div>
+        <div className="flex flex-col items-center gap-3">
+          <Image
+            src="/sdi/logo.png"
+            alt="Swiss Dental Industry"
+            width={180}
+            height={60}
+            className="object-contain"
+            priority
+          />
+          <p className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
+            Superadmin-Anmeldung
+          </p>
         </div>
 
         <input type="hidden" name="redirect" value={redirectTo} />

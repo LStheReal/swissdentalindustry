@@ -27,14 +27,16 @@ export function MobileNav({
     <>
       {/* Top bar — mobile only */}
       <div className="flex items-center justify-between border-b border-[#e2e2e7] bg-[#fafaf8] px-5 py-3 lg:hidden">
-        <Image
-          src="/sdi/logo.png"
-          alt="Swiss Dental Industry"
-          width={140}
-          height={46}
-          className="h-[28px] w-auto"
-          priority
-        />
+        <Link href="/admin">
+          <Image
+            src="/sdi/logo.png"
+            alt="Swiss Dental Industry"
+            width={140}
+            height={46}
+            className="h-[28px] w-auto"
+            priority
+          />
+        </Link>
         <button
           onClick={() => setOpen(true)}
           aria-label="Menü öffnen"

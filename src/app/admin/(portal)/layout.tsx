@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminT } from "@/lib/i18n-admin";
 import { logout } from "../login/actions";
@@ -36,14 +37,16 @@ export default async function PortalLayout({
         <div className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[240px_1fr] lg:overflow-hidden">
           <aside className="hidden flex-col border-b border-[#e2e2e7] bg-[#fafaf8] p-5 lg:flex lg:h-full lg:border-b-0 lg:border-r">
             <div className="mb-8">
-              <Image
-                src="/sdi/logo.png"
-                alt="Swiss Dental Industry"
-                width={1819}
-                height={591}
-                className="h-[34px] w-auto"
-                preload
-              />
+              <Link href="/admin">
+                <Image
+                  src="/sdi/logo.png"
+                  alt="Swiss Dental Industry"
+                  width={1819}
+                  height={591}
+                  className="h-[34px] w-auto"
+                  preload
+                />
+              </Link>
             </div>
 
             <div className="font-sdi-mono mb-2 pl-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9595a0]">

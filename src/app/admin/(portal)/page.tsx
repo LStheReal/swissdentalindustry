@@ -225,7 +225,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid border border-[#e2e2e7] bg-[#e2e2e7] sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 border border-[#e2e2e7] bg-[#e2e2e7] xl:grid-cols-4">
         {cards.map((c) => (
           <Link
             key={c.href}

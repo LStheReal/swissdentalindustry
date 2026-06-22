@@ -4,6 +4,7 @@ import { getAdminT } from "@/lib/i18n-admin";
 import { logout } from "../login/actions";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { NavLinks } from "./NavLinks";
+import { MobileNav } from "./MobileNav";
 
 export default async function PortalLayout({
   children,
@@ -26,8 +27,14 @@ export default async function PortalLayout({
     <div className="min-h-screen overflow-x-hidden bg-[#e7e5df] p-4 text-[#0a0a0b] lg:h-screen lg:overflow-hidden lg:p-8">
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1320px] flex-col overflow-hidden rounded-[2px] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] lg:h-full lg:min-h-0">
         <div className="h-[3px] bg-[#e1000f]" />
+        <MobileNav
+          items={navItems}
+          locale={locale}
+          email={admin.email ?? ""}
+          logoutLabel={t("nav.logout")}
+        />
         <div className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[240px_1fr] lg:overflow-hidden">
-          <aside className="flex flex-col border-b border-[#e2e2e7] bg-[#fafaf8] p-5 lg:h-full lg:border-b-0 lg:border-r">
+          <aside className="hidden flex-col border-b border-[#e2e2e7] bg-[#fafaf8] p-5 lg:flex lg:h-full lg:border-b-0 lg:border-r">
             <div className="mb-8">
               <Image
                 src="/sdi/logo.png"

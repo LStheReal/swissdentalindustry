@@ -67,7 +67,7 @@ export function SiteHeader() {
               ))}
             </div>
             <Link
-              href={l("/mitglied-werden")}
+              href={l("/kontakt")}
               className="inline-flex items-center gap-2 rounded-[4px] bg-[color:var(--accent)] px-5 py-[11px] text-[14px] font-semibold text-white transition-colors hover:bg-[color:var(--accent-hover)]"
               style={{ color: "#ffffff" }}
             >
@@ -110,13 +110,26 @@ export function SiteHeader() {
               </Link>
             ))}
             <Link
-              href={l("/mitglied-werden")}
+              href={l("/kontakt")}
               onClick={() => setMenuOpen(false)}
               className="mt-4 flex items-center justify-center rounded-[4px] bg-[color:var(--accent)] px-5 py-[13px] text-[15px] font-semibold text-white"
               style={{ color: "#ffffff" }}
             >
               {copy.header.join}
             </Link>
+
+            <div className="mt-5 flex items-center justify-center gap-6 border-t border-[color:var(--border-subtle)] pt-5 font-mono text-[13px] font-bold uppercase tracking-[0.1em]">
+              {LOCALES.map((code) => (
+                <a
+                  key={code}
+                  href={withLocalePath(pathname, code)}
+                  onClick={() => setMenuOpen(false)}
+                  style={{ color: code === locale ? "var(--accent)" : "var(--ink-500)" }}
+                >
+                  {code}
+                </a>
+              ))}
+            </div>
           </div>
         ) : null}
       </header>

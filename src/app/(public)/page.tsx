@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/sdi/Button";
 import { Eyebrow } from "@/components/sdi/Card";
-import { MarkerAccent } from "@/components/sdi/MarkerAccent";
+import { HeroVariant } from "@/components/sdi/HeroVariants";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicCopy } from "@/lib/public-copy";
 import { getPublicLocale } from "@/lib/public-locale.server";
@@ -143,163 +143,101 @@ export default async function HomePage() {
   const news = (newsResult.data ?? []) as News[];
   const visibleNews = news.slice(0, 2);
   const hiddenNews = news.slice(2);
-  const stats = copy.home.stats.map(([n, label]) => [
-    n === "__MEMBER_COUNT__" ? members.length.toString().padStart(2, "0") : n,
+  const associationFacts = copy.home.associationFacts.map(([n, label]) => [
+    n === "__MEMBER_COUNT__" ? String(members.length) : n,
     label,
   ]);
+  const heroContent = {
+    eyebrow: copy.home.introEyebrow,
+    titleA: copy.home.titleA,
+    titleAccent: copy.home.titleAccent,
+    titleB: copy.home.titleB,
+    intro: copy.home.intro,
+    primaryLabel: copy.home.primaryCta,
+    primaryHref: withLocalePath("/kontakt", locale),
+    secondaryLabel: copy.home.secondaryCta,
+    secondaryHref: withLocalePath("/mitglieder", locale),
+  };
 
   return (
     <>
-      <section className="mx-auto max-w-[1200px] px-[clamp(20px,5vw,48px)] pt-[clamp(48px,7vw,92px)] pb-[clamp(40px,5vw,72px)]">
-        <div className="grid items-stretch gap-[clamp(32px,5vw,56px)] xl:grid-cols-[1fr_1.1fr]">
-          <div className="self-center text-center xl:text-left">
-            <div className="mb-[22px] flex items-center justify-center gap-[10px] xl:justify-start">
-              <span className="h-[9px] w-[9px] bg-[color:var(--accent)]" />
-              <span className="font-mono text-[12px] font-bold uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                {copy.home.introEyebrow}
-              </span>
-            </div>
-            <h1 className="text-[clamp(38px,5.6vw,74px)] font-extrabold leading-none tracking-[-0.03em]">
-              {copy.home.titleA}
-              <br />
-              <MarkerAccent>{copy.home.titleAccent}</MarkerAccent>{" "}
-              {copy.home.titleB}
-            </h1>
-            <p className="mt-[26px] text-center text-[clamp(16px,1.7vw,19px)] leading-[1.6] text-[color:var(--text-secondary)] xl:max-w-[540px] xl:text-left">
-              {copy.home.intro}
+      <HeroVariant variant={1} content={heroContent} />
+
+      {/* About — The Swiss Dental Industry */}
+      <section id="about" className="scroll-mt-[80px] border-b border-[color:var(--border-default)]">
+        <div className="mx-auto grid max-w-[1200px] gap-[clamp(28px,5vw,72px)] px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,104px)] xl:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <Eyebrow>{copy.home.aboutEyebrow}</Eyebrow>
+            <h2 className="mt-4 text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
+              {copy.home.aboutTitle}
+            </h2>
+          </div>
+          <div>
+            <p className="text-[clamp(16px,1.8vw,19px)] leading-[1.65] text-[color:var(--text-secondary)]">
+              {copy.home.aboutText}
             </p>
-            <div className="mt-10 flex flex-wrap justify-center gap-3 xl:justify-start">
-              <ButtonLink href={withLocalePath("/mitglied-werden", locale)} size="lg">
-                {copy.home.primaryCta}
-              </ButtonLink>
-              <ButtonLink href={withLocalePath("/mitglieder", locale)} variant="secondary" size="lg">
-                {copy.home.secondaryCta}
-              </ButtonLink>
-            </div>
-          </div>
-
-          <div data-gsap-fade className="relative flex min-h-[clamp(260px,50vw,620px)] items-center justify-center overflow-hidden rounded-[6px] bg-[color:var(--ink-950)] p-6 text-white xl:min-h-[clamp(320px,42vw,620px)]">
-            <div
-              aria-hidden
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(255,255,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.05) 1px,transparent 1px)",
-                backgroundSize: "38px 38px",
-              }}
-            />
-            <span className="absolute top-[18px] left-5 font-mono text-[11px] font-bold tracking-[0.14em] text-white/50">
-              SVDI / ASDI
-            </span>
-            <span className="absolute top-[18px] right-5 font-mono text-[11px] font-bold tracking-[0.14em] text-white/50">
-              EST. 1965
-            </span>
-            <span className="absolute bottom-[18px] left-5 font-mono text-[11px] font-bold tracking-[0.14em] text-white/50">
-              GUMLIGEN · BERN
-            </span>
-            <span className="absolute right-5 bottom-[18px] font-mono text-[11px] font-bold tracking-[0.14em] text-[color:var(--red-400)]">
-              SWISS MADE
-            </span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/sdi/titelbild.jpg"
-              alt={copy.home.heroImageAlt}
-              className="absolute inset-0 h-full w-full rounded-[6px] object-cover"
-              data-gsap-parallax
-            />
+            <ul className="mt-8 flex flex-col gap-4" data-gsap-stagger>
+              {copy.home.aboutFacts.map((fact) => (
+                <li
+                  key={fact}
+                  className="border-l-2 border-[color:var(--accent)] pl-4 text-[15px] font-semibold leading-[1.5]"
+                >
+                  {fact}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
 
-      <section className="border-t border-[color:var(--ink-700)] bg-[color:var(--ink-950)] text-white">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-[clamp(24px,4vw,40px)] px-[clamp(20px,5vw,48px)] py-[clamp(40px,5vw,64px)] xl:grid-cols-4" data-gsap-stagger>
-          {stats.map(([n, label]) => (
-            <div key={label} className="border-l-2 border-[color:var(--accent)] pl-[18px]">
-              <div className="font-mono text-[clamp(34px,4.4vw,52px)] font-bold leading-none tracking-[-0.02em]">
-                {n}
-              </div>
-              <div className="mt-[10px] text-[14px] leading-[1.4] text-white/60">{label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-[color:var(--ink-950)] text-white">
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)",
-            backgroundSize: "44px 44px",
-          }}
-        />
-        <div className="relative mx-auto max-w-[1200px] px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,96px)]">
-          <div className="mx-auto max-w-[900px]">
-            <div data-gsap-fade className="relative w-full overflow-hidden rounded-[6px]" style={{ paddingBottom: "56.25%" }}>
-              <iframe
-                className="absolute inset-0 h-full w-full"
-                src="https://www.youtube.com/embed/zUHznpWmwXc?si=rQxEICVUr3JjsyD4"
-                title="Swiss Dental Industry"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="dentalindustrie" className="mx-auto max-w-[1200px] px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,104px)]">
-        <Eyebrow>{copy.home.valuesEyebrow}</Eyebrow>
-        <h2 className="mt-4 mb-[clamp(64px,8vw,112px)] max-w-[620px] text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
-          {copy.home.valuesTitle}
+      {/* Our expertise — four parts */}
+      <section id="expertise" className="mx-auto max-w-[1200px] scroll-mt-[80px] px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,104px)]">
+        <Eyebrow>{copy.home.expertiseEyebrow}</Eyebrow>
+        <h2 className="mt-4 max-w-[680px] text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
+          {copy.home.expertiseTitle}
         </h2>
-        <div className="mt-6 grid border border-[color:var(--border-default)] bg-[color:var(--border-default)] [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-px" data-gsap-stagger>
-          {copy.home.values.map((value) => (
-            <div key={value.n} className="bg-white px-[clamp(22px,2.5vw,30px)] py-[clamp(24px,3vw,36px)] transition-colors hover:bg-[color:var(--ink-50)]">
-              <span className="font-mono text-[13px] font-bold text-[color:var(--accent)]">{value.n}</span>
+        <p className="mt-5 mb-[clamp(48px,6vw,80px)] max-w-[680px] text-[clamp(15px,1.7vw,18px)] leading-[1.6] text-[color:var(--text-secondary)]">
+          {copy.home.expertiseLead}
+        </p>
+        <div className="grid border border-[color:var(--border-default)] bg-[color:var(--border-default)] [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-px" data-gsap-stagger>
+          {copy.home.expertise.map((item) => (
+            <div key={item.n} className="bg-white px-[clamp(22px,2.5vw,30px)] py-[clamp(24px,3vw,36px)] transition-colors hover:bg-[color:var(--ink-50)]">
+              <span className="font-mono text-[13px] font-bold text-[color:var(--accent)]">{item.n}</span>
               <h3 className="mt-[14px] text-[clamp(20px,2.2vw,25px)] font-bold tracking-[-0.015em]">
-                {value.t}
+                {item.t}
               </h3>
               <p className="mt-[14px] text-[15px] leading-[1.55] text-[color:var(--text-secondary)]">
-                {value.d}
+                {item.d}
               </p>
             </div>
           ))}
         </div>
       </section>
 
-      <section id="verband" className="border-y border-[color:var(--border-default)] bg-[color:var(--surface-subtle)]">
+      {/* Our association */}
+      <section id="verband" className="scroll-mt-[80px] border-y border-[color:var(--border-default)] bg-[color:var(--surface-subtle)]">
         <div className="mx-auto max-w-[1200px] px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,100px)]">
           <Eyebrow>{copy.home.associationEyebrow}</Eyebrow>
-          <h2 className="mt-4 mb-[clamp(64px,8vw,112px)] max-w-[820px] text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
+          <h2 className="mt-4 max-w-[820px] text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
             {copy.home.associationTitle}
           </h2>
-          <div className="grid gap-4 pt-4 sm:gap-9 sm:pt-6 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]" data-gsap-stagger>
-            {copy.home.pillars.map((pillar, index) => (
-              <Link
-                key={pillar.n}
-                href={withLocalePath(
-                  index === 0 ? "/verband" : index === 2 ? "/mitglied-werden" : "/mitglieder",
-                  locale,
-                )}
-                className="flex flex-col rounded-[6px] border border-[color:var(--border-default)] bg-white px-[clamp(26px,3vw,34px)] py-[24px] transition hover:border-[color:var(--accent)] hover:shadow-[var(--shadow-sm)] sm:min-h-[240px] sm:p-[clamp(26px,3vw,34px)]"
-              >
-                <span className="font-mono text-[13px] font-bold text-[color:var(--accent)]">
-                  {pillar.n}
-                </span>
-                <h3 className="mt-4 text-[clamp(20px,2.3vw,26px)] font-bold tracking-[-0.015em]">
-                  {pillar.t}
-                </h3>
-                <p className="mt-3 text-[15px] leading-[1.55] text-[color:var(--text-secondary)]">
-                  {pillar.d}
-                </p>
-                <span className="inline-flex items-center gap-2 pt-6 text-[14px] font-semibold sm:mt-auto">
-                  {pillar.cta}
-                  <span className="text-[color:var(--accent)]">→</span>
-                </span>
-              </Link>
+          <p className="mt-6 max-w-[760px] text-[clamp(16px,1.8vw,19px)] leading-[1.65] text-[color:var(--text-secondary)]">
+            {copy.home.associationText}
+          </p>
+          <div className="mt-[clamp(36px,5vw,56px)] grid grid-cols-2 gap-[clamp(20px,3vw,36px)] xl:grid-cols-4" data-gsap-stagger>
+            {associationFacts.map(([n, label]) => (
+              <div key={label} className="border-l-2 border-[color:var(--accent)] pl-[18px]">
+                <div className="font-mono text-[clamp(30px,4vw,46px)] font-bold leading-none tracking-[-0.02em]">
+                  {n}
+                </div>
+                <div className="mt-[10px] text-[14px] leading-[1.4] text-[color:var(--text-secondary)]">{label}</div>
+              </div>
             ))}
+          </div>
+          <div className="mt-[clamp(36px,5vw,56px)]">
+            <ButtonLink href={withLocalePath("/mitglied-werden", locale)} size="lg">
+              {copy.home.associationCta}
+            </ButtonLink>
           </div>
         </div>
       </section>

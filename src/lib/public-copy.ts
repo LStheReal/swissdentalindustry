@@ -22,14 +22,12 @@ const PUBLIC_COPY = {
     },
     header: {
       nav: [
-        { href: "/", label: "Home" },
-        { href: "/#dentalindustrie", label: "Die Dentalindustrie" },
-        { href: "/#verband", label: "Der Verband" },
+        { href: "/#about", label: "Über uns" },
         { href: "/mitglieder", label: "Mitglieder" },
         { href: "/news", label: "News" },
         { href: "/kontakt", label: "Kontakt" },
       ],
-      join: "Mitglied werden",
+      join: "Kontaktieren Sie uns",
       menu: "Menü",
     },
     footer: {
@@ -78,61 +76,53 @@ const PUBLIC_COPY = {
       titleB: "im Einsatz.",
       intro:
         "Wir vertreten die führenden Dentalunternehmen der Schweiz - Hersteller, die mit Präzision, Verlässlichkeit und Innovation den globalen Standard der modernen Zahnmedizin prägen.",
-      primaryCta: "Mitglied werden",
+      primaryCta: "Kontaktieren Sie uns",
       secondaryCta: "Die Mitglieder entdecken",
-      heroImageAlt: "Schweizer Dentalindustrie",
-      stats: [
-        ["1965", "gegründet in der Schweiz"],
-        ["__MEMBER_COUNT__", "aktive Mitgliedsfirmen"],
-        ["04", "Landessprachen"],
-        ["CH", "internationale Dentalqualität"],
+      aboutEyebrow: "Swiss Dental Industry",
+      aboutTitle: "Die Schweizer Dentalindustrie",
+      aboutText:
+        "Die Schweiz geniesst einen gefestigten Ruf für Spitzenleistungen in Präzisionsmechanik, Pharma und akademischer Forschung. In diesem aussergewöhnlichen Umfeld aus Kompetenz und Innovation hat sich die Schweizer Dentalindustrie im letzten Jahrhundert zu einer der weltweit anerkanntesten entwickelt.",
+      aboutFacts: [
+        "Über 90% der Schweizer Dentalproduktion wird weltweit exportiert",
+        "Die Schweiz nimmt eine führende Position in der globalen Medizintechnik ein",
       ],
-      valuesEyebrow: "Was uns ausmacht",
-      valuesTitle: "Vier Werte, ein Standard.",
-      values: [
+      expertiseEyebrow: "Unsere Kompetenz",
+      expertiseTitle: "Unsere Expertise im Dienst der Fachleute.",
+      expertiseLead:
+        "Eine gemeinsame Leidenschaft für die Präzisionsindustrie und für die Herausforderungen der Mundgesundheit treibt uns an, aussergewöhnliche Produkte zu entwickeln – täglich gefertigt in bester Schweizer Tradition, um den Bedürfnissen der Zahnärztinnen und Zahnärzte weltweit gerecht zu werden.",
+      expertise: [
         {
           n: "01",
-          t: "Präzision",
-          d: "Schweizer Dentaltechnik steht für verlässliche Qualität, genaue Prozesse und Produkte, denen Praxen und Labore weltweit vertrauen.",
+          t: "Aussergewöhnliche Produkte",
+          d: "In bester Schweizer Tradition gefertigt, um den Ansprüchen und Erwartungen der Praktiker weltweit gerecht zu werden.",
         },
         {
           n: "02",
-          t: "Innovation",
-          d: "Unsere Mitglieder entwickeln digitale Workflows, Materialien und Systeme für die Zahnmedizin von morgen.",
+          t: "Im Dienst der Fachleute",
+          d: "Wir stellen unser Können in den Dienst der Dentalfachleute und unterstützen den Erfolg der Behandlung ihrer Patienten.",
         },
         {
           n: "03",
-          t: "Verantwortung",
-          d: "Der Verband bündelt Branchenwissen, fördert Standards und vertritt gemeinsame Anliegen gegenüber Markt und Politik.",
+          t: "Nähe zu den Anwendern",
+          d: "Konstante Nähe zu den Anwendern unserer Produkte hält unsere Arbeit im Alltag der Praxis verankert.",
         },
         {
           n: "04",
-          t: "Netzwerk",
-          d: "Als Verband verbinden wir Hersteller, Handel, Fachpartner und internationale Plattformen der Dentalindustrie.",
+          t: "Forschung & Messen",
+          d: "Enge Hochschulkooperationen und regelmässige Präsenz an Dentalmessen bringen die neuesten Schweizer Innovationen ins Feld.",
         },
       ],
-      associationEyebrow: "Der Verband",
-      associationTitle: "Entdecken Sie die Schweizer Dentalindustrie.",
-      pillars: [
-        {
-          n: "A",
-          t: "Starke Stimme",
-          d: "Wir vertreten die Interessen der Schweizer Dentalindustrie und schaffen Orientierung in einem internationalen Markt.",
-          cta: "Mehr über den Verband",
-        },
-        {
-          n: "B",
-          t: "Sichtbares Netzwerk",
-          d: "Mitgliedsfirmen werden als Teil einer starken Schweizer Branchenplattform präsentiert.",
-          cta: "Mitglieder ansehen",
-        },
-        {
-          n: "C",
-          t: "Gemeinsame Standards",
-          d: "Austausch, Qualität und Know-how sichern die Position der Schweizer Dentalindustrie langfristig.",
-          cta: "Mitglied werden",
-        },
+      associationEyebrow: "Der Verband (SVDI)",
+      associationTitle: "Wo der Verband heute steht.",
+      associationText:
+        "Vor bald 70 Jahren gegründet, versammelt unser Verband die Schweizer Dentalhersteller rund um gemeinsame Werte – Präzision, Verlässlichkeit, Innovation und Tradition. Die Qualität unseres Austauschs stärkt den Zusammenhalt der Branche: Grossunternehmen und KMU setzen sich gemeinsam dafür ein, die Identität der Schweizer Dentalindustrie im In- und Ausland zu verteidigen und zu fördern.",
+      associationFacts: [
+        ["1956", "gegründet"],
+        ["__MEMBER_COUNT__", "Mitgliedsfirmen"],
+        ["5000+", "Arbeitsplätze in der Schweiz"],
+        ["FIDE", "Gründungsmitglied"],
       ],
+      associationCta: "Mitglied werden",
       membersEyebrow: "Die Mitglieder",
       membersTitle: "Hersteller mit Weltruf.",
       membersCta: "Alle Mitglieder ansehen →",
@@ -353,14 +343,12 @@ const PUBLIC_COPY = {
     },
     header: {
       nav: [
-        { href: "/", label: "Accueil" },
-        { href: "/#dentalindustrie", label: "L'industrie dentaire" },
-        { href: "/#verband", label: "L'association" },
+        { href: "/#about", label: "À propos" },
         { href: "/mitglieder", label: "Membres" },
         { href: "/news", label: "Actualités" },
         { href: "/kontakt", label: "Contact" },
       ],
-      join: "Devenir membre",
+      join: "Contactez-nous",
       menu: "Menu",
     },
     footer: {
@@ -409,61 +397,53 @@ const PUBLIC_COPY = {
       titleB: "à l'œuvre.",
       intro:
         "Nous représentons les principales entreprises dentaires de Suisse, des fabricants qui façonnent le standard mondial de la dentisterie moderne par leur précision, leur fiabilité et leur innovation.",
-      primaryCta: "Devenir membre",
+      primaryCta: "Contactez-nous",
       secondaryCta: "Découvrir les membres",
-      heroImageAlt: "Industrie dentaire suisse",
-      stats: [
-        ["1965", "fondée en Suisse"],
-        ["__MEMBER_COUNT__", "entreprises membres actives"],
-        ["04", "langues nationales"],
-        ["CH", "qualité dentaire internationale"],
+      aboutEyebrow: "Swiss Dental Industry",
+      aboutTitle: "L'industrie dentaire suisse",
+      aboutText:
+        "La Suisse jouit d'une réputation d'excellence solidement établie en mécanique de précision, en pharmaceutique et dans le domaine académique. C'est dans ce contexte exceptionnel de compétence et d'innovation que l'industrie dentaire suisse s'est développée au siècle dernier pour devenir l'une des plus reconnues au monde.",
+      aboutFacts: [
+        "Plus de 90% de la production dentaire suisse est exportée dans le monde entier",
+        "La Suisse occupe une position de leader dans la technologie médicale mondiale",
       ],
-      valuesEyebrow: "Ce qui nous distingue",
-      valuesTitle: "Quatre valeurs, une référence.",
-      values: [
+      expertiseEyebrow: "Notre savoir-faire",
+      expertiseTitle: "Notre expertise au service des professionnels.",
+      expertiseLead:
+        "Une passion commune pour l'industrie de précision et pour les défis liés à la santé bucco-dentaire nous pousse à développer des produits exceptionnels – fabriqués chaque jour dans la plus pure tradition suisse pour répondre aux besoins des praticiens du monde entier.",
+      expertise: [
         {
           n: "01",
-          t: "Précision",
-          d: "La technologie dentaire suisse incarne une qualité fiable, des processus rigoureux et des produits auxquels les cabinets et laboratoires du monde entier font confiance.",
+          t: "Produits exceptionnels",
+          d: "Fabriqués dans la plus pure tradition suisse pour répondre aux besoins et aux attentes des praticiens du monde entier.",
         },
         {
           n: "02",
-          t: "Innovation",
-          d: "Nos membres développent des flux de travail numériques, des matériaux et des systèmes pour la médecine dentaire de demain.",
+          t: "Au service des praticiens",
+          d: "Nous mettons notre savoir-faire au service des professionnels dentaires et accompagnons la réussite des soins prodigués à leurs patients.",
         },
         {
           n: "03",
-          t: "Responsabilité",
-          d: "L'association rassemble le savoir du secteur, encourage les standards et défend des intérêts communs auprès du marché et des autorités.",
+          t: "Proximité avec les utilisateurs",
+          d: "Une proximité constante avec les utilisateurs de nos produits ancre notre travail dans la pratique quotidienne.",
         },
         {
           n: "04",
-          t: "Réseau",
-          d: "En tant qu'association, nous relions fabricants, commerce, partenaires spécialisés et plateformes internationales de l'industrie dentaire.",
+          t: "Recherche & salons",
+          d: "De solides collaborations académiques et une présence régulière dans les salons dentaires présentent les dernières innovations suisses.",
         },
       ],
-      associationEyebrow: "L'association",
-      associationTitle: "Découvrez l'industrie dentaire suisse.",
-      pillars: [
-        {
-          n: "A",
-          t: "Une voix forte",
-          d: "Nous représentons les intérêts de l'industrie dentaire suisse et apportons des repères sur un marché international.",
-          cta: "En savoir plus sur l'association",
-        },
-        {
-          n: "B",
-          t: "Un réseau visible",
-          d: "Les entreprises membres sont présentées comme partie intégrante d'une solide plateforme sectorielle suisse.",
-          cta: "Voir les membres",
-        },
-        {
-          n: "C",
-          t: "Des standards communs",
-          d: "Échanges, qualité et savoir-faire assurent durablement la position de l'industrie dentaire suisse.",
-          cta: "Devenir membre",
-        },
+      associationEyebrow: "L'association (ASDI)",
+      associationTitle: "Où en est l'association aujourd'hui.",
+      associationText:
+        "Fondée il y a près de 70 ans, notre association rassemble les fabricants dentaires suisses autour de valeurs communes – précision, fiabilité, innovation et tradition. La qualité de nos échanges renforce la cohésion de la branche : grandes entreprises et PME œuvrent ensemble pour défendre et promouvoir l'identité de l'industrie dentaire suisse en Suisse et à l'étranger.",
+      associationFacts: [
+        ["1956", "fondée"],
+        ["__MEMBER_COUNT__", "entreprises membres"],
+        ["5000+", "emplois en Suisse"],
+        ["FIDE", "membre fondateur"],
       ],
+      associationCta: "Devenir membre",
       membersEyebrow: "Les membres",
       membersTitle: "Des fabricants de réputation mondiale.",
       membersCta: "Voir tous les membres →",
@@ -674,14 +654,12 @@ const PUBLIC_COPY = {
     },
     header: {
       nav: [
-        { href: "/", label: "Home" },
-        { href: "/#dentalindustrie", label: "L'industria dentale" },
-        { href: "/#verband", label: "L'associazione" },
+        { href: "/#about", label: "Chi siamo" },
         { href: "/mitglieder", label: "Membri" },
         { href: "/news", label: "News" },
         { href: "/kontakt", label: "Contatto" },
       ],
-      join: "Diventare membro",
+      join: "Contattaci",
       menu: "Menu",
     },
     footer: {
@@ -730,61 +708,53 @@ const PUBLIC_COPY = {
       titleB: "in azione.",
       intro:
         "Rappresentiamo le principali aziende dentali della Svizzera, produttori che definiscono lo standard globale dell'odontoiatria moderna con precisione, affidabilità e innovazione.",
-      primaryCta: "Diventare membro",
+      primaryCta: "Contattaci",
       secondaryCta: "Scoprire i membri",
-      heroImageAlt: "Industria dentale svizzera",
-      stats: [
-        ["1965", "fondata in Svizzera"],
-        ["__MEMBER_COUNT__", "aziende associate attive"],
-        ["04", "lingue nazionali"],
-        ["CH", "qualità dentale internazionale"],
+      aboutEyebrow: "Swiss Dental Industry",
+      aboutTitle: "L'industria dentale svizzera",
+      aboutText:
+        "La Svizzera gode di una solida reputazione di eccellenza nella meccanica di precisione, nella farmaceutica e nell'ambito accademico. È in questo contesto eccezionale di competenza e innovazione che l'industria dentale svizzera si è sviluppata nell'ultimo secolo fino a diventare una delle più riconosciute al mondo.",
+      aboutFacts: [
+        "Oltre il 90% della produzione dentale svizzera è esportato in tutto il mondo",
+        "La Svizzera occupa una posizione di primo piano nella tecnologia medica globale",
       ],
-      valuesEyebrow: "Ciò che ci distingue",
-      valuesTitle: "Quattro valori, uno standard.",
-      values: [
+      expertiseEyebrow: "Le nostre competenze",
+      expertiseTitle: "La nostra esperienza al servizio dei professionisti.",
+      expertiseLead:
+        "Una passione comune per l'industria di precisione e per le sfide legate alla salute orale ci spinge a sviluppare prodotti eccezionali – realizzati ogni giorno nella più pura tradizione svizzera per rispondere alle esigenze dei professionisti dentali di tutto il mondo.",
+      expertise: [
         {
           n: "01",
-          t: "Precisione",
-          d: "La tecnologia dentale svizzera rappresenta qualità affidabile, processi accurati e prodotti di cui studi e laboratori di tutto il mondo si fidano.",
+          t: "Prodotti eccezionali",
+          d: "Realizzati nella più pura tradizione svizzera per soddisfare le esigenze e le aspettative dei professionisti di tutto il mondo.",
         },
         {
           n: "02",
-          t: "Innovazione",
-          d: "I nostri membri sviluppano workflow digitali, materiali e sistemi per l'odontoiatria di domani.",
+          t: "Al servizio dei professionisti",
+          d: "Mettiamo le nostre competenze al servizio dei professionisti dentali, sostenendo il successo delle cure dei loro pazienti.",
         },
         {
           n: "03",
-          t: "Responsabilità",
-          d: "L'associazione riunisce il know-how del settore, promuove standard e rappresenta interessi comuni verso mercato e politica.",
+          t: "Vicinanza agli utilizzatori",
+          d: "Una vicinanza costante agli utilizzatori dei nostri prodotti mantiene il nostro lavoro radicato nella pratica quotidiana.",
         },
         {
           n: "04",
-          t: "Rete",
-          d: "Come associazione colleghiamo produttori, commercio, partner specializzati e piattaforme internazionali dell'industria dentale.",
+          t: "Ricerca & fiere",
+          d: "Solide collaborazioni accademiche e una presenza regolare alle fiere dentali presentano le ultime innovazioni svizzere.",
         },
       ],
-      associationEyebrow: "L'associazione",
-      associationTitle: "Scoprite l'industria dentale svizzera.",
-      pillars: [
-        {
-          n: "A",
-          t: "Voce forte",
-          d: "Rappresentiamo gli interessi dell'industria dentale svizzera e offriamo orientamento in un mercato internazionale.",
-          cta: "Più informazioni sull'associazione",
-        },
-        {
-          n: "B",
-          t: "Rete visibile",
-          d: "Le aziende associate vengono presentate come parte di una forte piattaforma settoriale svizzera.",
-          cta: "Vedere i membri",
-        },
-        {
-          n: "C",
-          t: "Standard comuni",
-          d: "Scambio, qualità e know-how garantiscono nel lungo periodo la posizione dell'industria dentale svizzera.",
-          cta: "Diventare membro",
-        },
+      associationEyebrow: "L'associazione (ASDI)",
+      associationTitle: "A che punto è oggi l'associazione.",
+      associationText:
+        "Fondata quasi 70 anni fa, la nostra associazione riunisce i produttori dentali svizzeri attorno a valori comuni – precisione, affidabilità, innovazione e tradizione. La qualità dei nostri scambi rafforza la coesione del settore: grandi aziende e PMI collaborano per difendere e promuovere l'identità dell'industria dentale svizzera in patria e all'estero.",
+      associationFacts: [
+        ["1956", "fondata"],
+        ["__MEMBER_COUNT__", "aziende associate"],
+        ["5000+", "posti di lavoro in Svizzera"],
+        ["FIDE", "membro fondatore"],
       ],
+      associationCta: "Diventare membro",
       membersEyebrow: "I membri",
       membersTitle: "Produttori di fama mondiale.",
       membersCta: "Vedere tutti i membri →",
@@ -995,14 +965,12 @@ const PUBLIC_COPY = {
     },
     header: {
       nav: [
-        { href: "/", label: "Home" },
-        { href: "/#dentalindustrie", label: "The Dental Industry" },
-        { href: "/#verband", label: "The Association" },
+        { href: "/#about", label: "About" },
         { href: "/mitglieder", label: "Members" },
         { href: "/news", label: "News" },
         { href: "/kontakt", label: "Contact" },
       ],
-      join: "Become a Member",
+      join: "Contact us",
       menu: "Menu",
     },
     footer: {
@@ -1051,61 +1019,53 @@ const PUBLIC_COPY = {
       titleB: "in action.",
       intro:
         "We represent Switzerland's leading dental companies - manufacturers shaping the global standard of modern dentistry through precision, reliability, and innovation.",
-      primaryCta: "Become a Member",
+      primaryCta: "Contact us",
       secondaryCta: "Discover the Members",
-      heroImageAlt: "Swiss dental industry",
-      stats: [
-        ["1965", "founded in Switzerland"],
-        ["__MEMBER_COUNT__", "active member companies"],
-        ["04", "national languages"],
-        ["CH", "international dental quality"],
+      aboutEyebrow: "Swiss Dental Industry",
+      aboutTitle: "The Swiss Dental Industry",
+      aboutText:
+        "Switzerland's reputation for excellence in precision mechanics, pharmaceuticals and academic research is firmly established. In this exceptional context of competence and innovation, the Swiss dental industry grew over the last century into one of the most recognised in the world.",
+      aboutFacts: [
+        "More than 90% of Swiss dental production is exported worldwide",
+        "Switzerland holds a leading position in global medical technology",
       ],
-      valuesEyebrow: "What defines us",
-      valuesTitle: "Four values, one standard.",
-      values: [
+      expertiseEyebrow: "Our expertise",
+      expertiseTitle: "Our expertise at the service of professionals.",
+      expertiseLead:
+        "A shared passion for the precision industry and for the challenges of oral health drives us to develop exceptional products – manufactured daily in the purest Swiss tradition to meet the needs of dental practitioners worldwide.",
+      expertise: [
         {
           n: "01",
-          t: "Precision",
-          d: "Swiss dental technology stands for reliable quality, exact processes, and products trusted by practices and laboratories worldwide.",
+          t: "Exceptional products",
+          d: "Crafted in the purest Swiss tradition to meet the needs and expectations of practitioners everywhere.",
         },
         {
           n: "02",
-          t: "Innovation",
-          d: "Our members develop digital workflows, materials, and systems for the dentistry of tomorrow.",
+          t: "At their service",
+          d: "We place our skills at the service of dental professionals, supporting the success of their patients' care.",
         },
         {
           n: "03",
-          t: "Responsibility",
-          d: "The association pools industry knowledge, promotes standards, and represents shared interests toward the market and policymakers.",
+          t: "Close to users",
+          d: "Constant proximity with the users of our products keeps our work grounded in everyday practice.",
         },
         {
           n: "04",
-          t: "Network",
-          d: "As an association, we connect manufacturers, trade partners, specialist partners, and international dental-industry platforms.",
+          t: "Research & fairs",
+          d: "Strong academic collaborations and a regular presence at dental events showcase the latest Swiss innovations.",
         },
       ],
-      associationEyebrow: "The Association",
-      associationTitle: "Discover the Swiss dental industry.",
-      pillars: [
-        {
-          n: "A",
-          t: "Strong voice",
-          d: "We represent the interests of the Swiss dental industry and provide orientation in an international market.",
-          cta: "Learn more about the association",
-        },
-        {
-          n: "B",
-          t: "Visible network",
-          d: "Member companies are presented as part of a strong Swiss industry platform.",
-          cta: "View members",
-        },
-        {
-          n: "C",
-          t: "Shared standards",
-          d: "Exchange, quality, and know-how secure the long-term position of the Swiss dental industry.",
-          cta: "Become a member",
-        },
+      associationEyebrow: "Our Association (ASDI)",
+      associationTitle: "Where the association stands today.",
+      associationText:
+        "Founded nearly 70 years ago, our association brings Swiss dental manufacturers together around shared values – precision, reliability, innovation and tradition. The quality of our exchanges strengthens the cohesion of the sector: large corporations and SMEs work side by side to defend and promote the identity of the Swiss dental industry at home and abroad.",
+      associationFacts: [
+        ["1956", "founded"],
+        ["__MEMBER_COUNT__", "member companies"],
+        ["5000+", "employees in Switzerland"],
+        ["FIDE", "founding member"],
       ],
+      associationCta: "Become a member",
       membersEyebrow: "The Members",
       membersTitle: "Manufacturers with a global reputation.",
       membersCta: "View all members →",

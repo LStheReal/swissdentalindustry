@@ -23,7 +23,7 @@ mit Freigabe-Workflow, Formulare, Auto-Übersetzung, Geocoding). Die gestaltete
 - **Öffentliche Website** — statische Inhalte in DE/FR/IT/EN; dynamische News-
   und Mitgliedertexte kommen weiterhin aus den mehrsprachigen Datenfeldern.
 - **`/api/forms/mitwirken`**, **`/api/forms/mitglied-werden`** — Formular-Endpoints
-  (E-Mail-Versand; „Mitglied werden" zusätzlich gespeichert). Dev-Testseite: `/forms-test`.
+  (E-Mail-Versand; „Mitglied werden" zusätzlich gespeichert).
 
 ## Setup
 

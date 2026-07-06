@@ -40,7 +40,7 @@ async function prepareLogoUpload(file: File): Promise<PreparedUpload> {
       withoutEnlargement: targetLongestEdge <= longestEdge,
       kernel: sharp.kernel.lanczos3,
     })
-    .sharpen(1.1, 0.7, 1.6);
+    .sharpen({ sigma: 1.1, m1: 0.7, m2: 1.6 });
 
   if (metadata.hasAlpha) {
     return {

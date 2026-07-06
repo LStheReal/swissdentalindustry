@@ -28,6 +28,20 @@ export function withLocalePath(href: string, locale: Locale): string {
   return `${localized}${query ? `?${query}` : ""}${hash ? `#${hash}` : ""}`;
 }
 
+/**
+ * Canonical- und hreflang-Metadaten für eine öffentliche Seite.
+ * Relative Pfade — Next löst sie gegen `metadataBase` im Root-Layout auf.
+ */
+export function localeAlternates(path: string, locale: Locale) {
+  return {
+    canonical: withLocalePath(path, locale),
+    languages: {
+      ...Object.fromEntries(LOCALES.map((l) => [l, withLocalePath(path, l)])),
+      "x-default": withLocalePath(path, DEFAULT_LOCALE),
+    },
+  };
+}
+
 export function formatDate(date: string | null, locale: Locale): string {
   if (!date) return "";
   const intlLocale =

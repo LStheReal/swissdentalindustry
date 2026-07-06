@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { getPublicLocale } from "@/lib/public-locale.server";
 import { getPublicCopy } from "@/lib/public-copy";
+import { getSiteUrl } from "@/lib/site-url";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getPublicLocale();
   const copy = getPublicCopy(locale);
   return {
+    metadataBase: new URL(getSiteUrl()),
     title: copy.meta.siteTitle,
     description: copy.meta.siteDescription,
   };

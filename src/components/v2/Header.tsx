@@ -4,17 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LOCALES, type Locale } from "@/lib/types";
-import { getPublicCopy } from "@/lib/public-copy";
-import { getLocaleFromPath, stripLocaleFromPath, withLocalePath } from "@/lib/public-i18n";
-import { v2Path } from "./nav";
+import { stripLocaleFromPath, withLocalePath } from "@/lib/public-i18n";
 
-export function V2Header() {
+// Nur der Header-Ausschnitt der Copy — als Props vom Server-Layout gereicht,
+// damit nicht das gesamte mehrsprachige Copy-Modul im Client-Bundle landet.
+export type HeaderCopy = {
+  nav: readonly { readonly href: string; readonly label: string }[];
+  join: string;
+  menu: string;
+};
+
+export function V2Header({ locale, copy }: { locale: Locale; copy: HeaderCopy }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
-  const locale = getLocaleFromPath(pathname);
-  const copy = getPublicCopy(locale);
 
   // Shrink + scroll progress, one rAF-throttled listener.
   useEffect(() => {
@@ -58,12 +62,10 @@ export function V2Header() {
 
   function isActive(href: string) {
     const target = href.split("#")[0] || "/";
-    const targetV2 = target === "/" ? "/v2" : `/v2${target}`;
-    if (targetV2 === "/v2") return current === "/v2";
-    return current.startsWith(targetV2);
+    if (target === "/") return current === "/";
+    return current.startsWith(target);
   }
 
-  /** Keep the locale switcher inside the /v2 tree. */
   function localeHref(code: Locale) {
     return withLocalePath(pathname, code);
   }
@@ -73,7 +75,7 @@ export function V2Header() {
       <header ref={headerRef} className={`v2-header ${scrolled ? "is-scrolled" : ""}`}>
         <span className="v2-header__progress" aria-hidden />
         <div className="v2-container v2-header__bar">
-          <Link href={v2Path("/", locale)} className="flex shrink-0 items-center" aria-label="Swiss Dental Industry">
+          <Link href={withLocalePath("/", locale)} className="flex shrink-0 items-center" aria-label="Swiss Dental Industry">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/sdi/logo.png"
@@ -85,10 +87,10 @@ export function V2Header() {
           </Link>
 
           <nav className="hidden flex-1 items-center gap-[30px] lg:flex" aria-label="Main">
-            {copy.header.nav.map((item) => (
+            {copy.nav.map((item) => (
               <Link
                 key={item.href}
-                href={v2Path(item.href, locale)}
+                href={withLocalePath(item.href, locale)}
                 className={`v2-nav-link ${isActive(item.href) ? "is-active" : ""}`}
               >
                 {item.label}
@@ -110,14 +112,14 @@ export function V2Header() {
             </div>
             {/* CTA stays visible well below the nav's collapse point */}
             <Link
-              href={v2Path("/kontakt", locale)}
+              href={withLocalePath("/kontakt", locale)}
               className="v2-btn v2-btn--primary v2-btn--sm v2-header__cta"
             >
-              <span className="v2-btn__label">{copy.header.join}</span>
+              <span className="v2-btn__label">{copy.join}</span>
             </Link>
             <button
               type="button"
-              aria-label={copy.header.menu}
+              aria-label={copy.menu}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
               className={`v2-burger lg:hidden ${menuOpen ? "is-open" : ""}`}
@@ -130,11 +132,11 @@ export function V2Header() {
       </header>
 
       <div className={`v2-menu lg:hidden ${menuOpen ? "is-open" : ""}`} aria-hidden={!menuOpen}>
-        <nav aria-label={copy.header.menu}>
-          {copy.header.nav.map((item, i) => (
+        <nav aria-label={copy.menu}>
+          {copy.nav.map((item, i) => (
             <Link
               key={item.href}
-              href={v2Path(item.href, locale)}
+              href={withLocalePath(item.href, locale)}
               onClick={() => setMenuOpen(false)}
               className="v2-menu__link"
               style={{ "--v2-d": i } as React.CSSProperties}
@@ -147,11 +149,11 @@ export function V2Header() {
 
         <div className="mt-auto flex flex-col gap-7 pt-10">
           <Link
-            href={v2Path("/kontakt", locale)}
+            href={withLocalePath("/kontakt", locale)}
             onClick={() => setMenuOpen(false)}
             className="v2-btn v2-btn--primary v2-btn--lg justify-center"
           >
-            <span className="v2-btn__label">{copy.header.join}</span>
+            <span className="v2-btn__label">{copy.join}</span>
           </Link>
           <div className="flex items-center justify-center gap-7">
             {LOCALES.map((code) => (

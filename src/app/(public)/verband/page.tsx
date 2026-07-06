@@ -1,15 +1,16 @@
-import { ButtonLink } from "@/components/sdi/Button";
-import { Card, Eyebrow } from "@/components/sdi/Card";
+import type { Metadata } from "next";
+import { V2BtnLink, V2Card, V2Eyebrow, V2PageHero } from "@/components/v2/ui";
 import { getPublicCopy } from "@/lib/public-copy";
 import { getPublicLocale } from "@/lib/public-locale.server";
-import { withLocalePath } from "@/lib/public-i18n";
+import { localeAlternates, withLocalePath } from "@/lib/public-i18n";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const locale = await getPublicLocale();
   const copy = getPublicCopy(locale);
   return {
     title: copy.meta.associationTitle,
     description: copy.meta.associationDescription,
+    alternates: localeAlternates("/verband", locale),
   };
 }
 
@@ -19,86 +20,91 @@ export default async function VerbandPage() {
 
   return (
     <>
-      <section className="border-b border-[color:var(--border-default)]">
-        <div className="mx-auto max-w-[1200px] px-8 pt-16 pb-12">
-          <Eyebrow>{copy.association.eyebrow}</Eyebrow>
-          <h1
-            className="mt-4 max-w-[820px] text-[clamp(40px,5vw,64px)] font-extrabold leading-[1.02]"
-            style={{ letterSpacing: "-0.03em" }}
-          >
-            {copy.association.title}
-          </h1>
-          <p className="mt-5 max-w-[760px] text-[17px] leading-[1.6] text-[color:var(--text-secondary)]">
-            {copy.association.intro}
-          </p>
-        </div>
-      </section>
+      <V2PageHero
+        index="01"
+        eyebrow={copy.association.eyebrow}
+        title={copy.association.title}
+        intro={copy.association.intro}
+      />
 
-      <section className="mx-auto grid max-w-[1200px] gap-10 px-8 py-16 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="order-2 space-y-6 lg:order-1">
-          <Card data-gsap-fade>
-            <p className="text-[16px] leading-[1.75] text-[color:var(--text-secondary)]">
+      <section className="v2-container grid gap-[clamp(28px,4vw,48px)] py-[clamp(56px,7vw,96px)] lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="order-2 lg:order-1">
+          <div data-v2-reveal>
+            <p className="max-w-[640px] text-[clamp(17px,1.9vw,20px)] leading-[1.7] tracking-[-0.005em] text-[color:var(--ink-800)]">
               {copy.association.paragraphs[0]}
             </p>
+          </div>
 
-            <ul className="mt-8 space-y-3 text-[16px] leading-[1.7] text-[color:var(--text-secondary)]">
-              {copy.association.facts.map((fact) => (
-                <li key={fact} className="flex gap-3">
-                  <span className="pt-[2px] text-[color:var(--accent)]">-</span>
-                  <span>{fact}</span>
-                </li>
-              ))}
-            </ul>
+          <ul className="mt-10 flex flex-col" data-v2-stagger>
+            {copy.association.facts.map((fact, i) => (
+              <li
+                key={fact}
+                className="flex items-start gap-4 border-t border-[color:var(--border-default)] py-[18px] text-[15.5px] leading-[1.6] text-[color:var(--text-secondary)]"
+              >
+                <span
+                  className="mt-[3px] shrink-0 text-[12px] font-bold text-[color:var(--red-500)]"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {fact}
+              </li>
+            ))}
+          </ul>
 
-            <p className="mt-10 text-[16px] leading-[1.75] text-[color:var(--text-secondary)]">
+          <div className="mt-12" data-v2-reveal>
+            <p className="max-w-[640px] text-[clamp(16px,1.8vw,18px)] leading-[1.7] text-[color:var(--text-secondary)]">
               {copy.association.paragraphs[1]}
             </p>
+          </div>
 
-            <ul className="mt-8 space-y-3 text-[16px] leading-[1.7] text-[color:var(--text-secondary)]">
-              {copy.association.commitments.map((item) => (
-                <li key={item} className="flex gap-3">
-                  <span className="pt-[2px] text-[color:var(--accent)]">-</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          <ul className="mt-10 flex flex-col" data-v2-stagger>
+            {copy.association.commitments.map((item, i) => (
+              <li
+                key={item}
+                className="flex items-start gap-4 border-t border-[color:var(--border-default)] py-[18px] text-[15.5px] leading-[1.6] text-[color:var(--text-secondary)]"
+              >
+                <span
+                  className="mt-[3px] shrink-0 text-[12px] font-bold text-[color:var(--red-500)]"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="order-1 space-y-6 lg:order-2">
-          <Card padded={false} className="overflow-hidden" data-gsap-fade>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/sdi/stand_F3748.jpg"
-              alt={copy.association.imageAlt}
-              className="block h-[280px] w-full object-cover sm:h-[340px] lg:h-[420px]"
-            />
-          </Card>
-
-          <Card data-gsap-fade>
-            <Eyebrow>{copy.association.cardEyebrow}</Eyebrow>
-            <h2 className="mt-3 text-[24px] font-bold" style={{ letterSpacing: "-0.01em" }}>
-              {copy.association.cardTitle}
-            </h2>
-            <p className="mt-4 text-[15px] leading-[1.7] text-[color:var(--text-secondary)]">
-              {copy.association.cardText}
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink
-                href={withLocalePath("/mitglieder", locale)}
-                variant="secondary"
-                size="md"
-              >
-                {copy.association.membersCta}
-              </ButtonLink>
-              <ButtonLink
-                href={withLocalePath("/mitglied-werden", locale)}
-                size="md"
-              >
-                {copy.association.joinCta}
-              </ButtonLink>
+        <div className="order-1 flex flex-col gap-6 lg:order-2">
+          <div className="v2-card overflow-hidden" data-v2-reveal="right">
+            <div className="group overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/sdi/stand_F3748.jpg"
+                alt={copy.association.imageAlt}
+                className="block h-[280px] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] sm:h-[340px] lg:h-[400px]"
+              />
             </div>
-          </Card>
+          </div>
+
+          <V2Card ticks className="lg:sticky lg:top-[110px]">
+            <div data-v2-reveal>
+              <V2Eyebrow>{copy.association.cardEyebrow}</V2Eyebrow>
+              <h2 className="mt-4 text-[24px] font-bold tracking-[-0.015em]">{copy.association.cardTitle}</h2>
+              <p className="mt-4 text-[15px] leading-[1.7] text-[color:var(--text-secondary)]">
+                {copy.association.cardText}
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <V2BtnLink href={withLocalePath("/mitglied-werden", locale)} size="sm">
+                  {copy.association.joinCta}
+                </V2BtnLink>
+                <V2BtnLink href={withLocalePath("/mitglieder", locale)} variant="ghost" size="sm">
+                  {copy.association.membersCta}
+                </V2BtnLink>
+              </div>
+            </div>
+          </V2Card>
         </div>
       </section>
     </>

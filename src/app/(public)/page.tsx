@@ -1,117 +1,88 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ButtonLink } from "@/components/sdi/Button";
-import { Eyebrow } from "@/components/sdi/Card";
-import { HeroVariant } from "@/components/sdi/HeroVariants";
-import { createClient } from "@/lib/supabase/server";
+import type { CSSProperties } from "react";
+import { V2Hero } from "@/components/v2/Hero";
+import { V2Marquee } from "@/components/v2/Marquee";
+import { V2ExpertiseAccordion } from "@/components/v2/ExpertiseAccordion";
+import { ArrowRight, V2BtnLink, V2Eyebrow, V2SectionHead } from "@/components/v2/ui";
+import { getPublishedMembers, getPublishedNews, excerpt, newsFaviconUrl, youtubeThumbnailUrl } from "@/lib/public-data";
 import { getPublicCopy } from "@/lib/public-copy";
 import { getPublicLocale } from "@/lib/public-locale.server";
-import { formatDate, withLocalePath } from "@/lib/public-i18n";
-import { mlText, type Locale, type Member, type News } from "@/lib/types";
+import { formatDate, localeAlternates, withLocalePath } from "@/lib/public-i18n";
+import { mlText, type Locale, type News } from "@/lib/types";
 
 export const revalidate = 60;
 
-function excerpt(text: string, length = 160) {
-  const clean = text.replace(/\s+/g, " ").trim();
-  return clean.length > length ? `${clean.slice(0, length).trim()}...` : clean;
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getPublicLocale();
+  return { alternates: localeAlternates("/", locale) };
 }
 
-function newsFaviconUrl(linkUrl: string): string | null {
-  try {
-    const { hostname } = new URL(linkUrl);
-    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
-  } catch {
-    return null;
-  }
+function NewsThumb({ item }: { item: News }) {
+  const ytThumbUrl = item.youtube_url ? youtubeThumbnailUrl(item.youtube_url) : null;
+  const faviconUrl = item.link_url ? newsFaviconUrl(item.link_url) : null;
+  return (
+    <span className="v2-news-row__thumb">
+      {item.image_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.image_url} alt="" className="cover" loading="lazy" />
+      ) : ytThumbUrl ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ytThumbUrl} alt="" className="cover" loading="lazy" />
+          <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--red-500)] shadow-lg">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" aria-hidden>
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
+        </>
+      ) : faviconUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={faviconUrl} alt="" className="h-12 w-12 object-contain opacity-80" loading="lazy" />
+      ) : (
+        <svg width="22" height="22" viewBox="0 0 100 100" aria-hidden>
+          <path d="M36 6h28v30h30v28H64v30H36V64H6V36h30V6Z" fill="none" stroke="var(--ink-300)" strokeWidth="6" />
+        </svg>
+      )}
+    </span>
+  );
 }
 
-function youtubeThumbnailUrl(youtubeUrl: string): string | null {
-  try {
-    const u = new URL(youtubeUrl);
-    let id: string | null = null;
-    if (u.hostname === "youtu.be") id = u.pathname.slice(1).split("?")[0] || null;
-    else if (u.hostname.includes("youtube.com")) id = u.searchParams.get("v");
-    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-  } catch { /* ignore */ }
-  return null;
-}
-
-function NewsCard({
-  item,
-  locale,
-}: {
-  item: News;
-  locale: Locale;
-}) {
+function NewsRow({ item, locale }: { item: News; locale: Locale }) {
   const copy = getPublicCopy(locale);
   const title = mlText(item.title, locale) || copy.common.news;
   const body = mlText(item.body, locale);
-  const isLink = !!item.link_url;
-  const isYoutube = !!item.youtube_url;
-  const faviconUrl = isLink ? newsFaviconUrl(item.link_url!) : null;
-  const ytThumbUrl = isYoutube ? youtubeThumbnailUrl(item.youtube_url!) : null;
-
-  const className =
-    "grid grid-cols-[112px_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-[6px] border border-[color:var(--border-default)] bg-white px-[clamp(16px,2vw,28px)] py-[clamp(16px,2vw,24px)] transition hover:border-[color:var(--accent)] md:grid-cols-[148px_minmax(0,1fr)_auto] md:items-start md:gap-x-[clamp(16px,3vw,40px)]";
+  const date = formatDate(item.published_at || item.created_at, locale);
 
   const inner = (
     <>
-      <span className="relative flex h-[92px] items-center justify-center overflow-hidden rounded-[4px] bg-[color:var(--surface-subtle)] md:h-[108px]">
-        {item.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.image_url}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : ytThumbUrl ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={ytThumbUrl}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 shadow-lg">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" aria-hidden>
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </span>
-          </>
-        ) : faviconUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={faviconUrl} alt="" className="h-20 w-20 object-contain" />
-        ) : null}
+      <span className="v2-news-row__date" style={{ fontFamily: "var(--font-mono)" }}>
+        {date}
       </span>
+      <NewsThumb item={item} />
       <span className="min-w-0">
-        <span className="block text-[clamp(18px,2.2vw,24px)] font-bold tracking-[-0.015em]">
-          {title}
-        </span>
+        <span className="v2-news-row__title block">{title}</span>
         {body ? (
-          <span className="mt-1 block break-words text-[14px] leading-[1.5] text-[color:var(--text-secondary)] [overflow-wrap:anywhere]">
-            {excerpt(body, 140)}
-          </span>
-        ) : isLink ? (
-          <span className="mt-1 block break-all text-[14px] leading-[1.5] text-[color:var(--text-secondary)]">
-            {item.link_url}
-          </span>
+          <span className="v2-news-row__excerpt block">{excerpt(body)}</span>
+        ) : item.link_url ? (
+          <span className="v2-news-row__excerpt block break-all">{item.link_url}</span>
         ) : null}
       </span>
-      <span className="col-span-2 font-mono text-[15px] font-bold tracking-[0.02em] text-[color:var(--accent)] md:col-span-1 md:justify-self-end md:pt-1 md:text-right">
-        {formatDate(item.published_at || item.created_at, locale)}
+      <span className="v2-news-row__go" aria-hidden>
+        <ArrowRight size={15} />
       </span>
     </>
   );
 
-  if (isLink) {
+  if (item.link_url) {
     return (
-      <a href={item.link_url!} target="_blank" rel="noopener noreferrer" className={className}>
+      <a href={item.link_url} target="_blank" rel="noopener noreferrer" className="v2-news-row">
         {inner}
       </a>
     );
   }
-
   return (
-    <Link href={withLocalePath(`/news/${item.id}`, locale)} className={className}>
+    <Link href={withLocalePath(`/news/${item.id}`, locale)} className="v2-news-row">
       {inner}
     </Link>
   );
@@ -120,68 +91,69 @@ function NewsCard({
 export default async function HomePage() {
   const locale = await getPublicLocale();
   const copy = getPublicCopy(locale);
-  const supabase = await createClient();
 
-  const [membersResult, newsResult] = await Promise.all([
-    supabase
-      .from("members")
-      .select("*")
-      .eq("status", "published")
-      .eq("is_active", true)
-      .order("name", { ascending: true })
-      .limit(8),
-    supabase
-      .from("news")
-      .select("*")
-      .eq("is_published", true)
-      .eq("is_active", true)
-      .order("published_at", { ascending: false, nullsFirst: false })
-      .limit(12),
-  ]);
-
-  const members = (membersResult.data ?? []) as Member[];
-  const news = (newsResult.data ?? []) as News[];
+  const [members, news] = await Promise.all([getPublishedMembers(8), getPublishedNews(12)]);
   const visibleNews = news.slice(0, 2);
   const hiddenNews = news.slice(2);
+
   const associationFacts = copy.home.associationFacts.map(([n, label]) => [
     n === "__MEMBER_COUNT__" ? String(members.length) : n,
     label,
-  ]);
-  const heroContent = {
-    eyebrow: copy.home.introEyebrow,
-    titleA: copy.home.titleA,
-    titleAccent: copy.home.titleAccent,
-    titleB: copy.home.titleB,
-    intro: copy.home.intro,
-    primaryLabel: copy.home.primaryCta,
-    primaryHref: withLocalePath("/kontakt", locale),
-    secondaryLabel: copy.home.secondaryCta,
-    secondaryHref: withLocalePath("/mitglieder", locale),
-  };
+  ]) as [string, string][];
 
   return (
     <>
-      <HeroVariant variant={1} content={heroContent} />
+      <V2Hero
+        content={{
+          eyebrow: copy.home.introEyebrow,
+          titleA: copy.home.titleA,
+          titleAccent: copy.home.titleAccent,
+          titleB: copy.home.titleB,
+          intro: copy.home.intro,
+          primaryLabel: copy.home.primaryCta,
+          primaryHref: withLocalePath("/kontakt", locale),
+          secondaryLabel: copy.home.secondaryCta,
+          secondaryHref: withLocalePath("/mitglieder", locale),
+        }}
+      />
 
-      {/* About — The Swiss Dental Industry */}
-      <section id="about" className="scroll-mt-[80px] border-b border-[color:var(--border-default)]">
-        <div className="mx-auto grid max-w-[1200px] gap-[clamp(28px,5vw,72px)] px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,104px)] xl:grid-cols-[0.9fr_1.1fr]">
+      {/* 01 — About */}
+      <section id="about" className="scroll-mt-[90px]">
+        <div className="v2-container grid gap-[clamp(32px,5vw,80px)] py-[clamp(72px,9vw,130px)] lg:grid-cols-[0.9fr_1.1fr]">
           <div>
-            <Eyebrow>{copy.home.aboutEyebrow}</Eyebrow>
-            <h2 className="mt-4 text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
+            <div className="flex items-center justify-between gap-6 lg:justify-start lg:gap-8" data-v2-reveal>
+              <V2Eyebrow>{copy.home.aboutEyebrow}</V2Eyebrow>
+              <span className="v2-index">
+                <em>/</em> 01
+              </span>
+            </div>
+            <h2
+              className="mt-5 text-[clamp(30px,4vw,52px)] font-extrabold leading-[1.02] tracking-[-0.03em] lg:sticky lg:top-[110px]"
+              data-v2-reveal
+              style={{ "--v2-d": 1 } as CSSProperties}
+            >
               {copy.home.aboutTitle}
             </h2>
           </div>
           <div>
-            <p className="text-[clamp(16px,1.8vw,19px)] leading-[1.65] text-[color:var(--text-secondary)]">
+            <p
+              className="text-[clamp(17px,2vw,22px)] leading-[1.6] tracking-[-0.01em] text-[color:var(--ink-800)]"
+              data-v2-reveal
+            >
               {copy.home.aboutText}
             </p>
-            <ul className="mt-8 flex flex-col gap-4" data-gsap-stagger>
-              {copy.home.aboutFacts.map((fact) => (
+            <ul className="mt-10 flex flex-col" data-v2-stagger>
+              {copy.home.aboutFacts.map((fact, i) => (
                 <li
                   key={fact}
-                  className="border-l-2 border-[color:var(--accent)] pl-4 text-[15px] font-semibold leading-[1.5]"
+                  className="flex items-start gap-4 border-t border-[color:var(--border-default)] py-5 text-[15.5px] font-semibold leading-[1.5]"
                 >
+                  <span
+                    className="mt-[3px] text-[12px] font-bold text-[color:var(--red-500)]"
+                    style={{ fontFamily: "var(--font-mono)" }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                   {fact}
                 </li>
               ))}
@@ -190,186 +162,145 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Our expertise — four parts */}
-      <section id="expertise" className="mx-auto max-w-[1200px] scroll-mt-[80px] px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,104px)]">
-        <Eyebrow>{copy.home.expertiseEyebrow}</Eyebrow>
-        <h2 className="mt-4 max-w-[680px] text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
-          {copy.home.expertiseTitle}
-        </h2>
-        <p className="mt-5 mb-[clamp(48px,6vw,80px)] max-w-[680px] text-[clamp(15px,1.7vw,18px)] leading-[1.6] text-[color:var(--text-secondary)]">
-          {copy.home.expertiseLead}
-        </p>
-        <div className="grid border border-[color:var(--border-default)] bg-[color:var(--border-default)] [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-px" data-gsap-stagger>
-          {copy.home.expertise.map((item) => (
-            <div key={item.n} className="bg-white px-[clamp(22px,2.5vw,30px)] py-[clamp(24px,3vw,36px)] transition-colors hover:bg-[color:var(--ink-50)]">
-              <span className="font-mono text-[13px] font-bold text-[color:var(--accent)]">{item.n}</span>
-              <h3 className="mt-[14px] text-[clamp(20px,2.2vw,25px)] font-bold tracking-[-0.015em]">
-                {item.t}
-              </h3>
-              <p className="mt-[14px] text-[15px] leading-[1.55] text-[color:var(--text-secondary)]">
-                {item.d}
-              </p>
-            </div>
-          ))}
+      {/* 02 — Expertise */}
+      <section id="expertise" className="scroll-mt-[90px] border-t border-[color:var(--border-default)] bg-white">
+        <div className="v2-container py-[clamp(72px,9vw,130px)]">
+          <V2SectionHead
+            index="02"
+            eyebrow={copy.home.expertiseEyebrow}
+            title={copy.home.expertiseTitle}
+            lead={copy.home.expertiseLead}
+          />
+          <div className="mt-[clamp(40px,5vw,64px)]">
+            <V2ExpertiseAccordion items={copy.home.expertise} />
+          </div>
         </div>
       </section>
 
-      {/* Our association */}
-      <section id="verband" className="scroll-mt-[80px] border-y border-[color:var(--border-default)] bg-[color:var(--surface-subtle)]">
-        <div className="mx-auto max-w-[1200px] px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,100px)]">
-          <Eyebrow>{copy.home.associationEyebrow}</Eyebrow>
-          <h2 className="mt-4 max-w-[820px] text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
-            {copy.home.associationTitle}
-          </h2>
-          <p className="mt-6 max-w-[760px] text-[clamp(16px,1.8vw,19px)] leading-[1.65] text-[color:var(--text-secondary)]">
+      {/* 03 — Association (dark) */}
+      <section id="verband" className="v2-dark scroll-mt-[90px]">
+        <div className="v2-dark__grid" aria-hidden />
+        <div className="v2-container relative py-[clamp(72px,9vw,130px)]">
+          <V2SectionHead
+            index="03"
+            eyebrow={copy.home.associationEyebrow}
+            title={copy.home.associationTitle}
+            light
+          />
+          <p
+            className="mt-7 max-w-[760px] text-[clamp(16px,1.8vw,19px)] leading-[1.7] text-white/60"
+            data-v2-reveal
+          >
             {copy.home.associationText}
           </p>
-          <div className="mt-[clamp(36px,5vw,56px)] grid grid-cols-2 gap-[clamp(20px,3vw,36px)] xl:grid-cols-4" data-gsap-stagger>
-            {associationFacts.map(([n, label]) => (
-              <div key={label} className="border-l-2 border-[color:var(--accent)] pl-[18px]">
-                <div className="font-mono text-[clamp(30px,4vw,46px)] font-bold leading-none tracking-[-0.02em]">
-                  {n}
+          <div className="mt-[clamp(48px,6vw,72px)] grid grid-cols-2 gap-[clamp(28px,4vw,44px)] xl:grid-cols-4" data-v2-stagger>
+            {associationFacts.map(([n, label]) => {
+              const numeric = /^\d/.test(n);
+              return (
+                <div key={label} className="v2-stat">
+                  <b style={{ fontFamily: "var(--font-mono)" }} {...(numeric ? { "data-v2-count": n } : {})}>
+                    {n}
+                  </b>
+                  <span>{label}</span>
                 </div>
-                <div className="mt-[10px] text-[14px] leading-[1.4] text-[color:var(--text-secondary)]">{label}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-          <div className="mt-[clamp(36px,5vw,56px)]">
-            <ButtonLink href={withLocalePath("/mitglied-werden", locale)} size="lg">
+          <div className="mt-[clamp(48px,6vw,64px)]" data-v2-reveal>
+            <V2BtnLink href={withLocalePath("/mitglied-werden", locale)} variant="outline-light" size="lg" magnetic>
               {copy.home.associationCta}
-            </ButtonLink>
+            </V2BtnLink>
           </div>
         </div>
       </section>
 
-      <section id="mitglieder" className="py-[clamp(56px,7vw,104px)]">
-        <div className="mx-auto mb-[clamp(28px,3vw,44px)] max-w-[1200px] px-[clamp(20px,5vw,48px)]">
-          <Eyebrow>{copy.home.membersEyebrow}</Eyebrow>
-          <h2 className="mt-4 max-w-[560px] text-[clamp(28px,3.6vw,46px)] font-extrabold leading-[1.04] tracking-[-0.025em]">
-            {copy.home.membersTitle}
-          </h2>
+      {/* 04 — Members */}
+      <section id="mitglieder" className="scroll-mt-[90px] py-[clamp(72px,9vw,130px)]">
+        <div className="v2-container mb-[clamp(36px,4vw,56px)] flex flex-wrap items-end justify-between gap-8">
+          <V2SectionHead index="04" eyebrow={copy.home.membersEyebrow} title={copy.home.membersTitle} />
+          <div data-v2-reveal>
+            <V2BtnLink href={withLocalePath("/mitglieder", locale)} variant="ghost">
+              {copy.home.membersCta}
+            </V2BtnLink>
+          </div>
         </div>
 
         {members.length > 0 ? (
-          (() => {
-            const repeatCount = Math.max(2, Math.ceil(40 / members.length));
-            const track = Array.from({ length: repeatCount }, () => members).flat();
-            return (
-              <div
-                className="overflow-hidden"
-                style={{ maskImage: "linear-gradient(to right, transparent, black 12%, black 88%, transparent)" }}
-              >
-                <div
-                  className="flex w-max items-center gap-[clamp(56px,7vw,96px)]"
-                  style={{ animation: "scroll-left 80s linear infinite" }}
-                >
-                  {[...track, ...track].map((member, i) => (
-                    <div
-                      key={`${member.id}-${i}`}
-                      className="flex h-[72px] max-w-[220px] shrink-0 items-center justify-center"
-                    >
-                      {member.logo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={member.logo_url}
-                          alt={member.name}
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      ) : (
-                        <span className="text-[14px] font-bold leading-[1.3] tracking-[-0.01em] text-[color:var(--text-secondary)]">
-                          {member.name}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()
+          <div data-v2-reveal>
+            <V2Marquee members={members} />
+          </div>
         ) : (
-          <div className="mx-auto max-w-[1200px] px-[clamp(20px,5vw,48px)]">
-            <p className="text-[15px] text-[color:var(--text-muted)]">
-              {copy.common.noMembers}
-            </p>
+          <div className="v2-container">
+            <p className="text-[15px] text-[color:var(--text-muted)]">{copy.common.noMembers}</p>
           </div>
         )}
-
-        <div className="mx-auto mt-[clamp(28px,3vw,44px)] max-w-[1200px] px-[clamp(20px,5vw,48px)]">
-          <ButtonLink href={withLocalePath("/mitglieder", locale)} variant="secondary" size="lg">
-            {copy.home.membersCta}
-          </ButtonLink>
-        </div>
       </section>
 
-      <section id="news" className="border-y border-[color:var(--border-default)] bg-[color:var(--surface-subtle)]">
-        <div className="mx-auto max-w-[1200px] px-[clamp(20px,5vw,48px)] pt-[clamp(32px,4vw,56px)] pb-[clamp(56px,7vw,100px)]">
-          <h2 className="text-[clamp(20px,2.2vw,28px)] font-extrabold tracking-[0.08em] uppercase text-[color:var(--accent)]" style={{ marginBottom: "clamp(40px,5vw,64px)" }}>
-            {copy.home.newsTitle}
-          </h2>
+      {/* 05 — News */}
+      <section id="news" className="scroll-mt-[90px] border-t border-[color:var(--border-default)] bg-white">
+        <div className="v2-container py-[clamp(72px,9vw,120px)]">
+          <div className="flex flex-wrap items-end justify-between gap-8">
+            <V2SectionHead index="05" eyebrow={copy.common.news} title={copy.home.newsTitle} />
+            <div data-v2-reveal>
+              <V2BtnLink href={withLocalePath("/news", locale)} variant="ghost">
+                {copy.home.allNews}
+              </V2BtnLink>
+            </div>
+          </div>
+
           {news.length > 0 ? (
-            <div className="flex flex-col gap-[clamp(10px,1.2vw,16px)]" data-gsap-stagger>
+            <div className="mt-[clamp(36px,4vw,56px)] border-t border-[color:var(--border-default)]" data-v2-reveal>
               {visibleNews.map((item) => (
-                <NewsCard key={item.id} item={item} locale={locale} />
+                <NewsRow key={item.id} item={item} locale={locale} />
               ))}
               {hiddenNews.length > 0 ? (
-                <details className="group flex flex-col gap-[clamp(10px,1.2vw,16px)]">
-                  <summary className="order-1 mt-2 inline-flex cursor-pointer list-none items-center gap-2 self-start rounded-[4px] border border-[color:var(--accent)] bg-white px-4 py-3 text-[14px] font-semibold text-[color:var(--accent)] transition hover:bg-[color:var(--red-50)] group-open:order-3 [&::-webkit-details-marker]:hidden">
+                <details className="group">
+                  <summary className="mt-7 inline-flex cursor-pointer list-none items-center gap-2 rounded-full border border-[color:var(--border-strong)] bg-white px-6 py-3 text-[14px] font-semibold transition-colors hover:border-[color:var(--ink-950)] [&::-webkit-details-marker]:hidden">
                     <span className="group-open:hidden">{copy.home.moreNews}</span>
                     <span className="hidden group-open:inline">{copy.home.lessNews}</span>
-                    <span className="transition-transform group-open:rotate-45">+</span>
+                    <span className="text-[color:var(--red-500)] transition-transform duration-300 group-open:rotate-45">+</span>
                   </summary>
-                  <div className="order-2 flex flex-col gap-[clamp(10px,1.2vw,16px)]">
+                  <div className="mt-4 border-t border-[color:var(--border-default)]">
                     {hiddenNews.map((item) => (
-                      <NewsCard key={item.id} item={item} locale={locale} />
+                      <NewsRow key={item.id} item={item} locale={locale} />
                     ))}
                   </div>
                 </details>
               ) : null}
-              <div className="pt-3">
-                <ButtonLink href={withLocalePath("/news", locale)} variant="secondary">
-                  {copy.home.allNews}
-                </ButtonLink>
-              </div>
             </div>
           ) : (
-            <p className="text-[15px] text-[color:var(--text-muted)]">
-              {copy.common.noNews}
-            </p>
+            <p className="mt-10 text-[15px] text-[color:var(--text-muted)]">{copy.common.noNews}</p>
           )}
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[color:var(--ink-950)] text-white">
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)",
-            backgroundSize: "44px 44px",
-          }}
-        />
-        <div className="relative mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-8 px-[clamp(20px,5vw,48px)] py-[clamp(56px,7vw,96px)]">
-          <div className="max-w-[620px]">
-            <svg width="44" height="44" viewBox="0 0 100 100" className="mb-6">
-              <rect width="100" height="100" rx="6" fill="#e1000f" />
-              <rect x="42" y="20" width="16" height="60" fill="#fff" />
-              <rect x="20" y="42" width="60" height="16" fill="#fff" />
-            </svg>
-            <h2 className="text-[clamp(30px,4vw,52px)] font-extrabold leading-[1.02] tracking-[-0.03em]">
+      {/* 06 — Join (Swiss red) */}
+      <section className="v2-red">
+        <div className="v2-container relative flex flex-wrap items-center justify-between gap-12 py-[clamp(72px,10vw,140px)]">
+          <div className="max-w-[640px]">
+            <span className="v2-index" style={{ color: "rgba(255,255,255,0.55)" }} data-v2-reveal>
+              <em style={{ color: "#fff" }}>/</em> 06
+            </span>
+            <h2
+              className="mt-6 text-[clamp(34px,5vw,64px)] font-extrabold leading-[1.0] tracking-[-0.035em]"
+              data-v2-reveal
+              style={{ "--v2-d": 1 } as CSSProperties}
+            >
               {copy.home.joinTitle}
             </h2>
-            <p className="mt-5 max-w-[520px] text-[clamp(15px,1.7vw,18px)] leading-[1.6] text-white/60">
+            <p
+              className="mt-6 max-w-[520px] text-[clamp(15px,1.7vw,18px)] leading-[1.65] text-white/75"
+              data-v2-reveal
+              style={{ "--v2-d": 2 } as CSSProperties}
+            >
               {copy.home.joinText}
             </p>
           </div>
-          <ButtonLink
-            href={withLocalePath("/mitglied-werden", locale)}
-            size="lg"
-            className="h-[72px] px-12 text-[22px] font-bold"
-          >
-            {copy.home.joinCta}
-          </ButtonLink>
+          <div data-v2-reveal style={{ "--v2-d": 3 } as CSSProperties}>
+            <V2BtnLink href={withLocalePath("/mitglied-werden", locale)} variant="light" size="lg" magnetic>
+              {copy.home.joinCta}
+            </V2BtnLink>
+          </div>
         </div>
       </section>
     </>

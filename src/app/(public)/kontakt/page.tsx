@@ -1,14 +1,17 @@
-import { Eyebrow, Card } from "@/components/sdi/Card";
+import type { Metadata } from "next";
+import { ContactForm } from "@/app/(public)/kontakt/ContactForm";
+import { V2Card, V2Eyebrow, V2PageHero } from "@/components/v2/ui";
 import { getPublicCopy } from "@/lib/public-copy";
 import { getPublicLocale } from "@/lib/public-locale.server";
-import { ContactForm } from "./ContactForm";
+import { localeAlternates } from "@/lib/public-i18n";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const locale = await getPublicLocale();
   const copy = getPublicCopy(locale);
   return {
     title: copy.meta.contactTitle,
     description: copy.meta.contactDescription,
+    alternates: localeAlternates("/kontakt", locale),
   };
 }
 
@@ -17,69 +20,66 @@ export default async function KontaktPage() {
   const copy = getPublicCopy(locale);
   return (
     <>
-      <section className="border-b border-[color:var(--border-default)]">
-        <div className="mx-auto max-w-[1200px] px-8 pt-16 pb-12">
-          <Eyebrow>{copy.contact.eyebrow}</Eyebrow>
-          <h1
-            className="mt-4 text-[56px] font-extrabold leading-[1.02]"
-            style={{ letterSpacing: "-0.03em" }}
-          >
-            {copy.contact.title}
-          </h1>
-          <p className="mt-5 max-w-[640px] text-[17px] leading-[1.6] text-[color:var(--text-secondary)]">
-            {copy.contact.intro}
-          </p>
-        </div>
-      </section>
+      <V2PageHero index="04" eyebrow={copy.contact.eyebrow} title={copy.contact.title} intro={copy.contact.intro} />
 
-      <section className="mx-auto grid max-w-[1200px] gap-10 px-8 py-16 md:grid-cols-[1.1fr_1fr]">
-        <div className="flex flex-col gap-6">
-          <Card>
-            <Eyebrow>{copy.contact.formEyebrow}</Eyebrow>
-            <div className="mt-5">
+      <section className="v2-container grid gap-6 py-[clamp(48px,6vw,88px)] md:grid-cols-[1.15fr_0.85fr]">
+        <div data-v2-reveal>
+          <V2Card ticks>
+            <V2Eyebrow>{copy.contact.formEyebrow}</V2Eyebrow>
+            <div className="mt-6">
               <ContactForm locale={locale} />
             </div>
-          </Card>
+          </V2Card>
         </div>
 
         <div className="flex flex-col gap-6">
-          <Card accent>
-            <Eyebrow>{copy.contact.officeEyebrow}</Eyebrow>
-            <h2 className="mt-3 text-[24px] font-bold" style={{ letterSpacing: "-0.01em" }}>
-              ASDI — Association of the Swiss Dental Industry
-            </h2>
-            <p
-              className="mt-4 text-[15px] leading-[1.7]"
-              style={{ fontFamily: "var(--font-mono)" }}
-            >
-              Moosstrasse 2<br />
-              CH&nbsp;–&nbsp;3073 Gümligen, Bern<br />
-              {copy.contact.officeCountry}
-            </p>
-            <div className="mt-5 flex flex-col gap-2 text-[15px]">
-              <a
-                href="mailto:info@swissdentalindustry.ch"
-                className="font-semibold text-[color:var(--accent)] hover:text-[color:var(--accent-hover)]"
-              >
-                info@swissdentalindustry.ch
-              </a>
+          <div data-v2-reveal="right">
+            <div className="v2-dark rounded-[14px] p-[clamp(24px,3vw,36px)]">
+              <div className="v2-dark__grid rounded-[14px]" aria-hidden />
+              <div className="relative">
+                <V2Eyebrow light>{copy.contact.officeEyebrow}</V2Eyebrow>
+                <h2 className="mt-4 text-[22px] font-bold leading-[1.25] tracking-[-0.015em]">
+                  ASDI — Association of the Swiss Dental Industry
+                </h2>
+                <p
+                  className="mt-5 text-[14.5px] leading-[1.8] text-white/70"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  Moosstrasse 2
+                  <br />
+                  CH&nbsp;–&nbsp;3073 Gümligen, Bern
+                  <br />
+                  {copy.contact.officeCountry}
+                </p>
+                <a
+                  href="mailto:info@swissdentalindustry.ch"
+                  className="mt-6 inline-flex items-center gap-2 text-[15px] font-semibold text-[color:var(--red-300)] transition-colors hover:text-white"
+                >
+                  <span className="inline-block h-[6px] w-[6px] rounded-full bg-[color:var(--red-500)] v2-pulse" aria-hidden />
+                  info@swissdentalindustry.ch
+                </a>
+              </div>
             </div>
-          </Card>
+          </div>
 
-          <Card>
-            <span id="vorstand" />
-            <Eyebrow>{copy.contact.boardEyebrow}</Eyebrow>
-            <p className="mt-3 text-[15px] leading-[1.65] text-[color:var(--text-secondary)]">
-              {copy.contact.boardText}
-            </p>
-          </Card>
+          <div data-v2-reveal="right" style={{ "--v2-d": 1 } as React.CSSProperties}>
+            <V2Card hover>
+              <span id="vorstand" className="block scroll-mt-[100px]" />
+              <V2Eyebrow>{copy.contact.boardEyebrow}</V2Eyebrow>
+              <p className="mt-4 text-[15px] leading-[1.7] text-[color:var(--text-secondary)]">
+                {copy.contact.boardText}
+              </p>
+            </V2Card>
+          </div>
 
-          <Card>
-            <Eyebrow>{copy.contact.mediaEyebrow}</Eyebrow>
-            <p className="mt-3 text-[15px] leading-[1.65] text-[color:var(--text-secondary)]">
-              {copy.contact.mediaText}
-            </p>
-          </Card>
+          <div data-v2-reveal="right" style={{ "--v2-d": 2 } as React.CSSProperties}>
+            <V2Card hover>
+              <V2Eyebrow>{copy.contact.mediaEyebrow}</V2Eyebrow>
+              <p className="mt-4 text-[15px] leading-[1.7] text-[color:var(--text-secondary)]">
+                {copy.contact.mediaText}
+              </p>
+            </V2Card>
+          </div>
         </div>
       </section>
     </>

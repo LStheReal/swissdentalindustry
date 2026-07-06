@@ -1,21 +1,19 @@
-import "@/styles/sdi/index.css";
-import { SiteHeader } from "@/components/sdi/SiteHeader";
-import { SiteFooter } from "@/components/sdi/SiteFooter";
-import { GsapAnimations } from "@/components/sdi/GsapAnimations";
+import "@/styles/v2/index.css";
+import { V2Header } from "@/components/v2/Header";
+import { V2Footer } from "@/components/v2/Footer";
+import { V2Fx } from "@/components/v2/Fx";
+import { getPublicCopy } from "@/lib/public-copy";
+import { getPublicLocale } from "@/lib/public-locale.server";
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getPublicLocale();
+  const copy = getPublicCopy(locale);
   return (
-    <div
-      style={{
-        fontFamily: "'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif",
-        background: "var(--surface-page)",
-        color: "var(--text-primary)",
-      }}
-    >
-      <SiteHeader />
+    <div className="v2-root" id="top">
+      <V2Header locale={locale} copy={copy.header} />
       <main>{children}</main>
-      <SiteFooter />
-      <GsapAnimations />
+      <V2Footer />
+      <V2Fx />
     </div>
   );
 }

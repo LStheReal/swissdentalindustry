@@ -1,18 +1,15 @@
 import type { MetadataRoute } from "next";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { LOCALES, type Member, type News } from "@/lib/types";
+import { LOCALES } from "@/lib/types";
 import { withLocalePath } from "@/lib/public-i18n";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const revalidate = 3600;
 
-function baseUrl() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "https://swissdentalindustry.ch";
-}
+type SitemapRow = { id: string; updated_at: string };
 
 function absolute(path: string) {
-  return `${baseUrl()}${path === "/" ? "" : path}`;
+  return `${getSiteUrl()}${path === "/" ? "" : path}`;
 }
 
 function alternates(path: string) {
@@ -26,27 +23,28 @@ function alternates(path: string) {
 async function loadDynamicRows() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return { members: [] as Member[], news: [] as News[] };
+  if (!url || !key) return { members: [] as SitemapRow[], news: [] as SitemapRow[] };
 
+  // Bewusst der einfache Client ohne Cookies — die Sitemap ist nutzerunabhängig.
   const supabase = createSupabaseClient(url, key);
   const [members, news] = await Promise.all([
     supabase
       .from("members")
-      .select("*")
+      .select("id, updated_at")
       .eq("status", "published")
       .eq("is_active", true)
       .order("updated_at", { ascending: false }),
     supabase
       .from("news")
-      .select("*")
+      .select("id, updated_at")
       .eq("is_published", true)
       .eq("is_active", true)
       .order("updated_at", { ascending: false }),
   ]);
 
   return {
-    members: (members.data ?? []) as Member[],
-    news: (news.data ?? []) as News[],
+    members: (members.data ?? []) as SitemapRow[],
+    news: (news.data ?? []) as SitemapRow[],
   };
 }
 

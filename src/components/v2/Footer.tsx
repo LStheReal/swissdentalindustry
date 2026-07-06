@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getPublicLocale } from "@/lib/public-locale.server";
 import { getPublicCopy } from "@/lib/public-copy";
-import { v2Path } from "./nav";
+import { withLocalePath } from "@/lib/public-i18n";
 
 export async function V2Footer() {
   const locale = await getPublicLocale();
@@ -36,7 +36,7 @@ export async function V2Footer() {
             </div>
             <div className="flex flex-col items-start gap-[12px]">
               {col.links.map((link) => (
-                <Link key={link.label} href={v2Path(link.href, locale)} className="v2-footer__link">
+                <Link key={link.label} href={withLocalePath(link.href, locale)} className="v2-footer__link">
                   {link.label}
                 </Link>
               ))}

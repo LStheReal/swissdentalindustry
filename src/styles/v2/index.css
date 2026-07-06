@@ -106,20 +106,6 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
   border-radius: 2px;
 }
 
-/* Neutralise v1's GSAP pre-hide rules (loaded globally once a
-   v1 page has been visited) — v2 runs its own reveal system. */
-@media (prefers-reduced-motion: no-preference) {
-  html:not(.gsap-ready) .v2-root main h1,
-  html:not(.gsap-ready) .v2-root main h1 ~ p,
-  html:not(.gsap-ready) .v2-root main h1 ~ div,
-  html:not(.gsap-ready) .v2-root main h2,
-  html:not(.gsap-ready) .v2-root main h3,
-  html:not(.gsap-ready) .v2-root [data-gsap-fade],
-  html:not(.gsap-ready) .v2-root [data-gsap-stagger] > * {
-    opacity: 1;
-  }
-}
-
 /* ------------------------------------------------------------
    Primitives
    ------------------------------------------------------------ */

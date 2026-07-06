@@ -13,7 +13,7 @@
 - [x] B: deleted original-upload, scaffold svgs, unused sdi assets, forms-test. Build green at 30 routes.
 
 ## Still open — needs YOU (manual / decisions), see SECURITY.md
-- [ ] Replace vulnerable `xlsx@0.18.5` — CDN install was blocked by the sandbox; choose source (SheetJS CDN tarball / `@e965/xlsx` npm mirror / exceljs) and run install, then update import in member-import.ts. In-code file guard added as interim mitigation.
+- [x] Replace vulnerable `xlsx@0.18.5` → official SheetJS 0.20.3 (CDN tarball, integrity-pinned in lockfile; both CVEs fixed; manual updates — see SECURITY.md)
 - [ ] Apply `supabase/migrations/0010_restrict_anon_grants.sql` in the Supabase SQL editor (revokes anon writes + fail-open default privileges).
 - [ ] Push branch + open PR; watch CI go green.
 

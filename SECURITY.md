@@ -23,34 +23,36 @@ Status of the hardening pass (2026-07-06) and the manual steps still required.
 - **XLSX import** — file extension + 5 MB size guard before parsing
   (`parseMemberImportSpreadsheet`).
 
-## Manual steps still required
+## Resolved
 
-### 1. Replace the vulnerable `xlsx` package (HIGH)
-`xlsx@0.18.5` has prototype-pollution (CVE-2023-30533) and ReDoS
-(CVE-2024-22363) with **no fix on npm** — SheetJS stopped publishing there.
-The import path is admin-only, and there's now a type/size guard, but the
-package should still be replaced. Pick one, then update the import in
-`src/lib/member-import.ts`:
+### xlsx replaced with the official SheetJS 0.20.3 build (2026-07-06)
+`xlsx@0.18.5` had prototype-pollution (CVE-2023-30533) and ReDoS
+(CVE-2024-22363) with no fix on npm — SheetJS stopped publishing there.
+The dependency now points at the vendor's official distribution channel:
 
-```bash
-# Option A — official SheetJS build (not on npm; external CDN):
-npm install https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
-# Option B — maintained npm mirror:
-npm install @e965/xlsx        # import * as XLSX from "@e965/xlsx"
-# Option C — switch to exceljs (larger refactor of readSpreadsheet)
+```json
+"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
 ```
 
-### 2. Apply the RLS grants migration
+Both CVEs are fixed in 0.20.3. package-lock.json pins a SHA-512 integrity
+hash for the tarball, so `npm ci` rejects a tampered artifact.
+**Maintenance note:** off-registry dependencies are not tracked by
+Dependabot/`npm audit` — check <https://cdn.sheetjs.com> for new versions
+occasionally and bump the URL manually.
+
+## Manual steps still required
+
+### 1. Apply the RLS grants migration
 Run `supabase/migrations/0010_restrict_anon_grants.sql` in the Supabase SQL
 editor. It revokes `anon` write access and the fail-open default privileges
 introduced by `0002_grants.sql`. Public reads keep working through the existing
 RLS SELECT policies.
 
-### 3. Consider hashing edit tokens (LOW)
+### 2. Consider hashing edit tokens (LOW)
 Tokens are 256-bit CSPRNG (good) but stored in plaintext and never expire. A DB
 read/backup compromise yields working edit links for every member. Store
 `sha256(token)` and compare hashes; optionally add an expiry.
 
-### 4. Consider a Content-Security-Policy (LOW)
+### 3. Consider a Content-Security-Policy (LOW)
 No CSP yet. The news page embeds a YouTube iframe, so any CSP must allow
 `frame-src https://www.youtube.com` and the Supabase/Google image + font hosts.

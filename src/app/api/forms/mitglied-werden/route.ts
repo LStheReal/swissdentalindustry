@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { sendAdminMembershipApplication } from "@/lib/email";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getRecipient, parseFormPayload } from "@/lib/forms";
+import { getRecipient, isHoneypotTripped, parseFormPayload } from "@/lib/forms";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 // "Mitglied werden"-Fragebogen: speichert den Antrag UND benachrichtigt per Mail.
 export async function POST(request: Request) {
   try {
+    if (!rateLimit(`mitglied-werden:${clientIp(request)}`, 5, 10 * 60_000)) {
+      return NextResponse.json({ error: "Zu viele Anfragen." }, { status: 429 });
+    }
+
     const payload = await parseFormPayload(request);
+    if (isHoneypotTripped(payload)) return NextResponse.json({ ok: true });
 
     // Antrag speichern (auch wenn der Mailversand scheitern sollte).
     const supabase = createAdminClient();

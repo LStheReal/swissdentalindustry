@@ -6,6 +6,7 @@ import { getPublishedMember } from "@/lib/public-data";
 import { getPublicCopy } from "@/lib/public-copy";
 import { getPublicLocale } from "@/lib/public-locale.server";
 import { localeAlternates, withLocalePath } from "@/lib/public-i18n";
+import { sanitizeExternalUrl } from "@/lib/url";
 import { mlText } from "@/lib/types";
 
 export const revalidate = 60;
@@ -33,6 +34,7 @@ export default async function MemberDetailPage({ params }: Props) {
   const copy = getPublicCopy(locale);
 
   const description = mlText(member.description, locale);
+  const websiteUrl = sanitizeExternalUrl(member.website_url);
   const googleMapsUrl =
     member.lat != null && member.lng != null
       ? `https://www.google.com/maps?q=${member.lat},${member.lng}`
@@ -83,8 +85,8 @@ export default async function MemberDetailPage({ params }: Props) {
               {member.name}
             </h1>
             <div className="mt-7 flex flex-wrap gap-3" data-v2-reveal style={{ "--v2-d": 2 } as React.CSSProperties}>
-              {member.website_url ? (
-                <V2BtnLink href={member.website_url} external magnetic>
+              {websiteUrl ? (
+                <V2BtnLink href={websiteUrl} external magnetic>
                   {copy.memberDetail.openWebsite}
                 </V2BtnLink>
               ) : null}

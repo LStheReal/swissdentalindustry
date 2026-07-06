@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { translateToAll, translateToAllAuto } from "@/lib/translate";
 import { geocodeAddress } from "@/lib/geocode";
 import { uploadImage } from "@/lib/storage";
+import { sanitizeExternalUrl } from "@/lib/url";
 import { sendMemberWelcomeMail } from "@/lib/email";
 import {
   ensureInternalProfilesTableAvailable,
@@ -121,7 +122,7 @@ export async function createMember(formData: FormData) {
       address,
       phone: str(formData, "phone"),
       email,
-      website_url: str(formData, "website_url"),
+      website_url: sanitizeExternalUrl(str(formData, "website_url")),
       member_since: str(formData, "member_since"),
       lat: geo?.lat ?? null,
       lng: geo?.lng ?? null,
@@ -203,7 +204,7 @@ export async function updateMember(id: string, formData: FormData) {
       address,
       phone: str(formData, "phone"),
       email: str(formData, "email"),
-      website_url: str(formData, "website_url"),
+      website_url: sanitizeExternalUrl(str(formData, "website_url")),
       member_since: str(formData, "member_since"),
       source_lang: sourceLang,
       status: "published",
@@ -243,7 +244,7 @@ export async function updateMember(id: string, formData: FormData) {
     address,
     phone: str(formData, "phone"),
     email: str(formData, "email"),
-    website_url: str(formData, "website_url"),
+    website_url: sanitizeExternalUrl(str(formData, "website_url")),
     member_since: str(formData, "member_since"),
     source_lang: sourceLang,
     status: "published",
@@ -345,7 +346,7 @@ export async function importMembers(
             address: row.address,
             phone: row.phone,
             email: row.email,
-            website_url: row.websiteUrl,
+            website_url: sanitizeExternalUrl(row.websiteUrl),
           })
           .eq("id", existing.id);
 
@@ -377,7 +378,7 @@ export async function importMembers(
           address: row.address,
           phone: row.phone,
           email: row.email,
-          website_url: row.websiteUrl,
+          website_url: sanitizeExternalUrl(row.websiteUrl),
           member_since: null,
           lat: null,
           lng: null,

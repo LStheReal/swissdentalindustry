@@ -1,21 +1,50 @@
 import { createAdminClient } from "./supabase/admin";
 
+// Harte Grenzen für eingereichte Formulare — die Endpunkte sind öffentlich.
+const MAX_FIELDS = 40;
+const MAX_KEY_LENGTH = 64;
+const MAX_VALUE_LENGTH = 5000;
+const MAX_TOTAL_LENGTH = 20000;
+
+// Unsichtbares Honeypot-Feld: Menschen lassen es leer, Bots füllen es aus.
+export const HONEYPOT_FIELD = "_hp";
+
 // Liest ein eingereichtes Formular als flaches String-Objekt — egal ob als
-// JSON oder als multipart/urlencoded gesendet.
+// JSON oder als multipart/urlencoded gesendet. Feldanzahl und -längen sind
+// begrenzt; gefährliche Schlüssel werden verworfen.
 export async function parseFormPayload(
   request: Request,
 ): Promise<Record<string, string>> {
   const contentType = request.headers.get("content-type") || "";
   const out: Record<string, string> = {};
 
+  const entries: [string, unknown][] = [];
   if (contentType.includes("application/json")) {
     const json = (await request.json()) as Record<string, unknown>;
-    for (const [k, v] of Object.entries(json)) out[k] = String(v ?? "");
+    entries.push(...Object.entries(json));
   } else {
     const form = await request.formData();
-    for (const [k, v] of form.entries()) out[k] = String(v);
+    entries.push(...form.entries());
+  }
+
+  let total = 0;
+  for (const [rawKey, rawValue] of entries) {
+    if (Object.keys(out).length >= MAX_FIELDS) break;
+    const key = rawKey.slice(0, MAX_KEY_LENGTH);
+    if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+    const value = String(rawValue ?? "").slice(0, MAX_VALUE_LENGTH);
+    total += value.length;
+    if (total > MAX_TOTAL_LENGTH) break;
+    out[key] = value;
   }
   return out;
+}
+
+/** True, wenn das Honeypot-Feld ausgefüllt wurde (Bot). Entfernt es aus dem Payload. */
+export function isHoneypotTripped(payload: Record<string, string>): boolean {
+  const tripped = Boolean(payload[HONEYPOT_FIELD]?.trim());
+  delete payload[HONEYPOT_FIELD];
+  return tripped;
 }
 
 // Wandelt ein Payload-Objekt in lesbaren E-Mail-Text um.

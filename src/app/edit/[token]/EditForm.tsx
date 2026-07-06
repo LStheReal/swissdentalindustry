@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   LOCALES,
   LOCALE_LABELS,
-  MEMBER_INTERNAL_PROFILE_KEYS,
+  MEMBER_SELF_SERVICE_PROFILE_KEYS,
   MEMBER_INTERNAL_PROFILE_LABELS,
   emptyMemberInternalProfile,
   type Locale,
@@ -242,7 +242,7 @@ function EditFormInner({
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            {MEMBER_INTERNAL_PROFILE_KEYS.map((key) => (
+            {MEMBER_SELF_SERVICE_PROFILE_KEYS.map((key) => (
               <label key={key} className={key === "internal_notes" ? "block sm:col-span-2" : "block"}>
                 <span className={label}>{MEMBER_INTERNAL_PROFILE_LABELS[key]}</span>
                 {key === "internal_notes" ? (
@@ -370,7 +370,7 @@ function PreviewBlock({
       {proposed.internal_profile && (
         <FieldPreview label="Interne Mitgliedsdaten (nicht öffentlich)">
           <div className="grid gap-2 text-sm sm:grid-cols-2">
-            {MEMBER_INTERNAL_PROFILE_KEYS.map((key) => (
+            {MEMBER_SELF_SERVICE_PROFILE_KEYS.map((key) => (
               <p key={key}>
                 <span className="mr-2 text-xs font-semibold uppercase text-slate-400">
                   {MEMBER_INTERNAL_PROFILE_LABELS[key]}

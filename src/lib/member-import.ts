@@ -386,7 +386,22 @@ async function enrichRowWithDeepSeek(args: {
   }
 }
 
+// Erlaubte Tabellen-Endungen und Grössenlimit. Grenzt die Angriffsfläche des
+// (aktuell nicht patchbaren) xlsx-Parsers ein — siehe SECURITY.md.
+const ALLOWED_IMPORT_EXTENSIONS = [".xlsx", ".xls", ".csv"];
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024; // 5 MB
+
 export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMemberImport> {
+  const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+  if (!ALLOWED_IMPORT_EXTENSIONS.includes(ext)) {
+    throw new Error(
+      `Nicht unterstütztes Dateiformat "${ext}". Erlaubt: ${ALLOWED_IMPORT_EXTENSIONS.join(", ")}.`,
+    );
+  }
+  if (file.size > MAX_IMPORT_BYTES) {
+    throw new Error("Die Datei ist zu gross (max. 5 MB).");
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
   const matrix = readSpreadsheet(file.name, buffer);
   const rawHeaders = (matrix[0] ?? []).map((cell) => normalizeCell(cell));

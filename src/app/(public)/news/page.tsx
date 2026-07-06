@@ -4,6 +4,7 @@ import { ArrowRight, V2PageHero } from "@/components/v2/ui";
 import { getPublishedNews, excerpt, newsFaviconUrl, youtubeThumbnailUrl } from "@/lib/public-data";
 import { getPublicCopy } from "@/lib/public-copy";
 import { getPublicLocale } from "@/lib/public-locale.server";
+import { sanitizeExternalUrl } from "@/lib/url";
 import { formatDate, localeAlternates, withLocalePath } from "@/lib/public-i18n";
 import { mlText, type Locale, type News } from "@/lib/types";
 
@@ -68,9 +69,10 @@ function NewsListRow({ item, locale }: { item: News; locale: Locale }) {
     </>
   );
 
-  if (item.link_url) {
+  const safeLinkUrl = sanitizeExternalUrl(item.link_url);
+  if (safeLinkUrl) {
     return (
-      <a href={item.link_url} target="_blank" rel="noopener noreferrer" className="v2-news-row">
+      <a href={safeLinkUrl} target="_blank" rel="noopener noreferrer" className="v2-news-row">
         {inner}
       </a>
     );

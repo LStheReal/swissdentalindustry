@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { sendAdminContactInquiry } from "@/lib/email";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getRecipient, parseFormPayload } from "@/lib/forms";
+import { getRecipient, isHoneypotTripped, parseFormPayload } from "@/lib/forms";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    if (!rateLimit(`contact:${clientIp(request)}`, 5, 10 * 60_000)) {
+      return NextResponse.json({ error: "Zu viele Anfragen." }, { status: 429 });
+    }
+
+    const parsed = await parseFormPayload(request);
+    // Bots bekommen ein „ok", damit sie nichts lernen — gespeichert wird nichts.
+    if (isHoneypotTripped(parsed)) return NextResponse.json({ ok: true });
+
     const payload: Record<string, string> = {
-      ...(await parseFormPayload(request)),
+      ...parsed,
       source: "public_contact",
     };
 

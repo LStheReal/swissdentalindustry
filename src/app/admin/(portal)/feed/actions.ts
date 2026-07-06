@@ -6,13 +6,25 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodeAddress } from "@/lib/geocode";
 import { sendChangeApprovedMail } from "@/lib/email";
 import { describeMemberValue, memberFieldLabel } from "@/lib/email-templates";
-import { saveInternalProfile } from "@/lib/member-internal-profiles";
+import { getInternalProfileForMember, saveInternalProfile } from "@/lib/member-internal-profiles";
+import { sanitizeExternalUrl } from "@/lib/url";
 import {
   normalizeMemberInternalProfile,
   type Member,
   type MemberChangeRequest,
   type MemberInternalProfileFields,
 } from "@/lib/types";
+
+// Nur diese Spalten dürfen aus einem Change-Request in `members` übernommen
+// werden — `proposed` stammt ursprünglich vom unauthentifizierten Edit-Link.
+const APPROVABLE_MEMBER_KEYS = [
+  "logo_url",
+  "description",
+  "address",
+  "phone",
+  "email",
+  "website_url",
+] as const;
 
 export async function approveChange(requestId: string) {
   await requireAdmin();
@@ -38,7 +50,15 @@ export async function approveChange(requestId: string) {
   // Vorgeschlagene Felder auf den Live-Stand übernehmen. Interne
   // Mitgliedsdaten bleiben in der separaten, nicht öffentlichen Tabelle.
   const { internal_profile: internalProfile, ...publicProposed } = request.proposed;
-  const update: Record<string, unknown> = { ...publicProposed };
+  const update: Record<string, unknown> = {};
+  for (const key of APPROVABLE_MEMBER_KEYS) {
+    if (key in publicProposed) {
+      update[key] = (publicProposed as Record<string, unknown>)[key];
+    }
+  }
+  if ("website_url" in update) {
+    update.website_url = sanitizeExternalUrl(update.website_url as string | null);
+  }
 
   // Bei Adressänderung neu geocodieren.
   if (
@@ -65,6 +85,11 @@ export async function approveChange(requestId: string) {
     const profile = normalizeMemberInternalProfile(
       internalProfile as Partial<MemberInternalProfileFields>,
     );
+    // Admin-only-Felder können über den Self-Service nie geändert werden —
+    // auch bei älteren, vor dieser Prüfung eingereichten Anfragen.
+    const current = await getInternalProfileForMember(supabase, member.id);
+    profile.membership_fee = current.membership_fee;
+    profile.internal_notes = current.internal_notes;
     await saveInternalProfile(supabase, member.id, profile);
   }
 

@@ -70,6 +70,14 @@ export const MEMBER_INTERNAL_PROFILE_KEYS = [
 
 export type MemberInternalProfileKey = (typeof MEMBER_INTERNAL_PROFILE_KEYS)[number];
 
+// Interne Felder, die ein Mitglied im Self-Service (/edit/[token]) sehen und
+// ändern darf. Mitgliederbeitrag und interne Notizen bleiben ausschliesslich
+// im Admin-Portal sichtbar.
+export const MEMBER_SELF_SERVICE_PROFILE_KEYS: readonly MemberInternalProfileKey[] =
+  MEMBER_INTERNAL_PROFILE_KEYS.filter(
+    (key) => key !== "membership_fee" && key !== "internal_notes",
+  );
+
 export type MemberInternalProfileFields = Record<MemberInternalProfileKey, string | null>;
 
 export interface MemberInternalProfile extends MemberInternalProfileFields {

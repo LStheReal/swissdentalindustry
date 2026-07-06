@@ -43,6 +43,16 @@ export function ContactForm({ locale }: { locale: Locale }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {/* Honeypot: unsichtbar fuer Menschen, Bots fuellen es aus */}
+      <input
+        type="text"
+        name="_hp"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+      />
+
       <div className="grid gap-5 md:grid-cols-2">
         <label className="block">
           <span className="text-[14px] font-semibold">{copy.name}</span>

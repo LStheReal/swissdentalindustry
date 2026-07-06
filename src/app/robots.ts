@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin/", "/api/", "/edit/"],
+      disallow: ["/admin/", "/api/", "/edit/", "/v2", "/forms-test"],
     },
     sitemap: `${baseUrl()}/sitemap.xml`,
   };

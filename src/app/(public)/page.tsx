@@ -280,7 +280,7 @@ export default async function HomePage() {
       </section>
 
       {/* 06 — Join (Swiss red) */}
-      <section className="v2-red">
+      <section id="vorteile" className="v2-red scroll-mt-[90px]">
         <div className="v2-container relative flex flex-wrap items-center justify-between gap-12 py-[clamp(72px,10vw,140px)]">
           <div className="max-w-[640px]">
             <span className="v2-index" style={{ color: "rgba(255,255,255,0.55)" }} data-v2-reveal>

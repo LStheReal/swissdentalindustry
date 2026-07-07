@@ -46,7 +46,7 @@ const PUBLIC_COPY = {
           links: [
             { label: "Mitglied werden", href: "/mitglied-werden" },
             { label: "Alle Mitglieder", href: "/mitglieder" },
-            { label: "Vorteile", href: "/#verband" },
+            { label: "Vorteile", href: "/#vorteile" },
           ],
         },
         {
@@ -363,7 +363,7 @@ const PUBLIC_COPY = {
           links: [
             { label: "Devenir membre", href: "/mitglied-werden" },
             { label: "Tous les membres", href: "/mitglieder" },
-            { label: "Avantages", href: "/#verband" },
+            { label: "Avantages", href: "/#vorteile" },
           ],
         },
         {
@@ -670,7 +670,7 @@ const PUBLIC_COPY = {
           links: [
             { label: "Diventare membro", href: "/mitglied-werden" },
             { label: "Tutti i membri", href: "/mitglieder" },
-            { label: "Vantaggi", href: "/#verband" },
+            { label: "Vantaggi", href: "/#vorteile" },
           ],
         },
         {
@@ -977,7 +977,7 @@ const PUBLIC_COPY = {
           links: [
             { label: "Become a member", href: "/mitglied-werden" },
             { label: "All members", href: "/mitglieder" },
-            { label: "Benefits", href: "/#verband" },
+            { label: "Benefits", href: "/#vorteile" },
           ],
         },
         {

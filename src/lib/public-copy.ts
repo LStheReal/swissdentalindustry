@@ -98,16 +98,11 @@ const PUBLIC_COPY = {
         },
         {
           n: "02",
-          t: "Im Dienst der Fachleute",
-          d: "Wir stellen unser Können in den Dienst der Dentalfachleute und unterstützen den Erfolg der Behandlung ihrer Patienten.",
-        },
-        {
-          n: "03",
           t: "Nähe zu den Anwendern",
           d: "Konstante Nähe zu den Anwendern unserer Produkte hält unsere Arbeit im Alltag der Praxis verankert.",
         },
         {
-          n: "04",
+          n: "03",
           t: "Forschung & Messen",
           d: "Enge Hochschulkooperationen und regelmässige Präsenz an Dentalmessen bringen die neuesten Schweizer Innovationen ins Feld.",
         },
@@ -119,7 +114,7 @@ const PUBLIC_COPY = {
       associationFacts: [
         ["1956", "gegründet"],
         ["__MEMBER_COUNT__", "Mitgliedsfirmen"],
-        ["5000+", "Arbeitsplätze in der Schweiz"],
+        ["172", "Exportländer"],
         ["FIDE", "Gründungsmitglied"],
       ],
       associationCta: "Mitglied werden",
@@ -420,16 +415,11 @@ const PUBLIC_COPY = {
         },
         {
           n: "02",
-          t: "Au service des praticiens",
-          d: "Nous mettons notre savoir-faire au service des professionnels dentaires et accompagnons la réussite des soins prodigués à leurs patients.",
-        },
-        {
-          n: "03",
           t: "Proximité avec les utilisateurs",
           d: "Une proximité constante avec les utilisateurs de nos produits ancre notre travail dans la pratique quotidienne.",
         },
         {
-          n: "04",
+          n: "03",
           t: "Recherche & salons",
           d: "De solides collaborations académiques et une présence régulière dans les salons dentaires présentent les dernières innovations suisses.",
         },
@@ -441,7 +431,7 @@ const PUBLIC_COPY = {
       associationFacts: [
         ["1956", "fondée"],
         ["__MEMBER_COUNT__", "entreprises membres"],
-        ["5000+", "emplois en Suisse"],
+        ["172", "pays d'exportation"],
         ["FIDE", "membre fondateur"],
       ],
       associationCta: "Devenir membre",
@@ -732,16 +722,11 @@ const PUBLIC_COPY = {
         },
         {
           n: "02",
-          t: "Al servizio dei professionisti",
-          d: "Mettiamo le nostre competenze al servizio dei professionisti dentali, sostenendo il successo delle cure dei loro pazienti.",
-        },
-        {
-          n: "03",
           t: "Vicinanza agli utilizzatori",
           d: "Una vicinanza costante agli utilizzatori dei nostri prodotti mantiene il nostro lavoro radicato nella pratica quotidiana.",
         },
         {
-          n: "04",
+          n: "03",
           t: "Ricerca & fiere",
           d: "Solide collaborazioni accademiche e una presenza regolare alle fiere dentali presentano le ultime innovazioni svizzere.",
         },
@@ -753,7 +738,7 @@ const PUBLIC_COPY = {
       associationFacts: [
         ["1956", "fondata"],
         ["__MEMBER_COUNT__", "aziende associate"],
-        ["5000+", "posti di lavoro in Svizzera"],
+        ["172", "paesi di esportazione"],
         ["FIDE", "membro fondatore"],
       ],
       associationCta: "Diventare membro",
@@ -1044,16 +1029,11 @@ const PUBLIC_COPY = {
         },
         {
           n: "02",
-          t: "At their service",
-          d: "We place our skills at the service of dental professionals, supporting the success of their patients' care.",
-        },
-        {
-          n: "03",
           t: "Close to users",
           d: "Constant proximity with the users of our products keeps our work grounded in everyday practice.",
         },
         {
-          n: "04",
+          n: "03",
           t: "Research & fairs",
           d: "Strong academic collaborations and a regular presence at dental events showcase the latest Swiss innovations.",
         },
@@ -1065,7 +1045,7 @@ const PUBLIC_COPY = {
       associationFacts: [
         ["1956", "founded"],
         ["__MEMBER_COUNT__", "member companies"],
-        ["5000+", "employees in Switzerland"],
+        ["172", "export countries"],
         ["FIDE", "founding member"],
       ],
       associationCta: "Become a member",

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-type Item = { n: string; t: string; d: string };
+type Item = { t: string; d: string };
 
 /**
- * Numbered accordion for the four expertise pillars.
+ * Accordion for the expertise pillars.
  * Hover previews (desktop), click/tap toggles, keyboard accessible.
  */
 export function V2ExpertiseAccordion({ items }: { items: readonly Item[] }) {
@@ -18,7 +18,7 @@ export function V2ExpertiseAccordion({ items }: { items: readonly Item[] }) {
         const panelId = `v2-exp-panel-${i}`;
         return (
           <div
-            key={item.n}
+            key={item.t}
             className={`v2-acc__row ${isOpen ? "is-open" : ""}`}
             onMouseEnter={() => setOpen(i)}
           >
@@ -29,9 +29,6 @@ export function V2ExpertiseAccordion({ items }: { items: readonly Item[] }) {
               aria-controls={panelId}
               onClick={() => setOpen(isOpen ? -1 : i)}
             >
-              <span className="v2-acc__num" style={{ fontFamily: "var(--font-mono)" }}>
-                {item.n}
-              </span>
               <span className="v2-acc__title">{item.t}</span>
               <span className="v2-acc__icon" aria-hidden>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">

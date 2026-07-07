@@ -118,7 +118,8 @@ export function V2SectionHead({
 }) {
   return (
     <div className={className}>
-      <div className="flex items-center justify-between gap-6" data-v2-reveal>
+      {/* Gleiches Muster wie Abschnitt 01: Eyebrow und /Nummer nebeneinander. */}
+      <div className="flex items-center justify-between gap-6 lg:justify-start lg:gap-8" data-v2-reveal>
         <V2Eyebrow light={light}>{eyebrow}</V2Eyebrow>
         <span className="v2-index" style={light ? { color: "rgba(255,255,255,0.35)" } : undefined}>
           <em>/</em> {index}
@@ -168,7 +169,7 @@ export function V2PageHero({
     <section className="v2-page-hero">
       <div className="v2-page-hero__grid" aria-hidden />
       <div className="v2-container relative pt-[clamp(52px,7vw,96px)] pb-[clamp(40px,5vw,72px)]">
-        <div className="flex items-center justify-between gap-6" data-v2-reveal>
+        <div className="flex items-center justify-between gap-6 lg:justify-start lg:gap-8" data-v2-reveal>
           <V2Eyebrow>{eyebrow}</V2Eyebrow>
           <span className="v2-index">
             <em>/</em> {index}

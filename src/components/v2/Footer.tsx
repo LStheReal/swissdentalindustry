@@ -57,7 +57,6 @@ export async function V2Footer() {
           style={{ fontFamily: "var(--font-mono)" }}
         >
           <span>{copy.footer.copyright}</span>
-          <span className="hidden sm:inline">{copy.footer.tagline}</span>
           <a href="#top" className="v2-totop" aria-label="Top">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M8 14V2M3.5 6.5 8 2l4.5 4.5" />

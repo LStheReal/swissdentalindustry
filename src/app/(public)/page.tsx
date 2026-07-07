@@ -94,7 +94,10 @@ export default async function HomePage() {
   const locale = await getPublicLocale();
   const copy = getPublicCopy(locale);
 
-  const [members, news] = await Promise.all([getPublishedMembers(8), getPublishedNews(12)]);
+  // Alle aktiven Mitglieder laden: die Statistik zeigt die echte Anzahl,
+  // das Logo-Band nur die ersten acht.
+  const [members, news] = await Promise.all([getPublishedMembers(), getPublishedNews(12)]);
+  const marqueeMembers = members.slice(0, 8);
   const visibleNews = news.slice(0, 2);
   const hiddenNews = news.slice(2);
 
@@ -227,9 +230,9 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {members.length > 0 ? (
+        {marqueeMembers.length > 0 ? (
           <div data-v2-reveal>
-            <V2Marquee members={members} />
+            <V2Marquee members={marqueeMembers} />
           </div>
         ) : (
           <div className="v2-container">

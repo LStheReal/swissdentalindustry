@@ -66,8 +66,11 @@ export function V2Header({ locale, copy }: { locale: Locale; copy: HeaderCopy })
     return current.startsWith(target);
   }
 
+  // Immer MIT Präfix verlinken — auch für die Default-Sprache: "/en/…" ist
+  // der Umschalt-Alias, über den der Proxy die Wahl im Cookie verankert,
+  // bevor er auf die präfixlose kanonische URL umleitet.
   function localeHref(code: Locale) {
-    return withLocalePath(pathname, code);
+    return `/${code}${current === "/" ? "" : current}`;
   }
 
   return (

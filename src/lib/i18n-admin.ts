@@ -1,7 +1,11 @@
 import { cookies } from "next/headers";
-import { DEFAULT_LOCALE, LOCALES, type Locale } from "./types";
+import { LOCALES, type Locale } from "./types";
 
 export const ADMIN_LOCALE_COOKIE = "admin_locale";
+
+// Das Portal bleibt standardmässig Deutsch — unabhängig von der
+// Default-Sprache der öffentlichen Website (DEFAULT_LOCALE = en).
+const ADMIN_DEFAULT_LOCALE: Locale = "de";
 
 // Übersetzungen der Admin-Portal-Oberfläche. Bewusst flach gehalten.
 const DICT = {
@@ -221,7 +225,7 @@ export type AdminI18nKey = keyof typeof DICT;
 /** Liest die gewählte Portal-Sprache aus dem Cookie (Default: DE). */
 export async function getAdminLocale(): Promise<Locale> {
   const value = (await cookies()).get(ADMIN_LOCALE_COOKIE)?.value;
-  return LOCALES.includes(value as Locale) ? (value as Locale) : DEFAULT_LOCALE;
+  return LOCALES.includes(value as Locale) ? (value as Locale) : ADMIN_DEFAULT_LOCALE;
 }
 
 /** Übersetzungsfunktion für eine bestimmte Sprache. */

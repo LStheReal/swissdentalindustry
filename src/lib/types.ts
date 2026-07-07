@@ -2,7 +2,10 @@
 
 export const LOCALES = ["de", "fr", "it", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = "de";
+// Default-Sprache der öffentlichen Website: Englisch lebt ohne URL-Präfix
+// ("/"), de/fr/it unter "/de", "/fr", "/it". Browser-Sprache bzw. die im
+// Cookie gespeicherte Wahl wird im Proxy gematcht.
+export const DEFAULT_LOCALE: Locale = "en";
 
 export const LOCALE_LABELS: Record<Locale, string> = {
   de: "Deutsch",

@@ -107,6 +107,61 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
 }
 
 /* ------------------------------------------------------------
+   Modal — Mitglieder-Popup
+   ------------------------------------------------------------ */
+.v2-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: rgba(12, 12, 13, 0.55);
+  backdrop-filter: blur(6px);
+  animation: v2-modal-fade 0.25s var(--v2-ease);
+}
+.v2-modal__panel {
+  position: relative;
+  width: min(680px, 100%);
+  max-height: min(84vh, 900px);
+  overflow-y: auto;
+  padding: clamp(24px, 4vw, 44px);
+  animation: v2-modal-rise 0.35s var(--v2-ease);
+}
+.v2-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s, transform 0.3s var(--v2-ease);
+}
+.v2-modal__close:hover {
+  background: var(--ink-950);
+  border-color: var(--ink-950);
+  color: #fff;
+  transform: rotate(90deg);
+}
+@keyframes v2-modal-fade {
+  from { opacity: 0; }
+}
+@keyframes v2-modal-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v2-modal, .v2-modal__panel { animation: none; }
+}
+
+/* ------------------------------------------------------------
    Primitives
    ------------------------------------------------------------ */
 .v2-container {

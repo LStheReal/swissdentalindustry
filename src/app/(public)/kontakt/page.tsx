@@ -74,6 +74,7 @@ export default async function KontaktPage() {
 
           <div data-v2-reveal="right" style={{ "--v2-d": 2 } as React.CSSProperties}>
             <V2Card hover>
+              <span id="medien" className="block scroll-mt-[100px]" />
               <V2Eyebrow>{copy.contact.mediaEyebrow}</V2Eyebrow>
               <p className="mt-4 text-[15px] leading-[1.7] text-[color:var(--text-secondary)]">
                 {copy.contact.mediaText}

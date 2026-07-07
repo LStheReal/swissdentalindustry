@@ -35,7 +35,7 @@ const PUBLIC_COPY = {
         {
           heading: "Verband",
           links: [
-            { label: "Über uns", href: "/#verband" },
+            { label: "Über uns", href: "/verband" },
             { label: "Der Vorstand", href: "/kontakt#vorstand" },
             { label: "News & Termine", href: "/news" },
             { label: "Kontakt", href: "/kontakt" },
@@ -47,13 +47,12 @@ const PUBLIC_COPY = {
             { label: "Mitglied werden", href: "/mitglied-werden" },
             { label: "Alle Mitglieder", href: "/mitglieder" },
             { label: "Vorteile", href: "/#verband" },
-            { label: "Mitgliederbereich", href: "/admin" },
           ],
         },
         {
           heading: "Service",
           links: [
-            { label: "Presse", href: "/kontakt" },
+            { label: "Presse", href: "/kontakt#medien" },
             { label: "Impressum", href: "/impressum" },
             { label: "Datenschutz", href: "/datenschutz" },
           ],
@@ -353,7 +352,7 @@ const PUBLIC_COPY = {
         {
           heading: "Association",
           links: [
-            { label: "À propos", href: "/#verband" },
+            { label: "À propos", href: "/verband" },
             { label: "Le comité", href: "/kontakt#vorstand" },
             { label: "Actualités & rendez-vous", href: "/news" },
             { label: "Contact", href: "/kontakt" },
@@ -365,13 +364,12 @@ const PUBLIC_COPY = {
             { label: "Devenir membre", href: "/mitglied-werden" },
             { label: "Tous les membres", href: "/mitglieder" },
             { label: "Avantages", href: "/#verband" },
-            { label: "Espace membres", href: "/admin" },
           ],
         },
         {
           heading: "Service",
           links: [
-            { label: "Presse", href: "/kontakt" },
+            { label: "Presse", href: "/kontakt#medien" },
             { label: "Mentions légales", href: "/impressum" },
             { label: "Protection des données", href: "/datenschutz" },
           ],
@@ -661,7 +659,7 @@ const PUBLIC_COPY = {
         {
           heading: "Associazione",
           links: [
-            { label: "Chi siamo", href: "/#verband" },
+            { label: "Chi siamo", href: "/verband" },
             { label: "Il comitato", href: "/kontakt#vorstand" },
             { label: "News e appuntamenti", href: "/news" },
             { label: "Contatto", href: "/kontakt" },
@@ -673,13 +671,12 @@ const PUBLIC_COPY = {
             { label: "Diventare membro", href: "/mitglied-werden" },
             { label: "Tutti i membri", href: "/mitglieder" },
             { label: "Vantaggi", href: "/#verband" },
-            { label: "Area membri", href: "/admin" },
           ],
         },
         {
           heading: "Servizio",
           links: [
-            { label: "Stampa", href: "/kontakt" },
+            { label: "Stampa", href: "/kontakt#medien" },
             { label: "Colophon", href: "/impressum" },
             { label: "Protezione dei dati", href: "/datenschutz" },
           ],
@@ -969,7 +966,7 @@ const PUBLIC_COPY = {
         {
           heading: "Association",
           links: [
-            { label: "About us", href: "/#verband" },
+            { label: "About us", href: "/verband" },
             { label: "The board", href: "/kontakt#vorstand" },
             { label: "News & dates", href: "/news" },
             { label: "Contact", href: "/kontakt" },
@@ -981,13 +978,12 @@ const PUBLIC_COPY = {
             { label: "Become a member", href: "/mitglied-werden" },
             { label: "All members", href: "/mitglieder" },
             { label: "Benefits", href: "/#verband" },
-            { label: "Members area", href: "/admin" },
           ],
         },
         {
           heading: "Service",
           links: [
-            { label: "Press", href: "/kontakt" },
+            { label: "Press", href: "/kontakt#medien" },
             { label: "Legal notice", href: "/impressum" },
             { label: "Privacy", href: "/datenschutz" },
           ],

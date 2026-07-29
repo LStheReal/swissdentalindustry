@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${member.name} — Swiss Dental Industry`,
     description: mlText(member.description, locale).replace(/\s+/g, " ").slice(0, 155),
-    alternates: localeAlternates(`/mitglieder/${id}`, locale),
+    alternates: localeAlternates(`/members/${id}`, locale),
   };
 }
 
@@ -90,7 +90,7 @@ export default async function MemberDetailPage({ params }: Props) {
                   {copy.memberDetail.openWebsite}
                 </V2BtnLink>
               ) : null}
-              <V2BtnLink href={withLocalePath("/mitglieder", locale)} variant="ghost">
+              <V2BtnLink href={withLocalePath("/members", locale)} variant="ghost">
                 {copy.memberDetail.allMembers}
               </V2BtnLink>
             </div>

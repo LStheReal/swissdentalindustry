@@ -115,7 +115,7 @@ export function V2Header({ locale, copy }: { locale: Locale; copy: HeaderCopy })
             </div>
             {/* CTA stays visible well below the nav's collapse point */}
             <Link
-              href={withLocalePath("/kontakt", locale)}
+              href={withLocalePath("/contact", locale)}
               className="v2-btn v2-btn--primary v2-btn--sm v2-header__cta"
             >
               <span className="v2-btn__label">{copy.join}</span>
@@ -152,7 +152,7 @@ export function V2Header({ locale, copy }: { locale: Locale; copy: HeaderCopy })
 
         <div className="mt-auto flex flex-col gap-7 pt-10">
           <Link
-            href={withLocalePath("/kontakt", locale)}
+            href={withLocalePath("/contact", locale)}
             onClick={() => setMenuOpen(false)}
             className="v2-btn v2-btn--primary v2-btn--lg justify-center"
           >

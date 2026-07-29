@@ -20,16 +20,16 @@ describe("isLocale / getLocaleFromPath", () => {
   });
 
   it("liest die Sprache aus dem Pfad, sonst Default", () => {
-    expect(getLocaleFromPath("/de/mitglieder")).toBe("de");
-    expect(getLocaleFromPath("/mitglieder")).toBe(DEFAULT_LOCALE);
+    expect(getLocaleFromPath("/de/members")).toBe("de");
+    expect(getLocaleFromPath("/members")).toBe(DEFAULT_LOCALE);
     expect(getLocaleFromPath("/")).toBe(DEFAULT_LOCALE);
   });
 });
 
 describe("stripLocaleFromPath", () => {
   it("entfernt nur ein führendes Sprachsegment", () => {
-    expect(stripLocaleFromPath("/de/mitglieder")).toBe("/mitglieder");
-    expect(stripLocaleFromPath("/mitglieder")).toBe("/mitglieder");
+    expect(stripLocaleFromPath("/de/members")).toBe("/members");
+    expect(stripLocaleFromPath("/members")).toBe("/members");
     expect(stripLocaleFromPath("/de")).toBe("/");
     expect(stripLocaleFromPath("/")).toBe("/");
   });
@@ -37,21 +37,21 @@ describe("stripLocaleFromPath", () => {
 
 describe("withLocalePath", () => {
   it("präfixt nicht-Default-Sprachen und lässt Default präfixlos", () => {
-    expect(withLocalePath("/mitglieder", "de")).toBe("/de/mitglieder");
-    expect(withLocalePath("/mitglieder", DEFAULT_LOCALE)).toBe("/mitglieder");
+    expect(withLocalePath("/members", "de")).toBe("/de/members");
+    expect(withLocalePath("/members", DEFAULT_LOCALE)).toBe("/members");
     expect(withLocalePath("/", "fr")).toBe("/fr");
     expect(withLocalePath("/", DEFAULT_LOCALE)).toBe("/");
   });
 
   it("wechselt die Sprache eines bereits präfixten Pfads", () => {
-    expect(withLocalePath("/de/mitglieder", "it")).toBe("/it/mitglieder");
-    expect(withLocalePath("/de/mitglieder", DEFAULT_LOCALE)).toBe("/mitglieder");
+    expect(withLocalePath("/de/members", "it")).toBe("/it/members");
+    expect(withLocalePath("/de/members", DEFAULT_LOCALE)).toBe("/members");
   });
 
   it("erhält Query und Hash", () => {
-    expect(withLocalePath("/verband?x=1#team", "fr")).toBe("/fr/verband?x=1#team");
-    expect(withLocalePath("/verband#membership-benefits", DEFAULT_LOCALE)).toBe(
-      "/verband#membership-benefits",
+    expect(withLocalePath("/about?x=1#team", "fr")).toBe("/fr/about?x=1#team");
+    expect(withLocalePath("/about#membership-benefits", DEFAULT_LOCALE)).toBe(
+      "/about#membership-benefits",
     );
   });
 
@@ -64,14 +64,14 @@ describe("withLocalePath", () => {
 
 describe("localeAlternates", () => {
   it("liefert canonical + alle Sprachen + x-default", () => {
-    const alt = localeAlternates("/mitglieder", "de");
-    expect(alt.canonical).toBe("/de/mitglieder");
+    const alt = localeAlternates("/members", "de");
+    expect(alt.canonical).toBe("/de/members");
     expect(alt.languages).toMatchObject({
-      de: "/de/mitglieder",
-      fr: "/fr/mitglieder",
-      it: "/it/mitglieder",
-      en: "/mitglieder",
-      "x-default": "/mitglieder",
+      de: "/de/members",
+      fr: "/fr/members",
+      it: "/it/members",
+      en: "/members",
+      "x-default": "/members",
     });
   });
 

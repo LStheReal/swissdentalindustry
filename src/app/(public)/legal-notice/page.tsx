@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: copy.meta.imprintTitle,
     description: copy.meta.imprintDescription,
-    alternates: localeAlternates("/impressum", locale),
+    alternates: localeAlternates("/legal-notice", locale),
   };
 }
 

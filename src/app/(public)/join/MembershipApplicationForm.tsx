@@ -27,7 +27,7 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
     const payload = Object.fromEntries(new FormData(form));
 
     try {
-      const response = await fetch("/api/forms/mitglied-werden", {
+      const response = await fetch("/api/forms/join", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),

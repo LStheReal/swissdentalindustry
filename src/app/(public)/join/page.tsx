@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { MembershipApplicationForm } from "@/app/(public)/mitglied-werden/MembershipApplicationForm";
+import { MembershipApplicationForm } from "@/app/(public)/join/MembershipApplicationForm";
 import { V2Card, V2Eyebrow, V2PageHero } from "@/components/v2/ui";
 import { getPublicCopy } from "@/lib/public-copy";
 import { getPublicLocale } from "@/lib/public-locale.server";
@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: copy.meta.joinTitle,
     description: copy.meta.joinDescription,
-    alternates: localeAlternates("/mitglied-werden", locale),
+    alternates: localeAlternates("/join", locale),
   };
 }
 

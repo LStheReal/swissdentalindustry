@@ -18,7 +18,7 @@ async function get(path: string) {
 }
 
 describe.skipIf(!enabled)("Prod-Smoke: öffentliche Seiten", () => {
-  it.each(["/", "/mitglieder", "/news", "/verband", "/kontakt", "/mitglied-werden"])(
+  it.each(["/", "/members", "/news", "/about", "/contact", "/join"])(
     "%s rendert HTML ohne 5xx",
     async (path) => {
       const r = await get(path);
@@ -28,7 +28,7 @@ describe.skipIf(!enabled)("Prod-Smoke: öffentliche Seiten", () => {
     },
   );
 
-  it.each(["/de/mitglieder", "/fr/mitglieder", "/it/mitglieder"])(
+  it.each(["/de/members", "/fr/members", "/it/members"])(
     "%s liefert die übersetzte Variante",
     async (path) => {
       const r = await get(path);
@@ -38,7 +38,7 @@ describe.skipIf(!enabled)("Prod-Smoke: öffentliche Seiten", () => {
   );
 
   it("die Mitgliederseite zeigt echte Mitglieder", async () => {
-    const r = await get("/mitglieder");
+    const r = await get("/members");
     // Kein Mitgliedsname im HTML = DB weg, RLS kaputt oder Fetch fehlgeschlagen.
     expect(r.body).toMatch(/Bien-Air|Axis Dental|Coltène|Nobel Biocare|Straumann/i);
   });

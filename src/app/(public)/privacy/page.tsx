@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: copy.meta.privacyTitle,
     description: copy.meta.privacyDescription,
-    alternates: localeAlternates("/datenschutz", locale),
+    alternates: localeAlternates("/privacy", locale),
   };
 }
 

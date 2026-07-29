@@ -116,9 +116,9 @@ export default async function HomePage() {
           titleB: copy.home.titleB,
           intro: copy.home.intro,
           primaryLabel: copy.home.primaryCta,
-          primaryHref: withLocalePath("/kontakt", locale),
+          primaryHref: withLocalePath("/contact", locale),
           secondaryLabel: copy.home.secondaryCta,
-          secondaryHref: withLocalePath("/mitglieder", locale),
+          secondaryHref: withLocalePath("/members", locale),
         }}
       />
 
@@ -212,7 +212,7 @@ export default async function HomePage() {
             })}
           </div>
           <div className="mt-[clamp(48px,6vw,64px)]" data-v2-reveal>
-            <V2BtnLink href={withLocalePath("/mitglied-werden", locale)} variant="outline-light" size="lg" magnetic>
+            <V2BtnLink href={withLocalePath("/join", locale)} variant="outline-light" size="lg" magnetic>
               {copy.home.associationCta}
             </V2BtnLink>
           </div>
@@ -224,7 +224,7 @@ export default async function HomePage() {
         <div className="v2-container mb-[clamp(36px,4vw,56px)] flex flex-wrap items-end justify-between gap-8">
           <V2SectionHead index="04" eyebrow={copy.home.membersEyebrow} title={copy.home.membersTitle} />
           <div data-v2-reveal>
-            <V2BtnLink href={withLocalePath("/mitglieder", locale)} variant="ghost">
+            <V2BtnLink href={withLocalePath("/members", locale)} variant="ghost">
               {copy.home.membersCta}
             </V2BtnLink>
           </div>
@@ -302,7 +302,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div data-v2-reveal style={{ "--v2-d": 3 } as CSSProperties}>
-            <V2BtnLink href={withLocalePath("/mitglied-werden", locale)} variant="light" size="lg" magnetic>
+            <V2BtnLink href={withLocalePath("/join", locale)} variant="light" size="lg" magnetic>
               {copy.home.joinCta}
             </V2BtnLink>
           </div>

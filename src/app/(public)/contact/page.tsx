@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ContactForm } from "@/app/(public)/kontakt/ContactForm";
+import { ContactForm } from "@/app/(public)/contact/ContactForm";
 import { V2Card, V2Eyebrow, V2PageHero } from "@/components/v2/ui";
 import { getPublicCopy } from "@/lib/public-copy";
 import { getPublicLocale } from "@/lib/public-locale.server";
@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: copy.meta.contactTitle,
     description: copy.meta.contactDescription,
-    alternates: localeAlternates("/kontakt", locale),
+    alternates: localeAlternates("/contact", locale),
   };
 }
 

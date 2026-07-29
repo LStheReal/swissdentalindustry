@@ -23,11 +23,14 @@ export function V2Fx() {
 
     // --- Stagger delays --------------------------------------------------
     document.querySelectorAll<HTMLElement>("[data-v2-stagger]").forEach((container) => {
-      Array.from(container.children).forEach((child, i) => {
-        // Cap the delay so long grids don't trickle in forever.
-        (child as HTMLElement).style.setProperty("--v2-d", String(Math.min(i, 9)));
-        if (!(child as HTMLElement).hasAttribute("data-v2-reveal")) {
-          (child as HTMLElement).setAttribute("data-v2-reveal", "");
+      const children = Array.from(container.children) as HTMLElement[];
+      children.forEach((child, i) => {
+        // Nur die erste Reihe(n) staffeln. Bei langen Listen (36 Mitglieder)
+        // liefen sonst bis zu 0.8s Verzögerung auf — die unteren Karten
+        // erschienen sichtbar später als der Rest der Seite.
+        child.style.setProperty("--v2-d", String(Math.min(i, 3)));
+        if (!child.hasAttribute("data-v2-reveal")) {
+          child.setAttribute("data-v2-reveal", "");
         }
       });
     });
@@ -48,9 +51,31 @@ export function V2Fx() {
             }
           }
         },
-        { threshold: 0.12, rootMargin: "0px 0px -6% 0px" },
+        // Vorlaufend statt nachlaufend: Karten sind fertig eingeblendet, bevor
+        // sie in den Viewport kommen. Vorher (-6%) mussten sie erst sichtbar
+        // sein und blendeten dann ein — beim Scrollen wirkte der Bereich unter
+        // der letzten Reihe leer, als wäre die Seite zu Ende.
+        { threshold: 0, rootMargin: "0px 0px 35% 0px" },
       );
       revealTargets.forEach((el) => io.observe(el));
+
+      // Sicherheitsnetz gegen "unsichtbar stehengeblieben": alles, was laut
+      // Geometrie längst sichtbar sein müsste (oberhalb des unteren
+      // Viewport-Randes), wird nach kurzer Zeit hart eingeblendet — etwa wenn
+      // ein nachladendes Logo die Karte aus dem beobachteten Bereich schiebt.
+      // Karten weiter unten behalten ihren Scroll-Reveal.
+      const failsafe = window.setInterval(() => {
+        let pending = 0;
+        for (const el of revealTargets) {
+          if (el.classList.contains("v2-in")) continue;
+          pending++;
+          if (el.getBoundingClientRect().top < window.innerHeight) {
+            el.classList.add("v2-in");
+          }
+        }
+        if (!pending) window.clearInterval(failsafe);
+      }, 600);
+      cleanups.push(() => window.clearInterval(failsafe));
       cleanups.push(() => io.disconnect());
     }
 

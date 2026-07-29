@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: copy.meta.membersTitle,
     description: copy.meta.membersDescription,
-    alternates: localeAlternates("/mitglieder", locale),
+    alternates: localeAlternates("/members", locale),
   };
 }
 
@@ -36,7 +36,7 @@ export default async function MitgliederPage() {
           data-v2-reveal
           style={{ "--v2-d": 3 } as React.CSSProperties}
         >
-          <V2BtnLink href={withLocalePath("/mitglied-werden", locale)} magnetic>
+          <V2BtnLink href={withLocalePath("/join", locale)} magnetic>
             {copy.association.joinCta}
           </V2BtnLink>
           <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-default)] bg-white px-5 py-[10px]">

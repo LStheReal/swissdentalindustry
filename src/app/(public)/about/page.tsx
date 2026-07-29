@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: copy.meta.associationTitle,
     description: copy.meta.associationDescription,
-    alternates: localeAlternates("/verband", locale),
+    alternates: localeAlternates("/about", locale),
   };
 }
 
@@ -96,10 +96,10 @@ export default async function VerbandPage() {
                 {copy.association.cardText}
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <V2BtnLink href={withLocalePath("/mitglied-werden", locale)} size="sm">
+                <V2BtnLink href={withLocalePath("/join", locale)} size="sm">
                   {copy.association.joinCta}
                 </V2BtnLink>
-                <V2BtnLink href={withLocalePath("/mitglieder", locale)} variant="ghost" size="sm">
+                <V2BtnLink href={withLocalePath("/members", locale)} variant="ghost" size="sm">
                   {copy.association.membersCta}
                 </V2BtnLink>
               </div>

@@ -16,14 +16,14 @@ test("Startseite lädt ohne Konsolenfehler", async ({ page }) => {
 });
 
 test("Mitgliederseite zeigt Mitglieder-Karten", async ({ page }) => {
-  await page.goto("/mitglieder");
+  await page.goto("/members");
   const cards = page.locator(".v2-member-card");
   await expect(cards.first()).toBeVisible();
   expect(await cards.count()).toBeGreaterThan(5);
 });
 
 test("Klick auf eine Mitglieds-Karte öffnet das Profil-Popup", async ({ page }) => {
-  await page.goto("/mitglieder");
+  await page.goto("/members");
   const first = page.locator(".v2-member-card").first();
   const name = (await first.innerText()).split("\n")[0];
   await first.click();
@@ -32,7 +32,7 @@ test("Klick auf eine Mitglieds-Karte öffnet das Profil-Popup", async ({ page })
 });
 
 test("Sprachwechsel liefert die deutsche Variante", async ({ page }) => {
-  await page.goto("/de/mitglieder");
+  await page.goto("/de/members");
   await expect(page.locator("html")).toHaveAttribute("lang", "de");
   await expect(page.locator(".v2-member-card").first()).toBeVisible();
 });
@@ -43,7 +43,7 @@ test("News-Seite rendert", async ({ page }) => {
 });
 
 test("Kontaktformular ist ausfüllbar und hat ein Honeypot-Feld", async ({ page }) => {
-  await page.goto("/kontakt");
+  await page.goto("/contact");
   const form = page.locator("form").first();
   await expect(form).toBeVisible();
   // Honeypot muss existieren und für Menschen unerreichbar sein: aus dem

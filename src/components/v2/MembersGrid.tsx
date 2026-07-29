@@ -43,7 +43,7 @@ export function MembersGrid({
             // Klick öffnet stattdessen das Profil als Popup.
             <a
               key={member.id}
-              href={withLocalePath(`/mitglieder/${member.id}`, locale)}
+              href={withLocalePath(`/members/${member.id}`, locale)}
               onClick={(e) => {
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
                 e.preventDefault();

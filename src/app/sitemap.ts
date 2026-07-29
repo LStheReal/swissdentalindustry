@@ -53,12 +53,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     "/",
     "/news",
-    "/verband",
-    "/mitglieder",
-    "/mitglied-werden",
-    "/kontakt",
-    "/impressum",
-    "/datenschutz",
+    "/about",
+    "/members",
+    "/join",
+    "/contact",
+    "/legal-notice",
+    "/privacy",
   ];
 
   const { members, news } = await loadDynamicRows();
@@ -72,11 +72,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       alternates: alternates(path),
     })),
     ...members.map((member) => ({
-      url: absolute(`/mitglieder/${member.id}`),
+      url: absolute(`/members/${member.id}`),
       lastModified: new Date(member.updated_at),
       changeFrequency: "weekly" as const,
       priority: 0.6,
-      alternates: alternates(`/mitglieder/${member.id}`),
+      alternates: alternates(`/members/${member.id}`),
     })),
     ...news.map((item) => ({
       url: absolute(`/news/${item.id}`),

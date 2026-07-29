@@ -114,7 +114,7 @@ export default async function NewsDetailPage({ params }: Props) {
           <V2BtnLink href={withLocalePath("/news", locale)} variant="ghost">
             {copy.newsDetail.back}
           </V2BtnLink>
-          <Link href={withLocalePath("/kontakt", locale)} className="v2-arrow-link">
+          <Link href={withLocalePath("/contact", locale)} className="v2-arrow-link">
             {copy.newsDetail.contact}
             <ArrowRight size={15} />
           </Link>

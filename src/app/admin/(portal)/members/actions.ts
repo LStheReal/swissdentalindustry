@@ -406,10 +406,10 @@ export async function importMembers(
       importedCount += 1;
     }
 
-    if (parsed.deepSeekApplied) {
-      details.unshift("DeepSeek wurde für das Header-Mapping des Imports verwendet.");
+    if (parsed.aiApplied) {
+      details.unshift("KI (Claude) wurde für das Header-Mapping des Imports verwendet.");
     } else {
-      details.unshift("DeepSeek wurde für diesen Import nicht erreicht; Heuristiken wurden als Fallback verwendet.");
+      details.unshift("Die KI wurde für diesen Import nicht erreicht; Heuristiken wurden als Fallback verwendet.");
     }
 
     revalidatePath("/admin/members");

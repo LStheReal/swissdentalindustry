@@ -120,7 +120,7 @@ export async function previewChange(
   const internalProfile = readInternalProfile(formData);
 
   // Nur neu übersetzen, wenn der Source-Text sich gegenüber dem aktuellen Live-
-  // Stand wirklich unterscheidet. Sonst würde LLM-Drift (DeepSeek
+  // Stand wirklich unterscheidet. Sonst würde LLM-Drift (Claude
   // non-deterministic) bei jedem Submit eine "Änderung" erzeugen, obwohl die
   // Firma die Beschreibung gar nicht angefasst hat.
   const liveSourceText = (member.description?.[sourceLang] ?? "").trim();

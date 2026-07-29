@@ -62,8 +62,8 @@ Portal: <http://localhost:3000/admin>
 
 ## Übersetzung & Geocoding
 
-- **Übersetzung:** DeepSeek (OpenAI-kompatibel) via `src/lib/translate.ts`.
-  Verwendet `DEEPSEEK_API_KEY` beim Erstellen von News sowie beim Anlegen oder
+- **Übersetzung:** Claude (Anthropic) via `src/lib/ai.ts` + `src/lib/translate.ts`.
+  Verwendet `ANTHROPIC_API_KEY` beim Erstellen von News sowie beim Anlegen oder
   Ändern von Mitgliederbeschreibungen. Schlägt der Aufruf fehl, wird der
   Originaltext als Fallback gespeichert.
 - **Geocoding:** OpenStreetMap Nominatim via `src/lib/geocode.ts` (kostenlos,

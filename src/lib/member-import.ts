@@ -1,5 +1,5 @@
-import OpenAI from "openai";
 import * as XLSX from "xlsx";
+import { askForJson, hasAI } from "./ai";
 import {
   normalizeMemberInternalProfile,
   type MemberInternalProfileFields,
@@ -37,10 +37,10 @@ export interface ParsedMemberImport {
   headers: string[];
   mappedHeaders: Partial<Record<ImportFieldKey, string>>;
   skippedRows: string[];
-  deepSeekApplied: boolean;
+  aiApplied: boolean;
 }
 
-interface DeepSeekRowEnrichment {
+interface AIRowEnrichment {
   name: string | null;
   website_url: string | null;
   address: string | null;
@@ -112,22 +112,6 @@ const HEADER_ALIASES: Record<ImportFieldKey, string[]> = {
   ],
   direct_email: ["e-mail", "email", "mail", "direct email", "e mail"],
 };
-
-let client: OpenAI | null = null;
-
-function getClient(): OpenAI {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) {
-    throw new Error("DEEPSEEK_API_KEY is missing.");
-  }
-  if (!client) {
-    client = new OpenAI({
-      apiKey,
-      baseURL: process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com",
-    });
-  }
-  return client;
-}
 
 function normalizeHeader(value: string): string {
   return value
@@ -208,43 +192,29 @@ function readSpreadsheet(fileName: string, buffer: Buffer) {
   return rows;
 }
 
-async function inferHeadersWithDeepSeek(
+async function inferHeadersWithAI(
   headers: string[],
 ): Promise<{
   mappedHeaders: Partial<Record<ImportFieldKey, string>>;
   used: boolean;
 }> {
-  if (!headers.length || !process.env.DEEPSEEK_API_KEY) {
+  if (!headers.length || !hasAI()) {
     return { mappedHeaders: {}, used: false };
   }
 
   try {
-    const completion = await getClient().chat.completions.create({
-      model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You map spreadsheet headers to structured company import fields. " +
-            "Respond only with JSON. Each key must be one of the allowed target keys. " +
-            "Each value must be an original spreadsheet header or null if unclear. " +
-            "Prefer semantically best matches, even across German, French, Italian, and English labels.",
-        },
-        {
-          role: "user",
-          content:
-            `Headers: ${JSON.stringify(headers)}\n` +
-            `Allowed target keys: ${JSON.stringify(Object.keys(IMPORT_FIELD_LABELS))}\n` +
-            `Field descriptions: ${JSON.stringify(IMPORT_FIELD_LABELS)}\n` +
-            "Return a JSON object like {\"name\":\"Company\",\"contact_first_name\":\"First Name\"}. Use null when not confident.",
-        },
-      ],
+    const parsed = await askForJson<Partial<Record<ImportFieldKey, string | null>>>({
+      system:
+        "You map spreadsheet headers to structured company import fields. " +
+        "Each key must be one of the allowed target keys. " +
+        "Each value must be an original spreadsheet header or null if unclear. " +
+        "Prefer semantically best matches, even across German, French, Italian, and English labels.",
+      user:
+        `Headers: ${JSON.stringify(headers)}\n` +
+        `Allowed target keys: ${JSON.stringify(Object.keys(IMPORT_FIELD_LABELS))}\n` +
+        `Field descriptions: ${JSON.stringify(IMPORT_FIELD_LABELS)}\n` +
+        "Return a JSON object like {\"name\":\"Company\",\"contact_first_name\":\"First Name\"}. Use null when not confident.",
     });
-
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    const parsed = JSON.parse(raw) as Partial<Record<ImportFieldKey, string | null>>;
     const next: Partial<Record<ImportFieldKey, string>> = {};
 
     for (const field of Object.keys(IMPORT_FIELD_LABELS) as ImportFieldKey[]) {
@@ -256,21 +226,21 @@ async function inferHeadersWithDeepSeek(
 
     return { mappedHeaders: next, used: true };
   } catch (error) {
-    console.error("inferHeadersWithDeepSeek failed:", error);
+    console.error("inferHeadersWithAI failed:", error);
     return { mappedHeaders: {}, used: false };
   }
 }
 
 async function mapHeaders(headers: string[]): Promise<{
   mappedHeaders: Partial<Record<ImportFieldKey, string>>;
-  deepSeekApplied: boolean;
+  aiApplied: boolean;
 }> {
   const normalized = headers.map((header) => ({
     original: header,
     normalized: normalizeHeader(header),
   }));
-  const deepSeekResult = await inferHeadersWithDeepSeek(headers);
-  const mapped: Partial<Record<ImportFieldKey, string>> = { ...deepSeekResult.mappedHeaders };
+  const aiResult = await inferHeadersWithAI(headers);
+  const mapped: Partial<Record<ImportFieldKey, string>> = { ...aiResult.mappedHeaders };
 
   for (const field of Object.keys(HEADER_ALIASES) as ImportFieldKey[]) {
     if (mapped[field]) continue;
@@ -294,38 +264,29 @@ async function mapHeaders(headers: string[]): Promise<{
     }
   }
 
-  return { mappedHeaders: mapped, deepSeekApplied: deepSeekResult.used };
+  return { mappedHeaders: mapped, aiApplied: aiResult.used };
 }
 
-async function enrichRowWithDeepSeek(args: {
+async function enrichRowWithAI(args: {
   rowNumber: number;
   cells: Map<string, string>;
-  heuristic: DeepSeekRowEnrichment;
+  heuristic: AIRowEnrichment;
 }): Promise<{
-  values: DeepSeekRowEnrichment;
+  values: AIRowEnrichment;
   used: boolean;
 }> {
-  if (!process.env.DEEPSEEK_API_KEY) {
+  if (!hasAI()) {
     return { values: args.heuristic, used: false };
   }
 
   try {
-    const completion = await getClient().chat.completions.create({
-      model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You extract structured member-company admin data from a spreadsheet row. " +
-            "Respond only with JSON. Clean whitespace. Keep company names exactly as written except trimming. " +
-            "Split people and addresses into the requested fields when possible. " +
-            "If a value is unknown, return null. Never invent facts.",
-        },
-        {
-          role: "user",
-          content:
+    const parsed = await askForJson<Partial<Record<keyof AIRowEnrichment, string | null>>>({
+      system:
+        "You extract structured member-company admin data from a spreadsheet row. " +
+        "Clean whitespace. Keep company names exactly as written except trimming. " +
+        "Split people and addresses into the requested fields when possible. " +
+        "If a value is unknown, return null. Never invent facts.",
+      user:
             `Spreadsheet row number: ${args.rowNumber}\n` +
             `Raw row data: ${JSON.stringify(rowSnapshot(args.cells))}\n` +
             `Heuristic extraction: ${JSON.stringify(args.heuristic)}\n` +
@@ -350,13 +311,9 @@ async function enrichRowWithDeepSeek(args: {
               "internal_notes",
             ]) +
             ". Prefer raw spreadsheet values over heuristic guesses when they conflict.",
-        },
-      ],
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    const parsed = JSON.parse(raw) as Partial<Record<keyof DeepSeekRowEnrichment, string | null>>;
-    const values: DeepSeekRowEnrichment = {
+    const values: AIRowEnrichment = {
       name: nullable(parsed.name) ?? args.heuristic.name,
       website_url: nullable(parsed.website_url) ?? args.heuristic.website_url,
       address: nullable(parsed.address) ?? args.heuristic.address,
@@ -381,7 +338,7 @@ async function enrichRowWithDeepSeek(args: {
 
     return { values, used: true };
   } catch (error) {
-    console.error("enrichRowWithDeepSeek failed:", error);
+    console.error("enrichRowWithAI failed:", error);
     return { values: args.heuristic, used: false };
   }
 }
@@ -411,7 +368,7 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
     throw new Error("Die erste Zeile der Datei enthält keine Spaltenüberschriften.");
   }
 
-  const { mappedHeaders, deepSeekApplied } = await mapHeaders(headers);
+  const { mappedHeaders, aiApplied } = await mapHeaders(headers);
 
   if (!mappedHeaders.name) {
     throw new Error(
@@ -421,7 +378,7 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
 
   const rows: ImportedMemberRow[] = [];
   const skippedRows: string[] = [];
-  let rowDeepSeekApplied = false;
+  let rowAiApplied = false;
 
   for (let index = 1; index < matrix.length; index += 1) {
     const values = matrix[index] ?? [];
@@ -441,7 +398,7 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
       return header ? cells.get(header) || "" : "";
     };
 
-    const heuristic: DeepSeekRowEnrichment = {
+    const heuristic: AIRowEnrichment = {
       name: nullable(read("name")),
       website_url: nullable(read("website_url")),
       address: buildAddress({
@@ -468,13 +425,13 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
       internal_notes: `Importiert aus Spreadsheet, Zeile ${rowNumber}.`,
     };
 
-    const enrichment = await enrichRowWithDeepSeek({
+    const enrichment = await enrichRowWithAI({
       rowNumber,
       cells,
       heuristic,
     });
     if (enrichment.used) {
-      rowDeepSeekApplied = true;
+      rowAiApplied = true;
     }
 
     const name = enrichment.values.name ?? heuristic.name ?? null;
@@ -528,7 +485,7 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
     headers,
     mappedHeaders,
     skippedRows,
-    deepSeekApplied: deepSeekApplied || rowDeepSeekApplied,
+    aiApplied: aiApplied || rowAiApplied,
   };
 }
 

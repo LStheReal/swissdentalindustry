@@ -56,7 +56,7 @@ export function ImportMembersForm() {
               Typische Header wie `Company`, `Title`, `First Name`, `Last Name`,
               `Job Title`, `Street Name`, `Street Number`, `Postal Code`, `City`,
               `Country`, `Direct Phone Number` und `E-mail` werden direkt erkannt.
-              Unklare Header versucht DeepSeek zusätzlich semantisch zuzuordnen.
+              Unklare Header versucht die KI (Claude) zusätzlich semantisch zuzuordnen.
             </p>
           </div>
 

@@ -14,8 +14,12 @@
 
 ## Still open — needs YOU (manual / decisions), see SECURITY.md
 - [x] Replace vulnerable `xlsx@0.18.5` → official SheetJS 0.20.3 (CDN tarball, integrity-pinned in lockfile; both CVEs fixed; manual updates — see SECURITY.md)
-- [ ] Apply `supabase/migrations/0010_restrict_anon_grants.sql` in the Supabase SQL editor (revokes anon writes + fail-open default privileges).
-- [ ] Push branch + open PR; watch CI go green.
+- [x] 2026-07-12 Applied `0010_restrict_anon_grants.sql` via supabase CLI (history repaired 0001–0009 as applied; verified anon read OK / write denied).
+- [x] 2026-07-10 Pushed main to github.com/LStheReal/swissdentalindustry (old freshnowch remote dead); deployed to Vercel project `swissdentalindustry`.
+- [x] 2026-07-12 Admin access restored: added superadmin louise.schuele@gmail.com (existing admins hello@freshnow.ch + mael.ilai@gmail.com untouched); SUPABASE_SERVICE_ROLE_KEY in .env.local + Vercel envs.
+- [x] 2026-07-29 Auto-Übersetzung + Mitglieder-Import laufen jetzt über Claude (Anthropic SDK, `src/lib/ai.ts`) statt DeepSeek; `openai`-Paket entfernt.
+- [ ] **DU:** `ANTHROPIC_API_KEY` setzen — lokal in `.env.local`, auf Vercel für Production + Preview (danach redeploy). Ohne Key bleiben Beschreibungen unübersetzt (kein Fehler).
+- [ ] **DU:** SMTP-Zugang neu erstellen (SMTP_HOST/PORT/USER/PASS + MAIL_FROM) — lokal und auf Vercel. Bis dahin verschickt die Seite keine Mails.
 
 ## Backlog (not yet done — from architecture review)
 - [ ] Caching: pages are still fully dynamic (revalidate=60 is a no-op because headers() forces dynamic). Wrap public-data.ts in unstable_cache/use cache with tags + revalidateTag from admin actions.

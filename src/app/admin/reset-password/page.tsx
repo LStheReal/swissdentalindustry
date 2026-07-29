@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AuthShell } from "../AuthShell";
 import { ResetPasswordForm } from "./ResetPasswordForm";
+import { RecoveryGate } from "./RecoveryGate";
 
 export const metadata: Metadata = {
   title: "Neues Passwort",
@@ -11,10 +12,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * Ziel des Links aus der Reset-Mail. Supabase hängt `?code=…` an; der Code wird
- * einmalig gegen eine Session getauscht (danach ist er verbraucht). Deshalb
- * wird nach dem Tausch auf dieselbe Seite ohne Query umgeleitet — sonst würde
- * ein Reload den bereits verbrauchten Code erneut einzulösen versuchen.
+ * Ziel des Links aus der Reset-Mail. Der Link liefert die Session als
+ * Hash-Fragment (#access_token=…&type=recovery) — funktioniert geräte- und
+ * browserübergreifend, weil kein zuvor gespeicherter PKCE-Verifier nötig ist
+ * (siehe forgot/actions.ts). Das Fragment ist serverseitig nie sichtbar,
+ * daher übernimmt <RecoveryGate> (Client-Komponente) die Prüfung.
+ *
+ * `?code=…` bleibt als Fallback bestehen, falls doch einmal ein Code-Link
+ * ankommt (z.B. noch nicht abgelaufene alte Mails aus der Zeit vor dieser
+ * Umstellung) — der einmalige Code wird nach dem Tausch aus der URL entfernt,
+ * sonst würde ein Reload ihn erneut einzulösen versuchen.
  */
 export default async function ResetPasswordPage({
   searchParams,
@@ -23,12 +30,6 @@ export default async function ResetPasswordPage({
 }) {
   const params = await searchParams;
   const code = typeof params.code === "string" ? params.code : null;
-  const errorDesc =
-    typeof params.error_description === "string"
-      ? params.error_description
-      : typeof params.error === "string"
-        ? params.error
-        : null;
 
   const supabase = await createClient();
 
@@ -51,24 +52,20 @@ export default async function ResetPasswordPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (user) {
     return (
       <AuthShell subtitle="Neues Passwort">
-        <p className="text-sm text-red-700">
-          {errorDesc ??
-            "Dieser Link ist ungültig, abgelaufen oder wurde bereits benutzt."}
+        <p className="text-[13px] text-[#4a4a51]">
+          Neues Passwort für {user.email} setzen. Mindestens 8 Zeichen.
         </p>
-        <RequestAgain />
+        <ResetPasswordForm />
       </AuthShell>
     );
   }
 
   return (
     <AuthShell subtitle="Neues Passwort">
-      <p className="text-[13px] text-[#4a4a51]">
-        Neues Passwort für {user.email} setzen. Mindestens 8 Zeichen.
-      </p>
-      <ResetPasswordForm />
+      <RecoveryGate />
     </AuthShell>
   );
 }

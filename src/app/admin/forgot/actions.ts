@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getSiteUrl } from "@/lib/site-url";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -41,7 +41,17 @@ export async function requestPasswordReset(
     return { sent: true };
   }
 
-  const supabase = await createClient();
+  // Bewusst NICHT der SSR-Cookie-Client aus @/lib/supabase/server: der nutzt
+  // PKCE, was einen "code_verifier"-Cookie im ANFRAGENDEN Browser voraussetzt
+  // — bricht, sobald die Mail auf einem anderen Gerät/Browser geöffnet wird
+  // (der Normalfall bei "Passwort vergessen"). Mit flowType "implicit"
+  // schickt Supabase die Tokens direkt im URL-Fragment des Links; die
+  // funktionieren überall, ohne gespeicherten Verifier.
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false } },
+  );
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${getSiteUrl()}/admin/reset-password`,
   });

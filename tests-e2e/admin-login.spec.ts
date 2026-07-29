@@ -45,11 +45,24 @@ test("der Reset gibt dieselbe Antwort für unbekannte Adressen", async ({ page }
   await expect(page.getByText(/Falls für diese Adresse/i)).toBeVisible();
 });
 
-test("ein ungültiger Reset-Link zeigt eine Fehlerseite statt eines Formulars", async ({
+test("ein Reset-Link ohne Tokens zeigt eine Fehlerseite statt eines Formulars", async ({
   page,
 }) => {
   await page.goto("/admin/reset-password");
   await expect(page.getByText(/ungültig, abgelaufen|bereits benutzt/i)).toBeVisible();
+  await expect(page.locator('input[name="password"]')).toHaveCount(0);
+});
+
+test("ein Reset-Link mit ungültigen Hash-Tokens zeigt eine Fehlerseite", async ({ page }) => {
+  // Simuliert die neue Link-Form (#access_token=…&type=recovery). Die Tokens
+  // sind erfunden, Supabase lehnt sie ab — die RecoveryGate-Komponente muss
+  // das als "ungültig" auffangen statt hängenzubleiben oder zu crashen.
+  await page.goto(
+    "/admin/reset-password#access_token=fake&refresh_token=fake&expires_in=3600&token_type=bearer&type=recovery",
+  );
+  await expect(page.getByText(/ungültig, abgelaufen|bereits benutzt/i)).toBeVisible({
+    timeout: 10_000,
+  });
   await expect(page.locator('input[name="password"]')).toHaveCount(0);
 });
 

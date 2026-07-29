@@ -94,6 +94,14 @@ describe("Admin Server Actions sind auth-geschützt", () => {
     expect(src).not.toMatch(/createAdminClient/);
   });
 
+  it("der Passwort-Reset nutzt implicit flow (funktioniert geräteübergreifend)", () => {
+    // PKCE braucht einen code_verifier-Cookie im anfragenden Browser — bricht,
+    // sobald die Mail auf einem anderen Gerät/Browser geöffnet wird. Regression
+    // für genau diesen Bug: "PKCE code verifier not found in storage".
+    const src = readFileSync(join(PORTAL, "forgot", "actions.ts"), "utf8");
+    expect(src).toMatch(/flowType:\s*["']implicit["']/);
+  });
+
   it("das Setzen des neuen Passworts braucht die Recovery-Session", () => {
     const src = readFileSync(join(PORTAL, "reset-password", "actions.ts"), "utf8");
     expect(src).toMatch(/auth\.getUser\(\)/);

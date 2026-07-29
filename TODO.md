@@ -38,4 +38,12 @@
 - [x] Mitglieder-Grid: Reveal blendet 35% Viewport früher ein, Stagger von 9 auf 3 Schritte gekappt, Failsafe für hängengebliebene Karten (wirkte, als sei die Seite zu Ende).
 - [x] Passwort-Reset im Admin: /admin/forgot + /admin/reset-password, rate-limited, anti-enumerierend. Supabase verschickt die Mail selbst — kein eigener SMTP nötig.
 - [ ] **DU:** In Supabase → Authentication → URL Configuration die Redirect-URL `https://<deine-domain>/admin/reset-password` freigeben (sonst lehnt Supabase den Link ab). Site URL ebenfalls auf die Vercel-/Live-Domain setzen.
-- [ ] Optional: API-Routen heissen noch deutsch (/api/forms/mitglied-werden, /api/forms/mitwirken) — rein intern, kein Nutzer sieht sie.
+- [x] API-Routen englisch: `/api/forms/join`, `/api/forms/collaborate`.
+
+## 2026-07-29 (3) — Antrags-Review-Flow
+- [x] Migration `0011_application_review_flow.sql` (angewendet auf Prod): `kind` trennt Anträge von Kontaktanfragen, `logo_url`/`rejection_reason`/`reviewed_at`/`member_id` für die Entscheidung.
+- [x] `/join`-Formular erhebt alle öffentlich sichtbaren Felder + Firmenlogo (max 4 MB, PNG/JPG/SVG/WebP) und schickt die Sprache mit.
+- [x] Admin → Anträge: Karte pro Antrag mit Vorschau; **Annehmen** legt das Mitglied an, füllt das interne Profil, erzeugt den Self-Service-Link und mailt die Zusage; **Ablehnen** mailt die Begründung. Mailfehler machen die Entscheidung nicht rückgängig.
+- [x] Entscheidungsmails gehen in der Sprache raus, in der der Antrag gestellt wurde.
+- [x] Tests: jede im Frontend gefetchte /api-URL muss als Route existieren (genau der Bug, der nach der Umbenennung Einsendungen still verschluckte); Probe-Requests lösen den Honeypot aus (keine Müll-Anträge mehr in Prod); Schema-Test deckt die neuen Spalten ab. 122 Vitest-Tests grün, Build grün (32 Routen).
+- [ ] **DU:** Ohne SMTP verschickt die Seite die Zusage-/Ablehnungsmail nicht (die Entscheidung wird trotzdem gespeichert, der Self-Service-Link steht im Mitglieder-Detail). Siehe SMTP-Punkt oben.

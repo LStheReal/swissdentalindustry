@@ -8,6 +8,7 @@ import {
   type MemberEditableFields,
   type Multilingual,
 } from "@/lib/types";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { approveChange, rejectChange } from "./actions";
 import { MemberFilter } from "./MemberFilter";
 
@@ -262,20 +263,20 @@ export default async function FeedPage({
                   </div>
                   <div className="flex gap-2">
                     <form action={approveChange.bind(null, req.id)}>
-                      <button
-                        type="submit"
+                      <SubmitButton
+                        pendingLabel="Wird freigegeben …"
                         className="rounded-[3px] bg-[#1f8a5b] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#176b45]"
                       >
                         Freigeben & publizieren
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={rejectChange.bind(null, req.id)}>
-                      <button
-                        type="submit"
+                      <SubmitButton
+                        pendingLabel="Wird abgelehnt …"
                         className="rounded-[3px] border border-[#c4c4cc] bg-white px-4 py-2 text-[12.5px] font-semibold hover:bg-[#f2f2f0]"
                       >
                         Ablehnen
-                      </button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </div>

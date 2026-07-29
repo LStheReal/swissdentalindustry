@@ -1,35 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useFormStatus } from "react-dom";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import type { MembershipApplication } from "@/lib/types";
-
-/**
- * Submit-Button, der während der Action sichtbar blockiert. Ohne diese
- * Rückmeldung wirkte ein Klick auf "Annehmen" wie ein Fehlklick — die Action
- * lief, nur sah man es nicht.
- */
-function SubmitButton({
-  children,
-  pendingLabel,
-  className,
-}: {
-  children: React.ReactNode;
-  pendingLabel: string;
-  className: string;
-}) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      aria-busy={pending}
-      className={`${className} disabled:cursor-progress disabled:opacity-60`}
-    >
-      {pending ? pendingLabel : children}
-    </button>
-  );
-}
 
 /**
  * Ein Antrag als Karte: links die Vorschau, wie die Firma im Verzeichnis

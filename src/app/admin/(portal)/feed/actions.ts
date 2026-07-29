@@ -1,9 +1,10 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { geocodeAddress } from "@/lib/geocode";
+import { geocodeAfterResponse } from "@/lib/after-response";
 import { sendChangeApprovedMail } from "@/lib/email";
 import { describeMemberValue, memberFieldLabel } from "@/lib/email-templates";
 import { getInternalProfileForMember, saveInternalProfile } from "@/lib/member-internal-profiles";
@@ -39,6 +40,21 @@ export async function approveChange(requestId: string) {
   if (!reqData) return;
   const request = reqData as MemberChangeRequest;
 
+  // Anfrage beanspruchen, bevor irgendetwas übernommen wird. Ohne diesen
+  // bedingten Update übernehmen zwei parallele Klicks dieselbe Änderung
+  // zweimal und verschicken zwei Bestätigungsmails.
+  const { data: claimed } = await supabase
+    .from("member_change_requests")
+    .update({ status: "approved", reviewed_at: new Date().toISOString() })
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+  if (!claimed) {
+    revalidatePath("/admin/feed");
+    return;
+  }
+
   const { data: memberData } = await supabase
     .from("members")
     .select("*")
@@ -60,17 +76,16 @@ export async function approveChange(requestId: string) {
     update.website_url = sanitizeExternalUrl(update.website_url as string | null);
   }
 
-  // Bei Adressänderung neu geocodieren.
-  if (
-    "address" in publicProposed &&
-    publicProposed.address !== member.address
-  ) {
-    const geo = publicProposed.address
-      ? await geocodeAddress(publicProposed.address)
-      : null;
-    update.lat = geo?.lat ?? null;
-    update.lng = geo?.lng ?? null;
-    update.canton = geo?.canton ?? null;
+  // Bei Adressänderung: alte Koordinaten sofort verwerfen, die neuen holt
+  // geocodeAfterResponse nach der Antwort — der Aufruf kostet sonst Wartezeit.
+  const newAddress =
+    "address" in publicProposed && publicProposed.address !== member.address
+      ? (publicProposed.address ?? null)
+      : undefined;
+  if (newAddress !== undefined) {
+    update.lat = null;
+    update.lng = null;
+    update.canton = null;
   }
 
   if (Object.keys(update).length > 0) {
@@ -93,29 +108,31 @@ export async function approveChange(requestId: string) {
     await saveInternalProfile(supabase, member.id, profile);
   }
 
-  await supabase
-    .from("member_change_requests")
-    .update({ status: "approved", reviewed_at: new Date().toISOString() })
-    .eq("id", requestId);
+  if (newAddress !== undefined) {
+    geocodeAfterResponse({ memberId: member.id, address: newAddress });
+  }
 
-  // Firma benachrichtigen (Fehler hier sollen die Freigabe nicht blockieren).
+  // Firma benachrichtigen — nach der Antwort, damit der SMTP-Versand die
+  // Freigabe nicht verzögert. Fehler blockieren die Freigabe ohnehin nicht.
   const to = request.contact_email || member.email;
   if (to) {
-    try {
-      const locale = member.source_lang;
-      const changes = Object.entries(request.proposed).map(([key, value]) => ({
-        label: memberFieldLabel(key, locale),
-        value: describeMemberValue(key, value),
-      }));
-      await sendChangeApprovedMail({
-        to,
-        memberName: member.name,
-        changes,
-        locale,
-      });
-    } catch (err) {
-      console.error("notification email failed:", err);
-    }
+    after(async () => {
+      try {
+        const locale = member.source_lang;
+        const changes = Object.entries(request.proposed).map(([key, value]) => ({
+          label: memberFieldLabel(key, locale),
+          value: describeMemberValue(key, value),
+        }));
+        await sendChangeApprovedMail({
+          to,
+          memberName: member.name,
+          changes,
+          locale,
+        });
+      } catch (err) {
+        console.error("notification email failed:", err);
+      }
+    });
   }
 
   revalidatePath("/admin/feed");

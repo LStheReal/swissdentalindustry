@@ -1015,7 +1015,8 @@ interface ApplicationApprovedStrings {
 const APPLICATION_APPROVED: Record<Locale, ApplicationApprovedStrings> = {
   de: {
     eyebrow: "Mitgliedschaft · Zusage",
-    greeting: (name) => `Willkommen bei<br>Swiss Dental Industry.`,
+    // Bewusst ohne Firmennamen — die deutsche Zusage begrüsst allgemein.
+    greeting: () => `Willkommen bei<br>Swiss Dental Industry.`,
     intro:
       "Ihr Antrag wurde geprüft und angenommen — Ihre Firma ist ab sofort im Mitgliederverzeichnis eingetragen.",
     internalNote:

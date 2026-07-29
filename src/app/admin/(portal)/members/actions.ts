@@ -1,12 +1,17 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { translateToAll, translateToAllAuto } from "@/lib/translate";
-import { geocodeAddress } from "@/lib/geocode";
+import { translateToAll } from "@/lib/translate";
+import {
+  geocodeAfterResponse,
+  provisionalMultilingual,
+  translateAfterResponse,
+} from "@/lib/after-response";
 import { uploadImage } from "@/lib/storage";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { sendMemberWelcomeMail } from "@/lib/email";
@@ -106,27 +111,24 @@ export async function createMember(formData: FormData) {
   const email = str(formData, "email");
   const image = formData.get("logo");
 
-  const [descResult, logoUrl, geo] = await Promise.all([
-    translateToAllAuto(description, fallbackLang),
-    uploadImage("logos", image instanceof File ? image : null),
-    address ? geocodeAddress(address) : Promise.resolve(null),
-  ]);
-  const sourceLang = descResult.sourceLang;
+  // Die Sprache steht im Formular — kein Claude-Aufruf zur Erkennung (~4s).
+  const sourceLang = fallbackLang;
+  const logoUrl = await uploadImage("logos", image instanceof File ? image : null);
 
   const { data, error } = await supabase
     .from("members")
     .insert({
       name,
       logo_url: logoUrl,
-      description: descResult.ml,
+      description: provisionalMultilingual(description),
       address,
       phone: str(formData, "phone"),
       email,
       website_url: sanitizeExternalUrl(str(formData, "website_url")),
       member_since: str(formData, "member_since"),
-      lat: geo?.lat ?? null,
-      lng: geo?.lng ?? null,
-      canton: geo?.canton ?? null,
+      lat: null,
+      lng: null,
+      canton: null,
       source_lang: sourceLang,
       status: "published",
       is_active: true,
@@ -137,22 +139,33 @@ export async function createMember(formData: FormData) {
 
   await upsertInternalProfile(supabase, data.id, readInternalProfile(formData));
 
+  translateAfterResponse({
+    table: "members",
+    id: data.id,
+    fields: { description },
+    sourceLang,
+    paths: ["/members", `/members/${data.id}`],
+  });
+  geocodeAfterResponse({ memberId: data.id, address });
+
   // Self-Service-Link sofort erzeugen und der Firma per Mail zustellen, damit
   // der Admin nichts manuell verschicken muss. Mail-Fehler dürfen das Anlegen
-  // nicht abbrechen.
+  // nicht abbrechen — und der SMTP-Versand darf den Admin nicht warten lassen.
   if (email) {
-    try {
-      const token = await createEditTokenFor(supabase, data.id);
-      const localePrefix = sourceLang !== "de" ? `${sourceLang}/` : "";
-      await sendMemberWelcomeMail({
-        to: email,
-        memberName: name,
-        editUrl: `${appBaseUrl()}/${localePrefix}edit/${token}`,
-        locale: sourceLang,
-      });
-    } catch (err) {
-      console.error("member welcome mail failed:", err);
-    }
+    after(async () => {
+      try {
+        const token = await createEditTokenFor(supabase, data.id);
+        const localePrefix = sourceLang !== "de" ? `${sourceLang}/` : "";
+        await sendMemberWelcomeMail({
+          to: email,
+          memberName: name,
+          editUrl: `${appBaseUrl()}/${localePrefix}edit/${token}`,
+          locale: sourceLang,
+        });
+      } catch (err) {
+        console.error("member welcome mail failed:", err);
+      }
+    });
   }
 
   revalidatePath("/admin/members");
@@ -189,14 +202,11 @@ export async function updateMember(id: string, formData: FormData) {
   const removeLogo = formData.get("remove_logo") === "1";
 
   if (!skipTranslate && (sourceChanged || !originalDescription)) {
-    // Quelltext geändert → neu übersetzen
-    const [descResult, newLogoUrl, geo] = await Promise.all([
-      translateToAllAuto(description, fallbackLang),
-      uploadImage("logos", image instanceof File ? image : null),
-      addressChanged && address ? geocodeAddress(address) : Promise.resolve(null),
-    ]);
-    descMl = descResult.ml;
-    sourceLang = descResult.sourceLang;
+    // Quelltext geändert → neu übersetzen, aber erst nach der Antwort. Die
+    // Sprache kommt aus dem Formular, statt sie von Claude erkennen zu lassen.
+    sourceLang = fallbackLang;
+    descMl = provisionalMultilingual(description);
+    const newLogoUrl = await uploadImage("logos", image instanceof File ? image : null);
 
     const update: Record<string, unknown> = {
       name,
@@ -212,13 +222,25 @@ export async function updateMember(id: string, formData: FormData) {
     if (removeLogo) update.logo_url = null;
     else if (newLogoUrl) update.logo_url = newLogoUrl;
     if (addressChanged) {
-      update.lat = geo?.lat ?? null;
-      update.lng = geo?.lng ?? null;
-      update.canton = geo?.canton ?? null;
+      // Alte Koordinaten sofort verwerfen — sie gehören zur alten Adresse.
+      // Die neuen trägt geocodeAfterResponse nach.
+      update.lat = null;
+      update.lng = null;
+      update.canton = null;
     }
     const { error } = await supabase.from("members").update(update).eq("id", id);
     if (error) throw new Error(error.message);
     await upsertInternalProfile(supabase, id, readInternalProfile(formData));
+
+    translateAfterResponse({
+      table: "members",
+      id,
+      fields: { description },
+      sourceLang,
+      paths: ["/members", `/members/${id}`],
+    });
+    if (addressChanged) geocodeAfterResponse({ memberId: id, address });
+
     revalidatePath("/admin/members");
     redirect("/admin/members");
   }
@@ -233,10 +255,7 @@ export async function updateMember(id: string, formData: FormData) {
   descMl = directDesc;
   sourceLang = effectiveSourceLang;
 
-  const [newLogoUrl, geo] = await Promise.all([
-    uploadImage("logos", image instanceof File ? image : null),
-    addressChanged && address ? geocodeAddress(address) : Promise.resolve(null),
-  ]);
+  const newLogoUrl = await uploadImage("logos", image instanceof File ? image : null);
 
   const update: Record<string, unknown> = {
     name,
@@ -252,15 +271,17 @@ export async function updateMember(id: string, formData: FormData) {
   if (removeLogo) update.logo_url = null;
   else if (newLogoUrl) update.logo_url = newLogoUrl;
   if (addressChanged) {
-    update.lat = geo?.lat ?? null;
-    update.lng = geo?.lng ?? null;
-    update.canton = geo?.canton ?? null;
+    update.lat = null;
+    update.lng = null;
+    update.canton = null;
   }
 
   const { error } = await supabase.from("members").update(update).eq("id", id);
   if (error) throw new Error(error.message);
 
   await upsertInternalProfile(supabase, id, readInternalProfile(formData));
+
+  if (addressChanged) geocodeAfterResponse({ memberId: id, address });
 
   revalidatePath("/admin/members");
   redirect("/admin/members");

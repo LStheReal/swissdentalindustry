@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdminLocale } from "@/lib/i18n-admin";
 import { LocaleSwitcher } from "../LocaleSwitcher";
 import { saveSettings } from "./actions";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -118,12 +119,12 @@ export default async function SettingsPage() {
           </label>
         </div>
 
-        <button
-          type="submit"
+        <SubmitButton
+          pendingLabel="Wird gespeichert …"
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
         >
           Speichern
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

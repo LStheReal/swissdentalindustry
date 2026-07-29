@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { type Member, type MemberInternalProfileFields, MEMBER_INTERNAL_PROFILE_LABELS } from "@/lib/types";
 import { deleteMember, publishMember } from "./actions";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 function initials(name: string) {
   return name
@@ -177,12 +178,12 @@ export function MembersTable({ members, internalProfiles }: Props) {
             >
               {m.status === "draft" && (
                 <form action={publishMember.bind(null, m.id)}>
-                  <button
-                    type="submit"
+                  <SubmitButton
+                    pendingLabel="Wird aktiviert …"
                     className="min-w-[74px] whitespace-nowrap rounded-[3px] border border-[#1f8a5b] bg-[#1f8a5b] px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#18724b]"
                   >
                     Activate
-                  </button>
+                  </SubmitButton>
                 </form>
               )}
               <Link
@@ -192,12 +193,12 @@ export function MembersTable({ members, internalProfiles }: Props) {
                 Bearbeiten
               </Link>
               <form action={deleteMember.bind(null, m.id)}>
-                <button
-                  type="submit"
+                <SubmitButton
+                  pendingLabel="Wird gelöscht …"
                   className="min-w-[74px] whitespace-nowrap rounded-[3px] border border-[#e1000f] px-2.5 py-1.5 text-[11px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
                 >
                   Löschen
-                </button>
+                </SubmitButton>
               </form>
             </div>
           </div>

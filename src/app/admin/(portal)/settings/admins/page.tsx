@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inviteAdmin, removeAdmin } from "./actions";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export default async function AdminUsersPage() {
   const current = await requireAdmin();
@@ -31,12 +32,12 @@ export default async function AdminUsersPage() {
             placeholder="name@firma.ch"
             className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <button
-            type="submit"
+          <SubmitButton
+            pendingLabel="Wird eingeladen …"
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
           >
             Einladen
-          </button>
+          </SubmitButton>
         </form>
       </section>
 
@@ -70,12 +71,12 @@ export default async function AdminUsersPage() {
                 {!isSelf && (
                   <form action={removeAdmin}>
                     <input type="hidden" name="user_id" value={a.user_id} />
-                    <button
-                      type="submit"
+                    <SubmitButton
+                      pendingLabel="Wird entfernt …"
                       className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-red-400 hover:bg-red-50 hover:text-red-700"
                     >
                       Entfernen
-                    </button>
+                    </SubmitButton>
                   </form>
                 )}
               </li>

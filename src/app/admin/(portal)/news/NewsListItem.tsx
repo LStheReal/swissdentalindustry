@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { deleteNews, setNewsActive } from "./actions";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 const BODY_PREVIEW_LENGTH = 260;
 
@@ -114,8 +115,8 @@ export function NewsListItem({
           Bearbeiten
         </Link>
         <form action={setNewsActive.bind(null, id, !isActive)}>
-          <button
-            type="submit"
+          <SubmitButton
+            pendingLabel="Moment …"
             className={`rounded-[3px] border px-3 py-1.5 text-[12.5px] font-semibold ${
               isActive
                 ? "border-[#f0cf8b] text-[#a66a00] hover:bg-[#fff8e8]"
@@ -123,15 +124,15 @@ export function NewsListItem({
             }`}
           >
             {isActive ? "Pausieren" : "Aktivieren"}
-          </button>
+          </SubmitButton>
         </form>
         <form action={deleteNews.bind(null, id)}>
-          <button
-            type="submit"
+          <SubmitButton
+            pendingLabel="Wird gelöscht …"
             className="rounded-[3px] border border-[#ffb6b6] px-3 py-1.5 text-[12.5px] font-semibold text-[#ff1d1d] hover:bg-[#fff1f1]"
           >
             Löschen
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </li>

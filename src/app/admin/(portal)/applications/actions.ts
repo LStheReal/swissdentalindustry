@@ -66,9 +66,26 @@ export async function approveApplication(id: string) {
 
   const app = await loadApplication(supabase, id);
   if (!app) return;
-  if (app.status === "approved" || app.status === "converted") {
-    // Doppelklick oder zweiter Tab: nicht zweimal anlegen.
-    redirect(app.member_id ? `/admin/members/${app.member_id}` : "/admin/applications");
+
+  // Doppelklick-Schutz. Den Antrag SOFORT beanspruchen — mit einem
+  // bedingten Update, das nur greift, solange der Status noch 'new' ist.
+  // Die Datenbank entscheidet damit, welcher Klick gewinnt; ein "erst lesen,
+  // dann schreiben" reicht nicht, weil zwei parallele Klicks beide 'new'
+  // lesen, bevor einer schreibt — genau so entstanden doppelte Mitglieder.
+  const { data: claimed } = await supabase
+    .from("membership_applications")
+    .update({ status: "approved", reviewed_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("status", "new")
+    .select("id")
+    .maybeSingle();
+
+  if (!claimed) {
+    // Ein anderer Klick war schneller (oder der Antrag ist längst entschieden).
+    const current = await loadApplication(supabase, id);
+    redirect(
+      current?.member_id ? `/admin/members/${current.member_id}` : "/admin/applications",
+    );
   }
 
   const p = app.payload;
@@ -105,7 +122,15 @@ export async function approveApplication(id: string) {
     })
     .select("id")
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Anspruch zurückgeben, sonst hängt der Antrag als "angenommen" ohne
+    // Mitglied fest und lässt sich nicht erneut annehmen.
+    await supabase
+      .from("membership_applications")
+      .update({ status: "new", reviewed_at: null })
+      .eq("id", id);
+    throw new Error(error.message);
+  }
 
   // Was der Antrag über die Kontaktperson weiss, wandert ins interne Profil —
   // den Rest trägt die Firma über den Self-Service-Link selbst nach.
@@ -131,13 +156,10 @@ export async function approveApplication(id: string) {
   });
   if (tokenErr) throw new Error(tokenErr.message);
 
+  // Status steht schon (siehe Anspruch oben) — hier fehlt nur die Verknüpfung.
   await supabase
     .from("membership_applications")
-    .update({
-      status: "approved",
-      reviewed_at: new Date().toISOString(),
-      member_id: member.id,
-    })
+    .update({ member_id: member.id })
     .eq("id", id);
 
   // Ab hier ist die Aufnahme vollständig gespeichert. Alles, was noch folgt,
@@ -201,14 +223,23 @@ export async function rejectApplication(id: string, formData: FormData) {
 
   const reason = String(formData.get("reason") || "").trim().slice(0, 2000) || null;
 
-  await supabase
+  // Wie beim Annehmen: nur ablehnen, solange der Antrag offen ist. Sonst
+  // schickt ein Doppelklick zwei Absagen an dieselbe Firma.
+  const { data: claimed } = await supabase
     .from("membership_applications")
     .update({
       status: "rejected",
       rejection_reason: reason,
       reviewed_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("status", "new")
+    .select("id")
+    .maybeSingle();
+  if (!claimed) {
+    revalidatePath("/admin/applications");
+    return;
+  }
 
   // Die Absage nach der Antwort verschicken — der SMTP-Versand darf den Admin
   // nicht warten lassen (die Ablehnung selbst ist oben schon gespeichert).
@@ -237,7 +268,8 @@ export async function archiveApplication(id: string) {
   await supabase
     .from("membership_applications")
     .update({ status: "archived" })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("status", "new");
   revalidatePath("/admin/applications");
 }
 

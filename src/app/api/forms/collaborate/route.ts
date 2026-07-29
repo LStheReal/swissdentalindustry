@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const supabase = createAdminClient();
     const { error: dbErr } = await supabase
       .from("membership_applications")
-      .insert({ payload, status: "new" });
+      .insert({ payload, kind: "inquiry", status: "new" });
     if (dbErr) {
       console.error("save mitwirken failed:", dbErr);
       return NextResponse.json({ error: "Speichern fehlgeschlagen." }, { status: 500 });

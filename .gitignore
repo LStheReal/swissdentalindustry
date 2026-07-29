@@ -46,3 +46,6 @@ next-env.d.ts
 # Tests
 /test-results/
 /playwright-report/
+
+# Supabase CLI-Arbeitsdateien
+supabase/.temp/

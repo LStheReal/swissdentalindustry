@@ -64,6 +64,36 @@ describe("API-Routes: statische Invarianten", () => {
     expect(missing).toEqual([]);
   });
 
+  it("jede im Frontend aufgerufene /api-URL existiert auch als Route", () => {
+    // Regression: beim Umbenennen der öffentlichen Pfade auf Englisch wurde
+    // das Formular auf /api/forms/join umgestellt, die Route hiess aber noch
+    // /api/forms/mitglied-werden. Next liefert dann die _not-found-Seite mit
+    // Status 200 — der Absender sah "erfolgreich abgeschickt", gespeichert
+    // wurde nichts. Genau diese Lücke schliesst dieser Test.
+    const clientFiles: string[] = [];
+    const walkAll = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        if (name === "node_modules" || name === ".next") continue;
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) walkAll(full);
+        else if (/\.(ts|tsx)$/.test(name)) clientFiles.push(full);
+      }
+    };
+    walkAll(join(ROOT, "src"));
+
+    const missing: string[] = [];
+    for (const file of clientFiles) {
+      const src = readFileSync(file, "utf8");
+      for (const match of src.matchAll(/fetch\(\s*["'`](\/api\/[^"'`?]+)/g)) {
+        const apiPath = match[1].replace(/\/$/, "");
+        if (!postRoutes.includes(apiPath) && !routeFiles.some((f) => routeToPath(f) === apiPath)) {
+          missing.push(`${relative(ROOT, file)} → ${apiPath}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
   it("keine Route exportiert unbeabsichtigt DELETE/PUT/PATCH", () => {
     const writeRoutes = routeFiles
       .map((f) => ({ path: routeToPath(f), methods: exportedMethods(f) }))
@@ -78,12 +108,18 @@ describe("API-Routes: statische Invarianten", () => {
 let ipCounter = 0;
 const testIp = () => `198.51.100.${(ipCounter++ % 200) + 1}`;
 
+// Die Probe-Requests gehen gegen den echten Dev-Server — und der schreibt in
+// die Produktions-Datenbank. Deshalb tragen sie das Honeypot-Feld: die Route
+// durchläuft Rate-Limit, Parsing und Fehlerbehandlung wie immer, bricht dann
+// aber vor dem Speichern ab. Ohne das legt jeder Testlauf Müll-Anträge an.
+const PROBE_BODY = JSON.stringify({ _hp: "vitest-probe" });
+
 describe.skipIf(!serverUp)("API-Routes: Laufzeitverhalten", () => {
   it.each(postRoutes)("%s crasht nicht bei leerem Body", async (path) => {
     const res = await fetch(`${API_BASE}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-forwarded-for": testIp() },
-      body: "{}",
+      body: PROBE_BODY,
     });
     expect(res.status, `${path} → ${res.status}`).toBeLessThan(500);
   });

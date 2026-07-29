@@ -1,126 +1,91 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MembershipApplication } from "@/lib/types";
+import { ApplicationCard } from "./ApplicationCard";
 import {
-  convertApplication,
+  approveApplication,
   archiveApplication,
   deleteApplication,
+  rejectApplication,
 } from "./actions";
 
-const STATUS_LABEL: Record<string, string> = {
-  new: "Neu",
-  converted: "Umgewandelt",
-  archived: "Archiviert",
-};
+type Tab = "open" | "decided" | "inquiries";
 
-type ApplicationsPageProps = {
+const TABS: { key: Tab; href: string; label: string }[] = [
+  { key: "open", href: "/admin/applications", label: "Offen" },
+  { key: "decided", href: "/admin/applications?tab=decided", label: "Entschieden" },
+  { key: "inquiries", href: "/admin/applications?tab=inquiries", label: "Kontaktanfragen" },
+];
+
+export default async function ApplicationsPage({
+  searchParams,
+}: {
   searchParams?: Promise<{ tab?: string }>;
-};
+}) {
+  const params = (await searchParams) ?? {};
+  const tab: Tab =
+    params.tab === "decided" ? "decided" : params.tab === "inquiries" ? "inquiries" : "open";
 
-export default async function ApplicationsPage({ searchParams }: ApplicationsPageProps) {
-  const resolvedSearchParams = (await searchParams) ?? {};
-  const currentTab = resolvedSearchParams.tab === "archived" ? "archived" : "active";
   const supabase = await createClient();
   let query = supabase
     .from("membership_applications")
     .select("*")
     .order("created_at", { ascending: false });
 
-  query =
-    currentTab === "archived"
-      ? query.eq("status", "archived")
-      : query.neq("status", "archived");
+  if (tab === "inquiries") {
+    // Kontakt-/Mitwirken-Formulare — hier gibt es nichts anzunehmen.
+    query = query.eq("kind", "inquiry");
+  } else if (tab === "decided") {
+    query = query.eq("kind", "membership").in("status", ["approved", "converted", "rejected", "archived"]);
+  } else {
+    query = query.eq("kind", "membership").eq("status", "new");
+  }
 
   const { data } = await query;
   const apps = (data ?? []) as MembershipApplication[];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Mitglieds-Anträge</h1>
+      <div>
+        <h1 className="text-2xl font-semibold">Mitglieds-Anträge</h1>
+        <p className="mt-1 text-[13px] text-[#6b6b73]">
+          Angenommene Anträge legen die Firma an, schalten sie live und schicken der
+          Kontaktperson den Self-Service-Link. Abgelehnte erhalten eine Absage.
+        </p>
+      </div>
 
       <div className="inline-flex overflow-hidden rounded-[3px] border border-[#c4c4cc] bg-white">
-        <a
-          href="/admin/applications"
-          className={`px-4 py-2 text-[12.5px] font-semibold ${
-            currentTab === "active"
-              ? "bg-[#0a0a0b] text-white"
-              : "text-[#0a0a0b] hover:bg-[#fafaf8]"
-          }`}
-        >
-          Aktiv
-        </a>
-        <a
-          href="/admin/applications?tab=archived"
-          className={`border-l border-[#c4c4cc] px-4 py-2 text-[12.5px] font-semibold ${
-            currentTab === "archived"
-              ? "bg-[#0a0a0b] text-white"
-              : "text-[#0a0a0b] hover:bg-[#fafaf8]"
-          }`}
-        >
-          Archiviert
-        </a>
+        {TABS.map((t, i) => (
+          <a
+            key={t.key}
+            href={t.href}
+            className={`px-4 py-2 text-[12.5px] font-semibold ${i > 0 ? "border-l border-[#c4c4cc]" : ""} ${
+              tab === t.key ? "bg-[#0a0a0b] text-white" : "text-[#0a0a0b] hover:bg-[#fafaf8]"
+            }`}
+          >
+            {t.label}
+          </a>
+        ))}
       </div>
 
       {apps.length === 0 ? (
-        <p className="text-sm text-slate-500">
-          {currentTab === "archived"
-            ? "Keine archivierten Anträge vorhanden."
-            : "Keine aktiven Anträge vorhanden."}
+        <p className="text-sm text-[#6b6b73]">
+          {tab === "open"
+            ? "Keine offenen Anträge."
+            : tab === "decided"
+              ? "Noch keine entschiedenen Anträge."
+              : "Keine Kontaktanfragen."}
         </p>
       ) : (
         <ul className="space-y-4">
           {apps.map((app) => (
-            <li
+            <ApplicationCard
               key={app.id}
-              className="rounded-xl border border-slate-200 bg-white p-5"
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs text-slate-500">
-                  {new Date(app.created_at).toLocaleString("de-CH")} ·{" "}
-                  <span className="font-medium text-slate-700">
-                    {STATUS_LABEL[app.status] ?? app.status}
-                  </span>
-                </p>
-                <div className="flex gap-2">
-                  {app.status === "new" && (
-                    <form action={convertApplication.bind(null, app.id)}>
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
-                      >
-                        In Mitglied umwandeln
-                      </button>
-                    </form>
-                  )}
-                  {app.status !== "archived" && (
-                    <form action={archiveApplication.bind(null, app.id)}>
-                      <button
-                        type="submit"
-                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
-                      >
-                        Archivieren
-                      </button>
-                    </form>
-                  )}
-                  <form action={deleteApplication.bind(null, app.id)}>
-                    <button
-                      type="submit"
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      Löschen
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-                {Object.entries(app.payload).map(([k, v]) => (
-                  <div key={k} className="flex gap-2">
-                    <dt className="font-medium text-slate-500">{k}:</dt>
-                    <dd className="text-slate-800">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </li>
+              app={app}
+              approveAction={approveApplication.bind(null, app.id)}
+              rejectAction={rejectApplication.bind(null, app.id)}
+              archiveAction={archiveApplication.bind(null, app.id)}
+              deleteAction={deleteApplication.bind(null, app.id)}
+            />
           ))}
         </ul>
       )}

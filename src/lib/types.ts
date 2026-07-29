@@ -170,11 +170,56 @@ export interface News {
   updated_at: string;
 }
 
-export type ApplicationStatus = "new" | "converted" | "archived";
+// 'converted' stammt aus dem alten Flow (Antrag wurde ohne Prüfung sofort zum
+// Mitglied) und bleibt nur für Altbestand gültig.
+export type ApplicationStatus =
+  | "new"
+  | "approved"
+  | "rejected"
+  | "archived"
+  | "converted";
+
+/** Antrag auf Mitgliedschaft vs. allgemeine Kontakt-/Mitwirken-Anfrage. */
+export type ApplicationKind = "membership" | "inquiry";
+
+/**
+ * Felder, die der öffentliche Mitgliedsantrag erhebt. Alles, was später auf der
+ * Website steht, wird hier schon abgefragt — damit der Admin beim Prüfen genau
+ * das sieht, was live gehen würde, und nichts nachträglich erraten muss.
+ */
+export const APPLICATION_REQUIRED_FIELDS = [
+  "company",
+  "contact_person",
+  "email",
+  "address",
+  "description",
+] as const;
+
+export interface ApplicationPayload {
+  /** Offizieller Firmenname — wird als Mitgliedsname angezeigt. */
+  company?: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  website_url?: string;
+  address?: string;
+  description?: string;
+  /** Freitext an das Sekretariat, wird nicht veröffentlicht. */
+  message?: string;
+  source?: string;
+  /** Sprache des Formulars — bestimmt die Sprache von Zusage/Ablehnung. */
+  locale?: string;
+  [key: string]: string | undefined;
+}
 
 export interface MembershipApplication {
   id: string;
-  payload: Record<string, string>;
+  payload: ApplicationPayload;
+  kind: ApplicationKind;
   status: ApplicationStatus;
+  logo_url: string | null;
+  rejection_reason: string | null;
+  reviewed_at: string | null;
+  member_id: string | null;
   created_at: string;
 }

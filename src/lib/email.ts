@@ -4,11 +4,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   LOGO_CID,
   adminInviteMailSubject,
+  applicationApprovedSubject,
+  applicationRejectedSubject,
   changeApprovedMailSubject,
   renderAdminChangeMail,
   renderAdminContactInquiry,
   renderAdminInviteMail,
   renderAdminMembershipApplication,
+  renderApplicationApprovedMail,
+  renderApplicationRejectedMail,
   renderChangeApprovedMail,
   renderWelcomeMail,
   welcomeMailSubject,
@@ -148,6 +152,48 @@ export async function sendMemberWelcomeMail(args: {
   await sendMail({
     to: args.to,
     subject: welcomeMailSubject(args.locale ?? "de"),
+    text,
+    html,
+    attachments: [logoAttachment()],
+  });
+}
+
+/** Zusage auf einen Mitgliedsantrag — enthält den Self-Service-Link. */
+export async function sendApplicationApprovedMail(args: {
+  to: string;
+  memberName: string;
+  editUrl: string;
+  locale?: Locale;
+}) {
+  const { html, text } = renderApplicationApprovedMail({
+    memberName: args.memberName,
+    editUrl: args.editUrl,
+    locale: args.locale,
+  });
+  await sendMail({
+    to: args.to,
+    subject: applicationApprovedSubject(args.locale ?? "de"),
+    text,
+    html,
+    attachments: [logoAttachment()],
+  });
+}
+
+/** Absage auf einen Mitgliedsantrag, optional mit Begründung. */
+export async function sendApplicationRejectedMail(args: {
+  to: string;
+  memberName: string;
+  reason?: string | null;
+  locale?: Locale;
+}) {
+  const { html, text } = renderApplicationRejectedMail({
+    memberName: args.memberName,
+    reason: args.reason,
+    locale: args.locale,
+  });
+  await sendMail({
+    to: args.to,
+    subject: applicationRejectedSubject(args.locale ?? "de"),
     text,
     html,
     attachments: [logoAttachment()],

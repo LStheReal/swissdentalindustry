@@ -66,7 +66,7 @@ function brandRow(): string {
   </table>`;
 }
 
-function metaLabel(text: string, dotColor = COLORS.red): string {
+function metaLabel(text: string, dotColor: string = COLORS.red): string {
   return `
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 14px;">
     <tr>
@@ -995,5 +995,232 @@ export function renderAdminInviteMail(input: AdminInviteMailInput): {
     `Konto: ${input.email}\n` +
     `Zugang: Superadmin\n\n` +
     `Freundliche Grüsse\nSwiss Dental Industry · SVDI`;
+  return { html, text };
+}
+
+// ─── Template: Antrag angenommen ────────────────────────────────────────────
+
+interface ApplicationApprovedStrings {
+  eyebrow: string;
+  greeting: (name: string) => string;
+  intro: string;
+  internalNote: string;
+  cta: string;
+  fallback: string;
+  signOff: string;
+  preheader: (name: string) => string;
+  subject: string;
+}
+
+const APPLICATION_APPROVED: Record<Locale, ApplicationApprovedStrings> = {
+  de: {
+    eyebrow: "Mitgliedschaft · Zusage",
+    greeting: (name) => `Willkommen bei<br>Swiss Dental Industry.`,
+    intro:
+      "Ihr Antrag wurde geprüft und angenommen — Ihre Firma ist ab sofort im Mitgliederverzeichnis eingetragen.",
+    internalNote:
+      "Bitte ergänzen Sie über den folgenden Link noch Ihre internen Angaben (Kontaktperson, Anschrift, Direktkontakt). Über denselben Link können Sie Ihr Profil jederzeit aktualisieren — Änderungen werden vom Sekretariat geprüft und danach live geschaltet.",
+    cta: "Angaben ergänzen",
+    fallback: "Falls der Button nicht funktioniert",
+    signOff: "Freundliche Grüsse",
+    preheader: (name) => `Ihr Mitgliedsantrag für ${name} wurde angenommen.`,
+    subject: "Willkommen – Ihr Mitgliedsantrag wurde angenommen",
+  },
+  fr: {
+    eyebrow: "Adhésion · Acceptation",
+    greeting: () => `Bienvenue chez<br>Swiss Dental Industry.`,
+    intro:
+      "Votre demande a été examinée et acceptée — votre entreprise figure désormais dans le répertoire des membres.",
+    internalNote:
+      "Merci de compléter vos données internes (personne de contact, adresse, contact direct) via le lien ci-dessous. Ce même lien vous permet de mettre à jour votre profil à tout moment — les modifications sont vérifiées par le secrétariat avant publication.",
+    cta: "Compléter les données",
+    fallback: "Si le bouton ne fonctionne pas",
+    signOff: "Cordiales salutations",
+    preheader: (name) => `Votre demande d'adhésion pour ${name} a été acceptée.`,
+    subject: "Bienvenue – votre demande d'adhésion a été acceptée",
+  },
+  it: {
+    eyebrow: "Adesione · Accettazione",
+    greeting: () => `Benvenuti in<br>Swiss Dental Industry.`,
+    intro:
+      "La vostra richiesta è stata esaminata e accettata — la vostra azienda è ora iscritta nell'elenco dei membri.",
+    internalNote:
+      "Vi preghiamo di completare i vostri dati interni (persona di contatto, indirizzo, contatto diretto) tramite il link seguente. Lo stesso link vi permette di aggiornare il profilo in qualsiasi momento — le modifiche vengono verificate dalla segreteria prima della pubblicazione.",
+    cta: "Completare i dati",
+    fallback: "Se il pulsante non funziona",
+    signOff: "Cordiali saluti",
+    preheader: (name) => `La vostra richiesta di adesione per ${name} è stata accettata.`,
+    subject: "Benvenuti – la vostra richiesta di adesione è stata accettata",
+  },
+  en: {
+    eyebrow: "Membership · Accepted",
+    greeting: () => `Welcome to<br>Swiss Dental Industry.`,
+    intro:
+      "Your application has been reviewed and accepted — your company is now listed in the member directory.",
+    internalNote:
+      "Please complete your internal details (contact person, address, direct contact) using the link below. The same link lets you update your profile at any time — changes are reviewed by the secretariat before going live.",
+    cta: "Complete your details",
+    fallback: "If the button doesn't work",
+    signOff: "Kind regards",
+    preheader: (name) => `Your membership application for ${name} has been accepted.`,
+    subject: "Welcome – your membership application was accepted",
+  },
+};
+
+export interface ApplicationApprovedMailInput {
+  memberName: string;
+  editUrl: string;
+  locale?: Locale;
+}
+
+export function applicationApprovedSubject(locale: Locale = "de"): string {
+  return APPLICATION_APPROVED[locale].subject;
+}
+
+export function renderApplicationApprovedMail(input: ApplicationApprovedMailInput): {
+  html: string;
+  text: string;
+} {
+  const s = APPLICATION_APPROVED[input.locale ?? "de"];
+  const body = `
+    ${brandRow()}
+    ${metaLabel(s.eyebrow)}
+    <h2 style="font-family:${ARCHIVO};font-size:34px;line-height:1.05;letter-spacing:-0.025em;font-weight:800;margin:0 0 22px;color:${COLORS.ink};">${s.greeting(input.memberName)}</h2>
+    ${paragraph(`<strong style="color:${COLORS.ink};">${esc(input.memberName)}</strong> — ${esc(s.intro)}`, COLORS.ink2, "0 0 14px")}
+    ${paragraph(s.internalNote, COLORS.ink3, "0 0 28px")}
+    ${ctaButton(input.editUrl, s.cta)}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:26px 0 0;">
+      <tr>
+        <td style="background:${COLORS.surface2};border:1px solid ${COLORS.line2};border-radius:4px;padding:16px 18px;">
+          <div style="font-family:${MONO};font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:${COLORS.mute};font-weight:700;margin-bottom:6px;">${esc(s.fallback)}</div>
+          <div style="font-family:${MONO};font-size:12.5px;color:${COLORS.ink};word-break:break-all;line-height:1.5;">${esc(input.editUrl)}</div>
+        </td>
+      </tr>
+    </table>
+    ${localizedSignOff(s.signOff)}
+  `;
+  const html = shell({
+    preheader: s.preheader(input.memberName),
+    accent: "red",
+    bodyHtml: body,
+    footerHtml: brandFooter(),
+  });
+  const text =
+    `${s.greeting(input.memberName).replace(/<br>/g, " ").replace(/<[^>]+>/g, "")}\n\n` +
+    `${input.memberName} — ${s.intro}\n\n${s.internalNote}\n\n${input.editUrl}\n\n` +
+    `${s.signOff}\nSwiss Dental Industry · SVDI`;
+  return { html, text };
+}
+
+// ─── Template: Antrag abgelehnt ─────────────────────────────────────────────
+
+interface ApplicationRejectedStrings {
+  eyebrow: string;
+  heading: string;
+  intro: (name: string) => string;
+  reasonLabel: string;
+  closing: string;
+  signOff: string;
+  preheader: string;
+  subject: string;
+}
+
+const APPLICATION_REJECTED: Record<Locale, ApplicationRejectedStrings> = {
+  de: {
+    eyebrow: "Mitgliedschaft · Entscheid",
+    heading: "Zu Ihrem Mitgliedsantrag.",
+    intro: (name) =>
+      `Vielen Dank für Ihr Interesse an einer Mitgliedschaft bei Swiss Dental Industry. Nach Prüfung des Antrags für ${name} können wir diesem derzeit leider nicht entsprechen.`,
+    reasonLabel: "Begründung",
+    closing:
+      "Bei Rückfragen antworten Sie einfach auf diese E-Mail — die Geschäftsstelle meldet sich gerne bei Ihnen.",
+    signOff: "Freundliche Grüsse",
+    preheader: "Entscheid zu Ihrem Mitgliedsantrag.",
+    subject: "Ihr Mitgliedsantrag – Swiss Dental Industry",
+  },
+  fr: {
+    eyebrow: "Adhésion · Décision",
+    heading: "Concernant votre demande d'adhésion.",
+    intro: (name) =>
+      `Merci de l'intérêt que vous portez à Swiss Dental Industry. Après examen de la demande pour ${name}, nous ne pouvons malheureusement pas y donner suite pour le moment.`,
+    reasonLabel: "Motif",
+    closing:
+      "Pour toute question, répondez simplement à cet e-mail — le secrétariat se tient à votre disposition.",
+    signOff: "Cordiales salutations",
+    preheader: "Décision concernant votre demande d'adhésion.",
+    subject: "Votre demande d'adhésion – Swiss Dental Industry",
+  },
+  it: {
+    eyebrow: "Adesione · Decisione",
+    heading: "In merito alla vostra richiesta.",
+    intro: (name) =>
+      `Grazie per l'interesse dimostrato verso Swiss Dental Industry. Dopo aver esaminato la richiesta per ${name}, purtroppo non possiamo accoglierla al momento.`,
+    reasonLabel: "Motivazione",
+    closing:
+      "Per domande potete semplicemente rispondere a questa e-mail — la segreteria è a vostra disposizione.",
+    signOff: "Cordiali saluti",
+    preheader: "Decisione sulla vostra richiesta di adesione.",
+    subject: "La vostra richiesta di adesione – Swiss Dental Industry",
+  },
+  en: {
+    eyebrow: "Membership · Decision",
+    heading: "About your membership application.",
+    intro: (name) =>
+      `Thank you for your interest in Swiss Dental Industry. After reviewing the application for ${name}, we are unfortunately unable to accept it at this time.`,
+    reasonLabel: "Reason",
+    closing:
+      "If you have questions, simply reply to this email — the secretariat will be happy to help.",
+    signOff: "Kind regards",
+    preheader: "Decision on your membership application.",
+    subject: "Your membership application – Swiss Dental Industry",
+  },
+};
+
+export interface ApplicationRejectedMailInput {
+  memberName: string;
+  reason?: string | null;
+  locale?: Locale;
+}
+
+export function applicationRejectedSubject(locale: Locale = "de"): string {
+  return APPLICATION_REJECTED[locale].subject;
+}
+
+export function renderApplicationRejectedMail(input: ApplicationRejectedMailInput): {
+  html: string;
+  text: string;
+} {
+  const s = APPLICATION_REJECTED[input.locale ?? "de"];
+  const reasonBlock = input.reason
+    ? `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:22px 0 0;">
+      <tr>
+        <td style="background:${COLORS.surface2};border:1px solid ${COLORS.line2};border-radius:4px;padding:16px 18px;">
+          <div style="font-family:${MONO};font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:${COLORS.mute};font-weight:700;margin-bottom:8px;">${esc(s.reasonLabel)}</div>
+          <div style="font-family:${ARCHIVO};font-size:14.5px;line-height:1.6;color:${COLORS.ink};white-space:pre-wrap;">${esc(input.reason)}</div>
+        </td>
+      </tr>
+    </table>`
+    : "";
+
+  const body = `
+    ${brandRow()}
+    ${metaLabel(s.eyebrow, COLORS.mute)}
+    <h2 style="font-family:${ARCHIVO};font-size:30px;line-height:1.1;letter-spacing:-0.025em;font-weight:800;margin:0 0 22px;color:${COLORS.ink};">${esc(s.heading)}</h2>
+    ${paragraph(s.intro(input.memberName), COLORS.ink2, "0 0 14px")}
+    ${reasonBlock}
+    ${paragraph(s.closing, COLORS.ink3, "22px 0 0")}
+    ${localizedSignOff(s.signOff)}
+  `;
+  const html = shell({
+    preheader: s.preheader,
+    accent: "ink",
+    bodyHtml: body,
+    footerHtml: brandFooter(),
+  });
+  const text =
+    `${s.heading}\n\n${s.intro(input.memberName)}\n\n` +
+    (input.reason ? `${s.reasonLabel}: ${input.reason}\n\n` : "") +
+    `${s.closing}\n\n${s.signOff}\nSwiss Dental Industry · SVDI`;
   return { html, text };
 }

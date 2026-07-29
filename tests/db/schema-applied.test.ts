@@ -38,7 +38,10 @@ describe.skipIf(!up)("Live-Schema entspricht dem Code", () => {
     ["news", "id,title,body,image_url,source_lang,is_published,published_at,link_url,youtube_url"],
     ["member_edit_tokens", "token,member_id,is_active"],
     ["member_change_requests", "id,member_id,proposed,status,submitted_at"],
-    ["membership_applications", "id,payload,status"],
+    [
+      "membership_applications",
+      "id,payload,status,kind,logo_url,rejection_reason,reviewed_at,member_id",
+    ],
     ["admins", "user_id"],
     ["app_settings", "id,mitwirken_email,membership_email,admin_notification_email"],
   ])("%s existiert mit den erwarteten Spalten", async (table, columns) => {

@@ -85,6 +85,15 @@ function applicationName(app: MembershipApplication) {
   return "Neuer Mitgliedsantrag";
 }
 
+/** Absender einer Kontaktanfrage: Person zuerst, dann Firma, dann E-Mail. */
+function inquiryName(app: MembershipApplication) {
+  for (const key of ["name", "contact_person", "company", "email"]) {
+    const value = app.payload[key];
+    if (value?.trim()) return value.trim();
+  }
+  return "Unbekannter Absender";
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { locale, t } = await getAdminT();
@@ -96,6 +105,8 @@ export default async function DashboardPage() {
     applications,
     pendingRequestsResult,
     newApplicationsResult,
+    inquiries,
+    newInquiriesResult,
   ] = await Promise.all([
     supabase.from("members").select("*", { count: "exact", head: true }),
     supabase
@@ -103,9 +114,13 @@ export default async function DashboardPage() {
       .select("*", { count: "exact", head: true })
       .eq("status", "pending"),
     supabase.from("news").select("*", { count: "exact", head: true }),
+    // Nur echte Mitgliedsanträge — Kontaktanfragen liegen in derselben
+    // Tabelle und wurden hier bisher mitgezählt, weshalb auf dem Dashboard
+    // "möchte Mitglied werden" stand, obwohl es eine Kontaktanfrage war.
     supabase
       .from("membership_applications")
       .select("*", { count: "exact", head: true })
+      .eq("kind", "membership")
       .eq("status", "new"),
     supabase
       .from("member_change_requests")
@@ -116,6 +131,19 @@ export default async function DashboardPage() {
     supabase
       .from("membership_applications")
       .select("*")
+      .eq("kind", "membership")
+      .eq("status", "new")
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("membership_applications")
+      .select("*", { count: "exact", head: true })
+      .eq("kind", "inquiry")
+      .eq("status", "new"),
+    supabase
+      .from("membership_applications")
+      .select("*")
+      .eq("kind", "inquiry")
       .eq("status", "new")
       .order("created_at", { ascending: false })
       .limit(5),
@@ -123,6 +151,7 @@ export default async function DashboardPage() {
 
   const pendingCount = pending.count ?? 0;
   const applicationCount = applications.count ?? 0;
+  const inquiryCount = inquiries.count ?? 0;
 
   const cards = [
     {
@@ -161,12 +190,22 @@ export default async function DashboardPage() {
       trendColor: applicationCount ? "text-[#e1000f]" : "text-[#1f8a5b]",
       href: "/admin/applications",
     },
+    {
+      code: "KON",
+      label: t("dashboard.inquiries"),
+      value: inquiryCount,
+      sub: t("dashboard.openInquiries"),
+      trend: inquiryCount ? t("dashboard.new") : "OK",
+      trendColor: inquiryCount ? "text-[#e1000f]" : "text-[#1f8a5b]",
+      href: "/admin/applications?tab=inquiries",
+    },
   ];
 
   const pendingRequests =
     (pendingRequestsResult.data ?? []) as unknown as PendingChangeRequest[];
   const newApplications =
     (newApplicationsResult.data ?? []) as MembershipApplication[];
+  const newInquiries = (newInquiriesResult.data ?? []) as MembershipApplication[];
   const activity = [
     ...pendingRequests.map((request) => ({
       id: `change-${request.id}`,
@@ -187,6 +226,16 @@ export default async function DashboardPage() {
       status: t("dashboard.new"),
       statusColor: "text-[#e1000f]",
       date: application.created_at,
+    })),
+    ...newInquiries.map((inquiry) => ({
+      id: `inquiry-${inquiry.id}`,
+      href: "/admin/applications?tab=inquiries",
+      time: formatActivityTime(inquiry.created_at, locale),
+      tag: "KO",
+      text: `${inquiryName(inquiry)} ${t("dashboard.sentInquiry")}`,
+      status: t("dashboard.new"),
+      statusColor: "text-[#e1000f]",
+      date: inquiry.created_at,
     })),
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

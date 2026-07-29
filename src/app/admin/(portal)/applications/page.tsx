@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MembershipApplication } from "@/lib/types";
 import { ApplicationCard } from "./ApplicationCard";
+import { InquiryCard } from "./InquiryCard";
 import {
   approveApplication,
   archiveApplication,
@@ -32,7 +33,8 @@ export default async function ApplicationsPage({
     .order("created_at", { ascending: false });
 
   if (tab === "inquiries") {
-    // Kontakt-/Mitwirken-Formulare — hier gibt es nichts anzunehmen.
+    // Kontakt-/Mitwirken-Formulare — hier gibt es nichts anzunehmen, nur zu
+    // antworten. Offene zuerst, erledigte darunter.
     query = query.eq("kind", "inquiry");
   } else if (tab === "decided") {
     query = query.eq("kind", "membership").in("status", ["approved", "converted", "rejected", "archived"]);
@@ -41,17 +43,38 @@ export default async function ApplicationsPage({
   }
 
   const { data } = await query;
-  const apps = (data ?? []) as MembershipApplication[];
+  let apps = (data ?? []) as MembershipApplication[];
+
+  if (tab === "inquiries") {
+    // Unbeantwortete nach oben, erledigte darunter — innerhalb der Gruppen
+    // bleibt die Reihenfolge der Abfrage (neueste zuerst).
+    apps = [
+      ...apps.filter((a) => a.status === "new"),
+      ...apps.filter((a) => a.status !== "new"),
+    ];
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Mitglieds-Anträge</h1>
+        <h1 className="text-2xl font-semibold">
+          {tab === "inquiries" ? "Kontaktanfragen" : "Mitglieds-Anträge"}
+        </h1>
         <p className="mt-1 text-[13px] text-[#6b6b73]">
-          Angenommene Anträge legen die Firma an, schalten sie live und schicken der
-          Kontaktperson den Self-Service-Link. Abgelehnte erhalten eine Absage.
-          Die Übersetzung der Beschreibung und der Mailversand laufen im Hintergrund
-          weiter — bis die Übersetzung da ist, steht überall der Originaltext.
+          {tab === "inquiries" ? (
+            <>
+              Nachrichten aus dem Kontakt- und dem Mitwirken-Formular. Hier gibt es
+              nichts freizuschalten — „Antworten“ öffnet dein Mailprogramm mit der
+              zitierten Nachricht.
+            </>
+          ) : (
+            <>
+              Angenommene Anträge legen die Firma an, schalten sie live und schicken der
+              Kontaktperson den Self-Service-Link. Abgelehnte erhalten eine Absage.
+              Die Übersetzung der Beschreibung und der Mailversand laufen im Hintergrund
+              weiter — bis die Übersetzung da ist, steht überall der Originaltext.
+            </>
+          )}
         </p>
       </div>
 
@@ -79,16 +102,25 @@ export default async function ApplicationsPage({
         </p>
       ) : (
         <ul className="space-y-4">
-          {apps.map((app) => (
-            <ApplicationCard
-              key={app.id}
-              app={app}
-              approveAction={approveApplication.bind(null, app.id)}
-              rejectAction={rejectApplication.bind(null, app.id)}
-              archiveAction={archiveApplication.bind(null, app.id)}
-              deleteAction={deleteApplication.bind(null, app.id)}
-            />
-          ))}
+          {apps.map((app) =>
+            app.kind === "inquiry" ? (
+              <InquiryCard
+                key={app.id}
+                app={app}
+                archiveAction={archiveApplication.bind(null, app.id)}
+                deleteAction={deleteApplication.bind(null, app.id)}
+              />
+            ) : (
+              <ApplicationCard
+                key={app.id}
+                app={app}
+                approveAction={approveApplication.bind(null, app.id)}
+                rejectAction={rejectApplication.bind(null, app.id)}
+                archiveAction={archiveApplication.bind(null, app.id)}
+                deleteAction={deleteApplication.bind(null, app.id)}
+              />
+            ),
+          )}
         </ul>
       )}
     </div>

@@ -143,6 +143,24 @@ const DICT = {
     it: "desidera diventare membro",
     en: "wants to become a member",
   },
+  "dashboard.sentInquiry": {
+    de: "hat eine Kontaktanfrage geschickt",
+    fr: "a envoyé une demande de contact",
+    it: "ha inviato una richiesta di contatto",
+    en: "sent a contact inquiry",
+  },
+  "dashboard.inquiries": {
+    de: "Kontaktanfragen",
+    fr: "Demandes de contact",
+    it: "Richieste di contatto",
+    en: "Contact inquiries",
+  },
+  "dashboard.openInquiries": {
+    de: "Unbeantwortete Anfragen",
+    fr: "Demandes sans réponse",
+    it: "Richieste senza risposta",
+    en: "Unanswered inquiries",
+  },
   "dashboard.noActivity": {
     de: "Gerade keine neuen Anfragen oder offenen Änderungsvorschläge.",
     fr: "Aucune nouvelle demande ni modification en attente pour le moment.",

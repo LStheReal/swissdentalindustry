@@ -1,11 +1,12 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { translateToAllAuto } from "@/lib/translate";
+import { translateToAll } from "@/lib/translate";
 import { geocodeAddress } from "@/lib/geocode";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { saveInternalProfile } from "@/lib/member-internal-profiles";
@@ -19,6 +20,7 @@ import {
   type ApplicationPayload,
   type Locale,
   type MembershipApplication,
+  type Multilingual,
 } from "@/lib/types";
 
 /**
@@ -75,25 +77,28 @@ export async function approveApplication(id: string) {
   const address = (p.address || "").trim() || null;
   const email = (p.email || "").trim() || null;
 
-  const [descResult, geo] = await Promise.all([
-    translateToAllAuto(description, "de"),
-    address ? geocodeAddress(address) : Promise.resolve(null),
-  ]);
-  const sourceLang: Locale = descResult.sourceLang;
+  // Die Sprache steht im Antrag — die Spracherkennung via Claude (~4s) entfällt.
+  const sourceLang = applicantLocale(p);
+
+  // Erst mit dem Originaltext in allen vier Slots anlegen, damit sofort etwas
+  // Lesbares dasteht. Die echten Übersetzungen kommen unten in `after()` nach.
+  const provisionalDescription = Object.fromEntries(
+    LOCALES.map((l) => [l, description]),
+  ) as Multilingual;
 
   const { data: member, error } = await supabase
     .from("members")
     .insert({
       name,
       logo_url: app.logo_url,
-      description: descResult.ml,
+      description: provisionalDescription,
       address,
       phone: (p.phone || "").trim() || null,
       email,
       website_url: sanitizeExternalUrl(p.website_url ?? null),
-      lat: geo?.lat ?? null,
-      lng: geo?.lng ?? null,
-      canton: geo?.canton ?? null,
+      lat: null,
+      lng: null,
+      canton: null,
       source_lang: sourceLang,
       status: "published",
       is_active: true,
@@ -135,22 +140,48 @@ export async function approveApplication(id: string) {
     })
     .eq("id", id);
 
-  // Zusage verschicken. Ein Mail-Fehler darf die Aufnahme nicht rückgängig
-  // machen — der Admin kann den Link im Mitglieder-Detail erneut senden.
-  if (email) {
+  // Ab hier ist die Aufnahme vollständig gespeichert. Alles, was noch folgt,
+  // sind langsame Netzwerk-Aufrufe (Claude ~7s, Geocoding, SMTP) — die laufen
+  // nach der Antwort weiter, damit der Admin nicht wartet. `after` läuft auch
+  // dann, wenn direkt danach `redirect()` aufgerufen wird.
+  after(async () => {
     try {
-      const locale = applicantLocale(p);
-      const localePrefix = locale !== "de" ? `${locale}/` : "";
-      await sendApplicationApprovedMail({
-        to: email,
-        memberName: name,
-        editUrl: `${appBaseUrl()}/${localePrefix}edit/${token}`,
-        locale,
-      });
+      const [ml, geo] = await Promise.all([
+        description ? translateToAll(description, sourceLang) : Promise.resolve(null),
+        address ? geocodeAddress(address) : Promise.resolve(null),
+      ]);
+      const patch: Record<string, unknown> = {};
+      if (ml) patch.description = ml;
+      if (geo) {
+        patch.lat = geo.lat;
+        patch.lng = geo.lng;
+        patch.canton = geo.canton;
+      }
+      if (Object.keys(patch).length > 0) {
+        await supabase.from("members").update(patch).eq("id", member.id);
+        revalidatePath("/members");
+        revalidatePath(`/members/${member.id}`);
+      }
     } catch (err) {
-      console.error("application approved mail failed:", err);
+      console.error("post-approval enrichment failed:", err);
     }
-  }
+
+    // Zusage verschicken. Ein Mail-Fehler darf die Aufnahme nicht rückgängig
+    // machen — der Admin kann den Link im Mitglieder-Detail erneut senden.
+    if (email) {
+      try {
+        const localePrefix = sourceLang !== "de" ? `${sourceLang}/` : "";
+        await sendApplicationApprovedMail({
+          to: email,
+          memberName: name,
+          editUrl: `${appBaseUrl()}/${localePrefix}edit/${token}`,
+          locale: sourceLang,
+        });
+      } catch (err) {
+        console.error("application approved mail failed:", err);
+      }
+    }
+  });
 
   revalidatePath("/admin/applications");
   revalidatePath("/admin/members");
@@ -179,18 +210,22 @@ export async function rejectApplication(id: string, formData: FormData) {
     })
     .eq("id", id);
 
+  // Die Absage nach der Antwort verschicken — der SMTP-Versand darf den Admin
+  // nicht warten lassen (die Ablehnung selbst ist oben schon gespeichert).
   const email = (app.payload.email || "").trim();
   if (email) {
-    try {
-      await sendApplicationRejectedMail({
-        to: email,
-        memberName: (app.payload.company || "").trim() || email,
-        reason,
-        locale: applicantLocale(app.payload),
-      });
-    } catch (err) {
-      console.error("application rejected mail failed:", err);
-    }
+    after(async () => {
+      try {
+        await sendApplicationRejectedMail({
+          to: email,
+          memberName: (app.payload.company || "").trim() || email,
+          reason,
+          locale: applicantLocale(app.payload),
+        });
+      } catch (err) {
+        console.error("application rejected mail failed:", err);
+      }
+    });
   }
 
   revalidatePath("/admin/applications");

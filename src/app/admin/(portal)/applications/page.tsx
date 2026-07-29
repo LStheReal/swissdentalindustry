@@ -50,6 +50,8 @@ export default async function ApplicationsPage({
         <p className="mt-1 text-[13px] text-[#6b6b73]">
           Angenommene Anträge legen die Firma an, schalten sie live und schicken der
           Kontaktperson den Self-Service-Link. Abgelehnte erhalten eine Absage.
+          Die Übersetzung der Beschreibung und der Mailversand laufen im Hintergrund
+          weiter — bis die Übersetzung da ist, steht überall der Originaltext.
         </p>
       </div>
 

@@ -99,6 +99,13 @@ async function loadTestModeFilter(): Promise<{ enabled: boolean; allow: Set<stri
 export async function sendMail({ to, subject, text, html, replyTo, attachments }: MailInput) {
   const from = process.env.MAIL_FROM || process.env.SMTP_USER;
 
+  // Ohne konfigurierten Host würde nodemailer erst in einen Verbindungs-Timeout
+  // laufen — das hat Server-Actions sekundenlang blockiert. Lieber sofort und
+  // deutlich scheitern; die Aufrufer behandeln Mailfehler bereits als unkritisch.
+  if (!process.env.SMTP_HOST) {
+    throw new Error("SMTP_HOST ist nicht gesetzt — es wird keine Mail verschickt.");
+  }
+
   const filter = await loadTestModeFilter();
   if (filter.enabled) {
     const requested = parseRecipients(to);

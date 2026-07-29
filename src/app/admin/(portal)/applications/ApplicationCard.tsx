@@ -1,7 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import type { MembershipApplication } from "@/lib/types";
+
+/**
+ * Submit-Button, der während der Action sichtbar blockiert. Ohne diese
+ * Rückmeldung wirkte ein Klick auf "Annehmen" wie ein Fehlklick — die Action
+ * lief, nur sah man es nicht.
+ */
+function SubmitButton({
+  children,
+  pendingLabel,
+  className,
+}: {
+  children: React.ReactNode;
+  pendingLabel: string;
+  className: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      aria-busy={pending}
+      className={`${className} disabled:cursor-progress disabled:opacity-60`}
+    >
+      {pending ? pendingLabel : children}
+    </button>
+  );
+}
 
 /**
  * Ein Antrag als Karte: links die Vorschau, wie die Firma im Verzeichnis
@@ -49,12 +77,12 @@ export function ApplicationCard({
         {isOpen && (
           <div className="flex flex-wrap gap-2">
             <form action={approveAction}>
-              <button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Wird angelegt …"
                 className="rounded-[3px] bg-[#0a0a0b] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-black"
               >
                 Annehmen &amp; Mitglied anlegen
-              </button>
+              </SubmitButton>
             </form>
             <button
               type="button"
@@ -64,24 +92,24 @@ export function ApplicationCard({
               Ablehnen
             </button>
             <form action={archiveAction}>
-              <button
-                type="submit"
+              <SubmitButton
+                pendingLabel="Wird archiviert …"
                 className="rounded-[3px] border border-[#c4c4cc] px-3.5 py-2 text-[12.5px] font-semibold hover:bg-[#f2f2f0]"
               >
                 Archivieren
-              </button>
+              </SubmitButton>
             </form>
           </div>
         )}
 
         {!isOpen && (
           <form action={deleteAction}>
-            <button
-              type="submit"
+            <SubmitButton
+              pendingLabel="Wird gelöscht …"
               className="rounded-[3px] border border-[#e1000f] px-3.5 py-2 text-[12.5px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
             >
               Löschen
-            </button>
+            </SubmitButton>
           </form>
         )}
       </div>
@@ -103,12 +131,12 @@ export function ApplicationCard({
             />
           </label>
           <div className="mt-3 flex gap-2">
-            <button
-              type="submit"
+            <SubmitButton
+              pendingLabel="Wird abgelehnt …"
               className="rounded-[3px] bg-[#e1000f] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-[#c9000d]"
             >
               Ablehnen &amp; benachrichtigen
-            </button>
+            </SubmitButton>
             <button
               type="button"
               onClick={() => setRejecting(false)}

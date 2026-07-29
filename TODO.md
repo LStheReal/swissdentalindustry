@@ -21,6 +21,11 @@
 - [ ] **DU:** `ANTHROPIC_API_KEY` setzen — lokal in `.env.local`, auf Vercel für Production + Preview (danach redeploy). Ohne Key bleiben Beschreibungen unübersetzt (kein Fehler).
 - [ ] **DU:** SMTP-Zugang neu erstellen (SMTP_HOST/PORT/USER/PASS + MAIL_FROM) — lokal und auf Vercel. Bis dahin verschickt die Seite keine Mails.
 
+## Tests (2026-07-29)
+- [x] Testsuite nach Vorbild EusiApp/Funity: Vitest (`tests/lib|security|db|migrations|meta`) + Playwright (`tests-e2e`), `run-tests.sh`, `npm test` in CI. 128 Vitest- + 10 Browser-Tests, alle grün. Details: `docs/testing.md`.
+- [x] Backend verifiziert: 36 Mitglieder lesbar, anon-Schreibzugriff gesperrt, Schema deckt sich mit dem Code, Admin-Portal ohne Session gesperrt, alle Admin-Actions rufen `requireAdmin()`.
+- [x] Bug gefunden+behoben: `/api/forms/mitwirken` warf 500 und **verwarf die Einsendung**, wenn SMTP fehlt. Speichert jetzt zuerst in `membership_applications` (wie die anderen Formulare) und behandelt Mailfehler als unkritisch.
+
 ## Backlog (not yet done — from architecture review)
 - [ ] Caching: pages are still fully dynamic (revalidate=60 is a no-op because headers() forces dynamic). Wrap public-data.ts in unstable_cache/use cache with tags + revalidateTag from admin actions.
 - [ ] Robustness: root not-found.tsx + error.tsx (localized); convert admin CRUD actions from throw to typed SubmitState; zod on forms.

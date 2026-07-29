@@ -17,4 +17,8 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm run lint
+      # Server- und DB-abhängige Suiten überspringen sich ohne Dev-Server bzw.
+      # ohne .env.local selbst (tests/setup.ts). Unit-, Security-, Migrations-
+      # und Prod-Smoke-Tests laufen hier und blockieren jeden Push/PR.
+      - run: npm test
       - run: npm run build

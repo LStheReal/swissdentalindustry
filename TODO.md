@@ -32,3 +32,10 @@
 - [ ] Data/content (prod DB): remove "Rick Roll" test news; some member descriptions show English on /de (backfill German). FR hero "suisse.Dans" spacing — verify in v2 Hero word-split (may already be fine).
 - [ ] Optional: rename "Swistzerland Map.png" (typo) + update SwissMap.tsx; refresh README (still says public site is a later phase).
 - [ ] Optional: edit-token hashing + expiry; Content-Security-Policy.
+
+## 2026-07-29 (Fortsetzung)
+- [x] Öffentliche URLs englisch: /members, /about, /contact, /join, /privacy, /legal-notice (+ /news). Alte deutsche Slugs und die /en/…-Pfade der alten WordPress-Seite als 301 in next.config.ts.
+- [x] Mitglieder-Grid: Reveal blendet 35% Viewport früher ein, Stagger von 9 auf 3 Schritte gekappt, Failsafe für hängengebliebene Karten (wirkte, als sei die Seite zu Ende).
+- [x] Passwort-Reset im Admin: /admin/forgot + /admin/reset-password, rate-limited, anti-enumerierend. Supabase verschickt die Mail selbst — kein eigener SMTP nötig.
+- [ ] **DU:** In Supabase → Authentication → URL Configuration die Redirect-URL `https://<deine-domain>/admin/reset-password` freigeben (sonst lehnt Supabase den Link ab). Site URL ebenfalls auf die Vercel-/Live-Domain setzen.
+- [ ] Optional: API-Routen heissen noch deutsch (/api/forms/mitglied-werden, /api/forms/mitwirken) — rein intern, kein Nutzer sieht sie.

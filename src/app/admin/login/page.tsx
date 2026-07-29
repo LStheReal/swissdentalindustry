@@ -3,6 +3,7 @@
 import { Suspense, useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { login, type LoginState } from "./actions";
 
 export default function LoginPage() {
@@ -84,6 +85,13 @@ function LoginForm() {
         >
           {pending ? "Anmelden …" : "Anmelden"}
         </button>
+
+        <Link
+          href="/admin/forgot"
+          className="block text-center text-[12px] text-[#6b6b73] underline underline-offset-2 hover:text-[#0a0a0b]"
+        >
+          Passwort vergessen?
+        </Link>
         </div>
       </form>
     </main>

@@ -24,6 +24,12 @@ const PUBLIC_ACTIONS = new Set<string>([
   // (getUser() erforderlich) und ändert ausschliesslich das eigene Passwort —
   // requireAdmin() wäre hier unmöglich, die Person ist noch kein Admin.
   "src/app/admin/accept-invite/actions.ts::setInvitedPassword",
+  // Passwort-Reset anfordern: naturgemäss ohne Session. Selbst rate-limited
+  // und anti-enumerierend (Antwort immer gleich).
+  "src/app/admin/forgot/actions.ts::requestPasswordReset",
+  // Neues Passwort setzen: läuft in der Recovery-Session aus dem Mail-Link
+  // (getUser() erforderlich) und ändert nur das eigene Konto.
+  "src/app/admin/reset-password/actions.ts::setNewPassword",
 ]);
 
 function walk(dir: string): string[] {
@@ -72,6 +78,24 @@ describe("Admin Server Actions sind auth-geschützt", () => {
 
   it("die Invite-Action fordert eine bestehende Session und ändert nur das eigene Passwort", () => {
     const src = readFileSync(join(PORTAL, "accept-invite", "actions.ts"), "utf8");
+    expect(src).toMatch(/auth\.getUser\(\)/);
+    expect(src).toMatch(/auth\.updateUser\(/);
+    // Kein Service-Role-Client: sonst könnte die Action fremde Konten ändern.
+    expect(src).not.toMatch(/createAdminClient/);
+  });
+
+  it("der Passwort-Reset verrät nicht, welche Adressen existieren", () => {
+    const src = readFileSync(join(PORTAL, "forgot", "actions.ts"), "utf8");
+    // Rate-Limit pro IP und pro Adresse, und kein Zweig, der bei unbekannter
+    // Adresse etwas anderes zurückgibt als bei bekannter.
+    expect(src).toMatch(/rateLimit\(`forgot:ip:/);
+    expect(src).toMatch(/rateLimit\(`forgot:mail:/);
+    expect(src).not.toMatch(/user (not found|existiert nicht)/i);
+    expect(src).not.toMatch(/createAdminClient/);
+  });
+
+  it("das Setzen des neuen Passworts braucht die Recovery-Session", () => {
+    const src = readFileSync(join(PORTAL, "reset-password", "actions.ts"), "utf8");
     expect(src).toMatch(/auth\.getUser\(\)/);
     expect(src).toMatch(/auth\.updateUser\(/);
     // Kein Service-Role-Client: sonst könnte die Action fremde Konten ändern.

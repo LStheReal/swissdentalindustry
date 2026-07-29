@@ -34,9 +34,16 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminArea = pathname.startsWith("/admin");
   const isLoginPage = pathname === "/admin/login";
-  const isAcceptInvite = pathname === "/admin/accept-invite";
+  // Seiten, die es ohne Session geben MUSS: Einladung annehmen und der
+  // Passwort-Reset (Anfordern + Einlösen des Links aus der Mail). Ohne diese
+  // Ausnahme landet der Link aus der Reset-Mail auf dem Login — und niemand
+  // kommt je wieder rein, wenn das Passwort weg ist.
+  const isPreSessionPage =
+    pathname === "/admin/accept-invite" ||
+    pathname === "/admin/forgot" ||
+    pathname === "/admin/reset-password";
 
-  if (isAdminArea && !isLoginPage && !isAcceptInvite && !user) {
+  if (isAdminArea && !isLoginPage && !isPreSessionPage && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     url.searchParams.set("redirect", pathname);

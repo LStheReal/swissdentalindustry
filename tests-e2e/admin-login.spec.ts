@@ -27,6 +27,32 @@ test("falsche Zugangsdaten erzeugen keine Session", async ({ page }) => {
   await expect(page).toHaveURL(/\/admin\/login/);
 });
 
+test("vom Login zum Passwort-Reset und wieder zurück", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.getByRole("link", { name: /Passwort vergessen/i }).click();
+  await expect(page).toHaveURL(/\/admin\/forgot/);
+  await expect(page.locator('input[name="email"]')).toBeVisible();
+
+  await page.getByRole("link", { name: /Zurück zur Anmeldung/i }).first().click();
+  await expect(page).toHaveURL(/\/admin\/login/);
+});
+
+test("der Reset gibt dieselbe Antwort für unbekannte Adressen", async ({ page }) => {
+  await page.goto("/admin/forgot");
+  await page.fill('input[name="email"]', `gibt-es-nicht-${Date.now()}@example.com`);
+  await page.click('button[type="submit"]');
+  // Anti-Enumeration: bestätigende Meldung, kein "Konto nicht gefunden".
+  await expect(page.getByText(/Falls für diese Adresse/i)).toBeVisible();
+});
+
+test("ein ungültiger Reset-Link zeigt eine Fehlerseite statt eines Formulars", async ({
+  page,
+}) => {
+  await page.goto("/admin/reset-password");
+  await expect(page.getByText(/ungültig, abgelaufen|bereits benutzt/i)).toBeVisible();
+  await expect(page.locator('input[name="password"]')).toHaveCount(0);
+});
+
 test("ein unbekannter Edit-Token zeigt eine Fehlerseite", async ({ page }) => {
   const res = await page.goto("/edit/__playwright_unknown_token__");
   expect(res?.status()).toBeLessThan(500);

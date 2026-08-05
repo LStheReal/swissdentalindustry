@@ -86,6 +86,22 @@ function paragraph(text: string, color: string = COLORS.ink2, margin: string = "
   return `<p style="font-family:${ARCHIVO};font-size:15.5px;line-height:1.65;color:${color};margin:${margin};">${esc(text)}</p>`;
 }
 
+/**
+ * Wie `paragraph`, escapet den Inhalt aber NICHT — für Absätze, die bewusst
+ * Markup enthalten (z.B. ein hervorgehobener Firmenname). Alles Dynamische
+ * muss der Aufrufer selbst durch `esc()` schicken.
+ *
+ * Gibt es, weil der umgekehrte Fall in der Zusage-Mail stand: dort ging ein
+ * `<strong>` durch `paragraph()` und der Empfänger las das Tag als Text.
+ */
+function paragraphHtml(
+  html: string,
+  color: string = COLORS.ink2,
+  margin: string = "0 0 16px",
+): string {
+  return `<p style="font-family:${ARCHIVO};font-size:15.5px;line-height:1.65;color:${color};margin:${margin};">${html}</p>`;
+}
+
 function ctaButton(href: string, label: string): string {
   return `
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:6px 0 0;">
@@ -1087,7 +1103,7 @@ export function renderApplicationApprovedMail(input: ApplicationApprovedMailInpu
     ${brandRow()}
     ${metaLabel(s.eyebrow)}
     <h2 style="font-family:${ARCHIVO};font-size:34px;line-height:1.05;letter-spacing:-0.025em;font-weight:800;margin:0 0 22px;color:${COLORS.ink};">${s.greeting(input.memberName)}</h2>
-    ${paragraph(`<strong style="color:${COLORS.ink};">${esc(input.memberName)}</strong> — ${esc(s.intro)}`, COLORS.ink2, "0 0 14px")}
+    ${paragraphHtml(`<strong style="color:${COLORS.ink};">${esc(input.memberName)}</strong> — ${esc(s.intro)}`, COLORS.ink2, "0 0 14px")}
     ${paragraph(s.internalNote, COLORS.ink3, "0 0 28px")}
     ${ctaButton(input.editUrl, s.cta)}
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:26px 0 0;">

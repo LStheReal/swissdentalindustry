@@ -81,6 +81,24 @@ export const MEMBER_SELF_SERVICE_PROFILE_KEYS: readonly MemberInternalProfileKey
     (key) => key !== "membership_fee" && key !== "internal_notes",
   );
 
+// Felder, die zur einzelnen Ansprechperson gehören. Ein Partner kann mehrere
+// davon haben (Migration 0012) — `member_number` ist dabei der laufende Index
+// innerhalb der Firma (erste, zweite, dritte Person).
+export const CONTACT_PERSON_KEYS: readonly MemberInternalProfileKey[] = [
+  "member_number",
+  "contact_title",
+  "contact_first_name",
+  "contact_last_name",
+  "contact_job_title",
+  "direct_phone",
+  "direct_email",
+];
+
+// Felder, die es pro Firma nur einmal gibt. Sie hängen weiterhin an der
+// Position-1-Zeile, werden aber getrennt von den Personen bearbeitet.
+export const COMPANY_INTERNAL_KEYS: readonly MemberInternalProfileKey[] =
+  MEMBER_INTERNAL_PROFILE_KEYS.filter((key) => !CONTACT_PERSON_KEYS.includes(key));
+
 export type MemberInternalProfileFields = Record<MemberInternalProfileKey, string | null>;
 
 export interface MemberInternalProfile extends MemberInternalProfileFields {

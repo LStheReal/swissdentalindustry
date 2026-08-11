@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { translateDescriptionAction } from "./actions";
 import {
   LOCALES,
-  MEMBER_INTERNAL_PROFILE_KEYS,
+  COMPANY_INTERNAL_KEYS,
   MEMBER_INTERNAL_PROFILE_LABELS,
   emptyMemberInternalProfile,
   type Locale,
@@ -244,10 +244,11 @@ export function MemberForm({ action, formId = "member-form", initial }: Props) {
             </div>
             <p className="mb-4 text-[13px] leading-relaxed text-[#6b6b73]">
               Diese Angaben sind nur für das Admin-Portal und die Mitgliederverwaltung.
-              Sie werden nicht auf der Website angezeigt.
+              Sie werden nicht auf der Website angezeigt. Die Ansprechpersonen der
+              Firma werden separat unter „Mitglieder“ gepflegt.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-              {MEMBER_INTERNAL_PROFILE_KEYS.map((key) => (
+              {COMPANY_INTERNAL_KEYS.map((key) => (
                 <label key={key} className={key === "internal_notes" ? "block sm:col-span-2" : "block"}>
                   <span className={label}>{MEMBER_INTERNAL_PROFILE_LABELS[key]}</span>
                   {key === "internal_notes" ? (

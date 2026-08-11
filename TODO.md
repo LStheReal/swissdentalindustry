@@ -46,4 +46,25 @@
 - [x] Admin → Anträge: Karte pro Antrag mit Vorschau; **Annehmen** legt das Mitglied an, füllt das interne Profil, erzeugt den Self-Service-Link und mailt die Zusage; **Ablehnen** mailt die Begründung. Mailfehler machen die Entscheidung nicht rückgängig.
 - [x] Entscheidungsmails gehen in der Sprache raus, in der der Antrag gestellt wurde.
 - [x] Tests: jede im Frontend gefetchte /api-URL muss als Route existieren (genau der Bug, der nach der Umbenennung Einsendungen still verschluckte); Probe-Requests lösen den Honeypot aus (keine Müll-Anträge mehr in Prod); Schema-Test deckt die neuen Spalten ab. 122 Vitest-Tests grün, Build grün (32 Routen).
-- [ ] **DU:** Ohne SMTP verschickt die Seite die Zusage-/Ablehnungsmail nicht (die Entscheidung wird trotzdem gespeichert, der Self-Service-Link steht im Mitglieder-Detail). Siehe SMTP-Punkt oben.
+- [x] 2026-08-11 SMTP steht: Infomaniak (hello@freshnow.ch) lokal in `.env.local` und auf Vercel (Production + Preview). Mails gehen raus.
+
+## 2026-08-11 — Mail-Flow end-to-end repariert
+- [x] **Zusage-Mail ging verloren.** Sie stand am Ende eines `after()`-Blocks hinter Übersetzung + Geocoding. Beweis: `members.updated_at` lag 6.6s nach dem Anlegen (Anreicherung lief also durch), die Mail danach kam trotzdem nie an — während Absage und manueller Link-Versand, die synchron schicken, ankamen. Fünf Probe-Deployments (after+redirect, +revalidatePath, echtes Template mit Logo-Anhang) liefen alle grün, liessen sich also nicht nachstellen. Konsequenz: kritischer Versand läuft jetzt **synchron vor dem Redirect**, nur Übersetzung/Geocoding bleiben in `after()`. Gleiche Stelle in `createMember` mitgefixt.
+- [x] **Edit-Link war ungültig.** `sendEditLinkToMember` rotierte bei jedem Klick den Token und widerrief den alten — zweimal "Link senden" machte den Link aus der ersten Mail tot. Nutzt jetzt `activeEditTokenFor` (wiederverwenden statt rotieren); zum bewussten Rotieren gibt es weiterhin `generateEditLink` / `revokeEditLink`.
+- [x] **Locale-Präfix aus Edit-URLs entfernt.** `/en/edit/<token>` ist keine Route und lief nur über einen 307-Umweg; die Seite bestimmt die Sprache ohnehin aus `member.source_lang`.
+- [x] Die "zwei Mails, eine deutsch eine englisch" waren **kein Bug**: beide Absagen waren englisch (nur der von Louise getippte Grund war deutsch), und die zweite war eine Test-Mail von 08:04 — Gmail hat sie wegen gleichem Betreff in einen Thread gelegt.
+- [x] Regressionstest `tests/lib/critical-mail-delivery.test.ts` hält fest: Zusage-/Willkommens-Mail nie in `after()`, Link-Versand rotiert nicht, keine Locale-Präfixe in Edit-URLs. 172 Vitest-Tests grün, tsc grün.
+## 2026-08-11 (2) — Mailversand liegt beim Provider, nicht am Code
+- [x] Bewiesen: die App übergibt die Mail erfolgreich, Infomaniak quittiert mit `250 2.0.0 Ok: queued as …` — und stellt sie trotzdem nicht zu. Dieselbe Zusage-Vorlage von zwei verschiedenen Rechnern (Laptop 09:59, Vercel 09:52/09:55) kam nie an, während eine schlichte Testmail um 09:57 dazwischen ankam. Fünf Probe-Deployments (after+redirect, revalidatePath, echtes Template mit Logo) liefen alle grün. Limit laut Infomaniak: 100 Mails/24h (Free/Starter), 1440 (bezahlt) — wir lagen unter 20, es sieht eher nach Ausgangs-Content-Filter aus.
+- [ ] **DU/Nächster Schritt:** auf einen Transaktions-Dienst wechseln (Resend oder Postmark) mit verifizierter Absenderdomain. Entscheidender Vorteil: Zustellprotokoll pro Nachricht statt Raten. Betrifft nur `src/lib/email.ts`.
+
+## 2026-08-11 (3) — Mehrere Ansprechpersonen pro Partner
+- [x] Migration `0012_multiple_contact_persons.sql` auf Prod angewendet: `member_internal_profiles` hat jetzt eigene `id` + `position`, `member_id` ist nicht mehr Primary Key, unique `(member_id, position)`. Alle 36 Bestandszeilen erhalten, alle auf Position 1 — vorher/nachher verglichen.
+- [x] Neue Helfer `listContactPersons` / `addContactPerson` / `updateContactPerson` / `deleteContactPerson`. Die alten Einzelprofil-Funktionen arbeiten weiterhin auf Position 1, damit Self-Service-Formular, Feed, Import und Mails unverändert funktionieren.
+- [x] Admin → Mitglied: Abschnitt „Mitglieder" mit Liste der Ansprechpersonen und Knopf „+ Mitglied hinzufügen"; Nummer läuft automatisch (1, 2, 3 je Firma). Firmenfelder (Adresse, PLZ, Ort, Beitrag, Notizen) bleiben im Firmenformular.
+- [x] Firmenformular speichert jetzt zusammenführend statt überschreibend — sonst hätte ein Speichern Person 1 geleert.
+- [x] Zusage legt die Kontaktperson aus dem Antrag als Mitglied 1 an; die Adresse wird bewusst NICHT auf die Person kopiert.
+- [x] `member_since` wird beim Annehmen automatisch auf das Aufnahmedatum gesetzt.
+- [x] Gegen die echte Prod-DB verifiziert: 3 Personen anlegen → Nummerierung 1/2/3, Firmenformular-Speichern lässt alle bestehen, Einzelprofil liefert weiterhin Person 1. Anon kann interne Profile weiterhin nicht lesen (RLS nach Migration geprüft). 172 Tests + Build grün, deployed.
+- [x] Test-Mitglieder „TEst" und „asdg" auf draft gesetzt (waren im öffentlichen Verzeichnis) — 46 veröffentlichte Mitglieder. Reversibel.
+- [ ] **DU:** Einmal im Admin einen Antrag annehmen und prüfen, dass die Zusage-Mail ankommt — geht erst zuverlässig nach dem Provider-Wechsel.

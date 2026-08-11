@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getInternalProfileForMember } from "@/lib/member-internal-profiles";
+import {
+  getInternalProfileForMember,
+  listContactPersons,
+} from "@/lib/member-internal-profiles";
 import {
   type Member,
   type MemberEditToken,
@@ -8,11 +11,15 @@ import {
 import { MemberForm } from "../MemberForm";
 import { EditLinkPanel } from "../EditLinkPanel";
 import { LogoUploadField } from "../LogoUploadField";
+import { ContactPersonsPanel } from "../ContactPersonsPanel";
 import {
   updateMember,
   generateEditLink,
   revokeEditLink,
   sendEditLinkToMember,
+  addContactPersonAction,
+  updateContactPersonAction,
+  deleteContactPersonAction,
 } from "../actions";
 
 export default async function EditMemberPage({
@@ -23,7 +30,7 @@ export default async function EditMemberPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: memberData }, { data: tokenData }, internalProfile] = await Promise.all([
+  const [{ data: memberData }, { data: tokenData }, internalProfile, contactPersons] = await Promise.all([
     supabase.from("members").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("member_edit_tokens")
@@ -32,6 +39,7 @@ export default async function EditMemberPage({
       .eq("is_active", true)
       .maybeSingle(),
     getInternalProfileForMember(supabase, id),
+    listContactPersons(supabase, id),
   ]);
 
   if (!memberData) notFound();
@@ -132,6 +140,24 @@ export default async function EditMemberPage({
           internal_profile: internalProfile,
         }}
       />
+
+      <div className="mt-6">
+        <ContactPersonsPanel
+          people={contactPersons}
+          addAction={async (formData: FormData) => {
+            "use server";
+            await addContactPersonAction(member.id, formData);
+          }}
+          updateAction={async (contactId: string, formData: FormData) => {
+            "use server";
+            await updateContactPersonAction(member.id, contactId, formData);
+          }}
+          deleteAction={async (contactId: string) => {
+            "use server";
+            await deleteContactPersonAction(member.id, contactId);
+          }}
+        />
+      </div>
     </div>
   );
 }

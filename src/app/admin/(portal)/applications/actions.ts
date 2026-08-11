@@ -119,6 +119,9 @@ export async function approveApplication(id: string) {
       source_lang: sourceLang,
       status: "published",
       is_active: true,
+      // Mitglied seit = Tag der Aufnahme. Wird hier gesetzt, damit der Admin
+      // es nicht nachtragen muss; im Mitglieder-Formular bleibt es änderbar.
+      member_since: new Date().toISOString().slice(0, 10),
     })
     .select("id")
     .single();
@@ -132,14 +135,17 @@ export async function approveApplication(id: string) {
     throw new Error(error.message);
   }
 
-  // Was der Antrag über die Kontaktperson weiss, wandert ins interne Profil —
-  // den Rest trägt die Firma über den Self-Service-Link selbst nach.
+  // Die Kontaktperson aus dem Antrag wird das erste Mitglied dieses Partners.
+  // Weitere Personen legt der Admin im Mitglieder-Detail an ("Mitglied
+  // hinzufügen"), fortlaufend nummeriert. Die Adresse bleibt bewusst aussen vor
+  // — sie gehört zur Firma, nicht zur Person.
   const contact = (p.contact_person || "").trim();
   const spaceIdx = contact.lastIndexOf(" ");
   await saveInternalProfile(
     supabase,
     member.id,
     normalizeMemberInternalProfile({
+      member_number: "1",
       contact_first_name: spaceIdx > 0 ? contact.slice(0, spaceIdx) : contact || null,
       contact_last_name: spaceIdx > 0 ? contact.slice(spaceIdx + 1) : null,
       direct_email: email,
@@ -162,10 +168,34 @@ export async function approveApplication(id: string) {
     .update({ member_id: member.id })
     .eq("id", id);
 
-  // Ab hier ist die Aufnahme vollständig gespeichert. Alles, was noch folgt,
-  // sind langsame Netzwerk-Aufrufe (Claude ~7s, Geocoding, SMTP) — die laufen
-  // nach der Antwort weiter, damit der Admin nicht wartet. `after` läuft auch
-  // dann, wenn direkt danach `redirect()` aufgerufen wird.
+  // Die Zusage ist die wichtigste Mail des Systems — sie enthält den einzigen
+  // Link, über den die Firma je an ihr Profil kommt. Sie geht deshalb NOCH VOR
+  // der Antwort raus (~2s SMTP), statt in `after()`.
+  //
+  // Vorher stand sie am Ende eines `after()`-Blocks, hinter Übersetzung und
+  // Geocoding. Die Anreicherung lief dort nachweislich durch (members.updated_at
+  // ~7s nach dem Anlegen), die Mail danach kam trotzdem nie an — während die
+  // Absage-Mail und der manuelle Link-Versand, die synchron verschicken,
+  // zuverlässig ankamen. Kritischer Versand hängt jetzt nicht mehr davon ab,
+  // dass nach der Antwort noch Arbeit ausgeführt wird.
+  //
+  // Ein Mail-Fehler darf die Aufnahme nicht rückgängig machen — der Admin kann
+  // den Link im Mitglieder-Detail erneut senden.
+  if (email) {
+    try {
+      await sendApplicationApprovedMail({
+        to: email,
+        memberName: name,
+        editUrl: `${appBaseUrl()}/edit/${token}`,
+        locale: sourceLang,
+      });
+    } catch (err) {
+      console.error("application approved mail failed:", err);
+    }
+  }
+
+  // Übersetzung und Geocoding sind reine Anreicherung: schlagen sie fehl, steht
+  // trotzdem überall der Originaltext. Die dürfen nach der Antwort laufen.
   after(async () => {
     try {
       const [ml, geo] = await Promise.all([
@@ -186,22 +216,6 @@ export async function approveApplication(id: string) {
       }
     } catch (err) {
       console.error("post-approval enrichment failed:", err);
-    }
-
-    // Zusage verschicken. Ein Mail-Fehler darf die Aufnahme nicht rückgängig
-    // machen — der Admin kann den Link im Mitglieder-Detail erneut senden.
-    if (email) {
-      try {
-        const localePrefix = sourceLang !== "de" ? `${sourceLang}/` : "";
-        await sendApplicationApprovedMail({
-          to: email,
-          memberName: name,
-          editUrl: `${appBaseUrl()}/${localePrefix}edit/${token}`,
-          locale: sourceLang,
-        });
-      } catch (err) {
-        console.error("application approved mail failed:", err);
-      }
     }
   });
 

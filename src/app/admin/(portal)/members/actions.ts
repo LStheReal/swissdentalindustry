@@ -18,11 +18,16 @@ import { sendMemberWelcomeMail } from "@/lib/email";
 import {
   ensureInternalProfilesTableAvailable,
   saveInternalProfile,
+  getInternalProfileForMember,
+  addContactPerson,
+  updateContactPerson,
+  deleteContactPerson,
 } from "@/lib/member-internal-profiles";
 import { getImportedMemberKey, parseMemberImportSpreadsheet } from "@/lib/member-import";
 import {
   LOCALES,
   MEMBER_INTERNAL_PROFILE_KEYS,
+  CONTACT_PERSON_KEYS,
   emptyMultilingual,
   normalizeMemberInternalProfile,
   type Locale,
@@ -61,6 +66,29 @@ async function createEditTokenFor(
   return token;
 }
 
+/**
+ * Liefert den aktiven Edit-Token der Firma — und legt nur dann einen neuen an,
+ * wenn es noch keinen gibt.
+ *
+ * Wichtig für den Link-Versand: `createEditTokenFor` widerruft beim Rotieren
+ * alle bestehenden Tokens. Wer zweimal auf "Link senden" klickte, machte damit
+ * den Link aus der ersten Mail ungültig — der Empfänger landete auf
+ * "Link ungültig". Zum bewussten Rotieren gibt es `generateEditLink`.
+ */
+async function activeEditTokenFor(
+  supabase: ReturnType<typeof createAdminClient>,
+  memberId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("member_edit_tokens")
+    .select("token")
+    .eq("member_id", memberId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (data?.token) return data.token;
+  return createEditTokenFor(supabase, memberId);
+}
+
 function readLocale(formData: FormData): Locale {
   const v = String(formData.get("source_lang") || "de");
   return (LOCALES.includes(v as Locale) ? v : "de") as Locale;
@@ -71,23 +99,36 @@ function str(formData: FormData, key: string): string | null {
   return v || null;
 }
 
-function readInternalProfile(formData: FormData): MemberInternalProfileFields {
-  return normalizeMemberInternalProfile(
-    Object.fromEntries(
-      MEMBER_INTERNAL_PROFILE_KEYS.map((key) => [
-        key,
-        String(formData.get(`internal_${key}`) || ""),
-      ]),
-    ) as Partial<MemberInternalProfileFields>,
-  );
+/**
+ * Liest nur die Felder, die das Formular tatsächlich mitschickt. Seit die
+ * Ansprechpersonen getrennt bearbeitet werden, enthält das Mitglieder-Formular
+ * nur noch die Firmenfelder — die Personenfelder dürfen dabei nicht
+ * verlorengehen (siehe `upsertInternalProfile`).
+ */
+function readInternalProfile(formData: FormData): Partial<MemberInternalProfileFields> {
+  const partial: Partial<MemberInternalProfileFields> = {};
+  for (const key of MEMBER_INTERNAL_PROFILE_KEYS) {
+    const field = `internal_${key}`;
+    if (!formData.has(field)) continue;
+    const raw = String(formData.get(field) || "").trim();
+    partial[key] = raw || null;
+  }
+  return partial;
 }
 
 async function upsertInternalProfile(
   supabase: ReturnType<typeof createAdminClient>,
   memberId: string,
-  profile: MemberInternalProfileFields,
+  patch: Partial<MemberInternalProfileFields>,
 ) {
-  await saveInternalProfile(supabase, memberId, profile);
+  // Über den Bestand legen, statt ihn zu ersetzen: sonst löscht ein Speichern
+  // des Firmenformulars die Angaben der ersten Ansprechperson.
+  const existing = await getInternalProfileForMember(supabase, memberId);
+  await saveInternalProfile(
+    supabase,
+    memberId,
+    normalizeMemberInternalProfile({ ...existing, ...patch }),
+  );
 }
 
 export interface ImportMembersState {
@@ -150,22 +191,23 @@ export async function createMember(formData: FormData) {
 
   // Self-Service-Link sofort erzeugen und der Firma per Mail zustellen, damit
   // der Admin nichts manuell verschicken muss. Mail-Fehler dürfen das Anlegen
-  // nicht abbrechen — und der SMTP-Versand darf den Admin nicht warten lassen.
+  // nicht abbrechen.
+  //
+  // Synchron, nicht in `after()`: der Link ist der einzige Weg der Firma zu
+  // ihrem Profil. In `after()` vor einem `redirect()` ging genau diese Mail in
+  // der Zusage-Aktion verloren (siehe applications/actions.ts).
   if (email) {
-    after(async () => {
-      try {
-        const token = await createEditTokenFor(supabase, data.id);
-        const localePrefix = sourceLang !== "de" ? `${sourceLang}/` : "";
-        await sendMemberWelcomeMail({
-          to: email,
-          memberName: name,
-          editUrl: `${appBaseUrl()}/${localePrefix}edit/${token}`,
-          locale: sourceLang,
-        });
-      } catch (err) {
-        console.error("member welcome mail failed:", err);
-      }
-    });
+    try {
+      const token = await createEditTokenFor(supabase, data.id);
+      await sendMemberWelcomeMail({
+        to: email,
+        memberName: name,
+        editUrl: `${appBaseUrl()}/edit/${token}`,
+        locale: sourceLang,
+      });
+    } catch (err) {
+      console.error("member welcome mail failed:", err);
+    }
   }
 
   revalidatePath("/admin/members");
@@ -494,15 +536,51 @@ export async function sendEditLinkToMember(memberId: string) {
   }
 
   const memberLocale = (LOCALES.includes(member.source_lang as Locale) ? member.source_lang : "de") as Locale;
-  const token = await createEditTokenFor(supabase, memberId);
-  const localePrefix = memberLocale !== "de" ? `${memberLocale}/` : "";
+  const token = await activeEditTokenFor(supabase, memberId);
   await sendMemberWelcomeMail({
     to: member.email,
     memberName: member.name,
-    editUrl: `${appBaseUrl()}/${localePrefix}edit/${token}`,
+    editUrl: `${appBaseUrl()}/edit/${token}`,
     locale: memberLocale,
   });
 
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+// ─── Ansprechpersonen (mehrere pro Partner) ──────────────────────────────────
+
+/** Liest die Felder einer Ansprechperson aus dem Formular. */
+function readContactPerson(formData: FormData): MemberInternalProfileFields {
+  const partial: Partial<MemberInternalProfileFields> = {};
+  for (const key of CONTACT_PERSON_KEYS) {
+    const raw = String(formData.get(`contact_${key}`) || "").trim();
+    partial[key] = raw || null;
+  }
+  return normalizeMemberInternalProfile(partial);
+}
+
+export async function addContactPersonAction(memberId: string, formData: FormData) {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  await addContactPerson(supabase, memberId, readContactPerson(formData));
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+export async function updateContactPersonAction(
+  memberId: string,
+  contactId: string,
+  formData: FormData,
+) {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  await updateContactPerson(supabase, contactId, readContactPerson(formData));
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+export async function deleteContactPersonAction(memberId: string, contactId: string) {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  await deleteContactPerson(supabase, contactId);
   revalidatePath(`/admin/members/${memberId}`);
 }
 

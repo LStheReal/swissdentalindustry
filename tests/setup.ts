@@ -8,6 +8,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { HONEYPOT_FIELD } from "../src/lib/forms";
+
 try {
   const raw = readFileSync(join(__dirname, "..", ".env.local"), "utf8");
   for (const line of raw.split("\n")) {
@@ -67,13 +69,19 @@ export async function isSupabaseUp(): Promise<boolean> {
   }
 }
 
-/** True, wenn lokal ein Dev-Server dieser App antwortet. */
+/**
+ * True, wenn lokal ein Dev-Server dieser App antwortet.
+ *
+ * Der Probe-Request füllt bewusst das Honeypot-Feld: die Route quittiert dann
+ * mit demselben JSON, speichert aber nichts. Ohne das legte jeder Testlauf
+ * eine leere Kontaktanfrage in der (produktiven) Datenbank an.
+ */
 export async function isDevServerUp(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/api/forms/contact`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ [HONEYPOT_FIELD]: "liveness-probe" }),
       signal: AbortSignal.timeout(5000),
     });
     return (res.headers.get("content-type") ?? "").includes("application/json");

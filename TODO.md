@@ -58,6 +58,13 @@
 - [x] Bewiesen: die App übergibt die Mail erfolgreich, Infomaniak quittiert mit `250 2.0.0 Ok: queued as …` — und stellt sie trotzdem nicht zu. Dieselbe Zusage-Vorlage von zwei verschiedenen Rechnern (Laptop 09:59, Vercel 09:52/09:55) kam nie an, während eine schlichte Testmail um 09:57 dazwischen ankam. Fünf Probe-Deployments (after+redirect, revalidatePath, echtes Template mit Logo) liefen alle grün. Limit laut Infomaniak: 100 Mails/24h (Free/Starter), 1440 (bezahlt) — wir lagen unter 20, es sieht eher nach Ausgangs-Content-Filter aus.
 - [ ] **DU/Nächster Schritt:** auf einen Transaktions-Dienst wechseln (Resend oder Postmark) mit verifizierter Absenderdomain. Entscheidender Vorteil: Zustellprotokoll pro Nachricht statt Raten. Betrifft nur `src/lib/email.ts`.
 
+## 2026-08-13/14 — Testdaten aufgeräumt, alles deployed
+- [x] 13 Test-Mitglieder gelöscht (u.a. 10 leere "Neue Firma"-Zeilen, die live auf der Seite standen, sowie "TEst" und "asdg") + 5 Test-Anträge. Stand jetzt: **35 Mitglieder, alle published, 0 Entwürfe**, 33 Ansprechpersonen, keine verwaisten Profile.
+- [x] **Echter Fund:** die Testsuite schrieb bei *jedem* Lauf eine leere Kontaktanfrage in die **Produktionsdatenbank**. `isDevServerUp()` in `tests/setup.ts` schickte ein leeres `{}` an `/api/forms/contact`; der Honeypot griff nicht, also wurde `{"source":"public_contact"}` gespeichert — vier solcher Geister-Anfragen lagen im Admin. Der Probe füllt jetzt das Honeypot-Feld: gleiche Antwort, aber nichts wird gespeichert. Die vier Zeilen sind gelöscht (0 Anfragen).
+- [x] Regressionstest `tests/meta/probe-writes-nothing.test.ts` — verifiziert scharf: mit dem alten `{}`-Body schlägt er fehl, mit dem Fix ist er grün.
+- [x] 175 Vitest-Tests grün (inkl. der 12 Security-Tests, die vorher still übersprungen wurden), tsc exit 0, Build grün (32 Routen). Prod deployed aus `65e55eb`.
+- [ ] Notiz: In `.next` tauchen wiederholt macOS-Duplikate auf (`routes.d 3.ts`), die `tsc` mit falschen Fehlern rot machen. Bei Bedarf: `find .next -name "* [0-9].ts" -delete`.
+
 ## 2026-08-11 (3) — Mehrere Ansprechpersonen pro Partner
 - [x] Migration `0012_multiple_contact_persons.sql` auf Prod angewendet: `member_internal_profiles` hat jetzt eigene `id` + `position`, `member_id` ist nicht mehr Primary Key, unique `(member_id, position)`. Alle 36 Bestandszeilen erhalten, alle auf Position 1 — vorher/nachher verglichen.
 - [x] Neue Helfer `listContactPersons` / `addContactPerson` / `updateContactPerson` / `deleteContactPerson`. Die alten Einzelprofil-Funktionen arbeiten weiterhin auf Position 1, damit Self-Service-Formular, Feed, Import und Mails unverändert funktionieren.

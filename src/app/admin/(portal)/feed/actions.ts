@@ -10,6 +10,12 @@ import { describeMemberValue, memberFieldLabel } from "@/lib/email-templates";
 import { getInternalProfileForMember, saveInternalProfile } from "@/lib/member-internal-profiles";
 import { sanitizeExternalUrl } from "@/lib/url";
 import {
+  ADDRESS_KEYS,
+  formatAddress,
+  formatAddressOneLine,
+  normalizeAddress,
+} from "@/lib/address";
+import {
   normalizeMemberInternalProfile,
   type Member,
   type MemberChangeRequest,
@@ -21,7 +27,10 @@ import {
 const APPROVABLE_MEMBER_KEYS = [
   "logo_url",
   "description",
-  "address",
+  "street_name",
+  "street_number",
+  "postal_code",
+  "city",
   "phone",
   "email",
   "website_url",
@@ -78,14 +87,28 @@ export async function approveChange(requestId: string) {
 
   // Bei Adressänderung: alte Koordinaten sofort verwerfen, die neuen holt
   // geocodeAfterResponse nach der Antwort — der Aufruf kostet sonst Wartezeit.
-  const newAddress =
-    "address" in publicProposed && publicProposed.address !== member.address
-      ? (publicProposed.address ?? null)
-      : undefined;
-  if (newAddress !== undefined) {
+  //
+  // Die Adresse besteht seit Migration 0013 aus vier Feldern; ein Vorschlag
+  // kann einzelne davon enthalten. Verglichen wird deshalb die zusammengesetzte
+  // Adresse aus Bestand + Vorschlag.
+  const currentAddress = normalizeAddress(member);
+  const mergedAddress = normalizeAddress({
+    ...currentAddress,
+    ...Object.fromEntries(
+      ADDRESS_KEYS.filter((key) => key in publicProposed).map((key) => [
+        key,
+        (publicProposed as Record<string, unknown>)[key] ?? null,
+      ]),
+    ),
+  });
+  const addressChanged = formatAddress(currentAddress) !== formatAddress(mergedAddress);
+  if (addressChanged) {
     update.lat = null;
     update.lng = null;
     update.canton = null;
+    // `address` ist nur noch Archiv — mitschreiben, damit der Rohtext zum
+    // Stand der Einzelfelder passt.
+    update.address = formatAddress(mergedAddress) || null;
   }
 
   if (Object.keys(update).length > 0) {
@@ -108,8 +131,11 @@ export async function approveChange(requestId: string) {
     await saveInternalProfile(supabase, member.id, profile);
   }
 
-  if (newAddress !== undefined) {
-    geocodeAfterResponse({ memberId: member.id, address: newAddress });
+  if (addressChanged) {
+    geocodeAfterResponse({
+      memberId: member.id,
+      address: formatAddressOneLine(mergedAddress) || null,
+    });
   }
 
   // Firma benachrichtigen — nach der Antwort, damit der SMTP-Versand die

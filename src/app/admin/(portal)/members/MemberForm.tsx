@@ -22,7 +22,11 @@ interface Props {
     descriptions?: Multilingual;
     source_lang: Locale;
     logo_url: string | null;
-    address: string | null;
+    street_name: string | null;
+    street_number: string | null;
+    postal_code: string | null;
+    city: string | null;
+    address_needs_review?: boolean;
     phone: string | null;
     email: string | null;
     website_url: string | null;
@@ -190,18 +194,48 @@ export function MemberForm({ action, formId = "member-form", initial }: Props) {
                 02 — Kontakt & Standort
               </span>
             </div>
-            <label className="block">
-              <span className={label}>Adresse</span>
-              <textarea
-                name="address"
-                rows={3}
-                defaultValue={initial?.address ?? ""}
-                className={`${input} leading-relaxed`}
-              />
-              <span className="font-sdi-mono mt-1.5 block text-[10.5px] uppercase tracking-[0.04em] text-[#1f8a5b]">
-                Geocodierung erfolgt automatisch
-              </span>
-            </label>
+            {initial?.address_needs_review ? (
+              <p className="mb-4 border-l-2 border-[#a66a00] bg-[#fdf6e7] px-4 py-3 text-[13px] leading-relaxed text-[#7a4f00]">
+                Diese Adresse liess sich beim Umstellen auf Einzelfelder nicht
+                sicher zerlegen. Bitte einmal prüfen und speichern.
+              </p>
+            ) : null}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_8rem]">
+              <label className="block">
+                <span className={label}>Strasse</span>
+                <input
+                  name="street_name"
+                  defaultValue={initial?.street_name ?? ""}
+                  className={input}
+                />
+              </label>
+              <label className="block">
+                <span className={label}>Hausnummer</span>
+                <input
+                  name="street_number"
+                  defaultValue={initial?.street_number ?? ""}
+                  className={input}
+                />
+              </label>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[8rem_1fr]">
+              <label className="block">
+                <span className={label}>PLZ</span>
+                <input
+                  name="postal_code"
+                  inputMode="numeric"
+                  defaultValue={initial?.postal_code ?? ""}
+                  className={input}
+                />
+              </label>
+              <label className="block">
+                <span className={label}>Ort</span>
+                <input name="city" defaultValue={initial?.city ?? ""} className={input} />
+              </label>
+            </div>
+            <span className="font-sdi-mono mt-1.5 block text-[10.5px] uppercase tracking-[0.04em] text-[#1f8a5b]">
+              Geocodierung erfolgt automatisch
+            </span>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

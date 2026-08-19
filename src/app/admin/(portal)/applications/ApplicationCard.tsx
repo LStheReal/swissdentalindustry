@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import type { MembershipApplication } from "@/lib/types";
+import { formatAddress } from "@/lib/address";
 
 /**
  * Ein Antrag als Karte: links die Vorschau, wie die Firma im Verzeichnis
@@ -32,7 +33,7 @@ export function ApplicationCard({
     ["E-Mail", p.email],
     ["Telefon", p.phone],
     ["Website", p.website_url],
-    ["Adresse", p.address],
+    ["Adresse", formatAddress(p) || undefined],
     ["Beschreibung", p.description],
     ["Nachricht", p.message],
   ];

@@ -10,6 +10,7 @@ import { getInternalProfileForMember } from "@/lib/member-internal-profiles";
 import { translateToAllAuto } from "@/lib/translate";
 import { uploadImage } from "@/lib/storage";
 import { sanitizeExternalUrl } from "@/lib/url";
+import { ADDRESS_KEYS } from "@/lib/address";
 import {
   LOCALES,
   MEMBER_SELF_SERVICE_PROFILE_KEYS,
@@ -78,7 +79,9 @@ function sanitizeProposed(
     if (LOCALES.some((l) => ml[l].trim())) out.description = ml;
   }
 
-  if ("address" in src) out.address = strOrNull(src.address, 1000);
+  for (const key of ADDRESS_KEYS) {
+    if (key in src) out[key] = strOrNull(src[key], 200);
+  }
   if ("phone" in src) out.phone = strOrNull(src.phone, 100);
   if ("email" in src) out.email = strOrNull(src.email, 200);
   if ("website_url" in src) out.website_url = sanitizeExternalUrl(strOrNull(src.website_url, 500));
@@ -110,7 +113,6 @@ export async function previewChange(
     : "de";
 
   const descriptionText = String(formData.get("description") || "").trim();
-  const address = String(formData.get("address") || "").trim() || null;
   const phone = String(formData.get("phone") || "").trim() || null;
   const email = String(formData.get("email") || "").trim() || null;
   const websiteRaw = String(formData.get("website_url") || "").trim();
@@ -154,7 +156,10 @@ export async function previewChange(
   const proposed: Partial<MemberEditableFields> = {};
   if (logoUrl) proposed.logo_url = logoUrl;
   if (descriptionMl) proposed.description = descriptionMl;
-  if (!eq(address, member.address)) proposed.address = address;
+  for (const key of ADDRESS_KEYS) {
+    const value = String(formData.get(key) || "").trim().slice(0, 200) || null;
+    if (!eq(value, member[key])) proposed[key] = value;
+  }
   if (!eq(phone, member.phone)) proposed.phone = phone;
   if (!eq(email, member.email)) proposed.email = email;
   if (!eq(website_url, member.website_url)) proposed.website_url = website_url;
@@ -246,7 +251,7 @@ export async function confirmChange(
         const pair = describeMemberValuePair(key, currentRecord[key], value);
         return { label: memberFieldLabel(key), ...pair };
       });
-      const totalFields = 7; // address, phone, email, website_url, description, logo_url, internal_profile
+      const totalFields = 10; // street_name, street_number, postal_code, city, phone, email, website_url, description, logo_url, internal_profile
       await sendAdminChangeNotification({
         to,
         memberName: member.name,

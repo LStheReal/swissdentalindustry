@@ -90,10 +90,20 @@ export default async function EditPage({
                     (pending?.description ?? member.description).de,
                   source_lang: member.source_lang,
                   logo_url: pending?.logo_url ?? member.logo_url,
-                  address:
-                    pending && "address" in pending
-                      ? (pending.address ?? null)
-                      : member.address,
+                  street_name:
+                    pending && "street_name" in pending
+                      ? (pending.street_name ?? null)
+                      : member.street_name,
+                  street_number:
+                    pending && "street_number" in pending
+                      ? (pending.street_number ?? null)
+                      : member.street_number,
+                  postal_code:
+                    pending && "postal_code" in pending
+                      ? (pending.postal_code ?? null)
+                      : member.postal_code,
+                  city:
+                    pending && "city" in pending ? (pending.city ?? null) : member.city,
                   phone:
                     pending && "phone" in pending
                       ? (pending.phone ?? null)

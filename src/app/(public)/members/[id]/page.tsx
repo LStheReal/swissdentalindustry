@@ -8,6 +8,7 @@ import { getPublicLocale } from "@/lib/public-locale.server";
 import { localeAlternates, withLocalePath } from "@/lib/public-i18n";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { mlText } from "@/lib/types";
+import { formatAddress, formatAddressOneLine } from "@/lib/address";
 
 export const revalidate = 60;
 
@@ -35,11 +36,13 @@ export default async function MemberDetailPage({ params }: Props) {
 
   const description = mlText(member.description, locale);
   const websiteUrl = sanitizeExternalUrl(member.website_url);
+  const address = formatAddress(member);
+  const addressOneLine = formatAddressOneLine(member);
   const googleMapsUrl =
     member.lat != null && member.lng != null
       ? `https://www.google.com/maps?q=${member.lat},${member.lng}`
-      : member.address
-        ? `https://www.google.com/maps/search/${encodeURIComponent(member.address)}`
+      : addressOneLine
+        ? `https://www.google.com/maps/search/${encodeURIComponent(addressOneLine)}`
         : null;
 
   const mapPin =
@@ -122,9 +125,9 @@ export default async function MemberDetailPage({ params }: Props) {
             <div data-v2-reveal>
               <V2Eyebrow>{copy.memberDetail.contactEyebrow}</V2Eyebrow>
               <div className="mt-5 space-y-3 text-[15px] leading-[1.7] text-[color:var(--text-secondary)]">
-                {member.address ? (
+                {address ? (
                   <p className="break-words [overflow-wrap:anywhere]" style={{ whiteSpace: "pre-line" }}>
-                    {member.address}
+                    {address}
                   </p>
                 ) : null}
                 {member.canton ? (
@@ -149,7 +152,7 @@ export default async function MemberDetailPage({ params }: Props) {
                     </a>
                   </p>
                 ) : null}
-                {!member.address && !member.phone && !member.email ? <p>{copy.memberDetail.noContact}</p> : null}
+                {!address && !member.phone && !member.email ? <p>{copy.memberDetail.noContact}</p> : null}
               </div>
             </div>
           </V2Card>
@@ -200,7 +203,7 @@ export default async function MemberDetailPage({ params }: Props) {
             style={{ fontFamily: "var(--font-mono)" }}
           >
             <span className="min-w-0 truncate text-[color:var(--text-muted)]">
-              {member.address || copy.memberDetail.addressFallback}
+              {addressOneLine || copy.memberDetail.addressFallback}
             </span>
             {googleMapsUrl ? (
               <a

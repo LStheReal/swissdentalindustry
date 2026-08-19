@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { askForJson, hasAI } from "./ai";
+import { emptyAddress, parseAddress, type Address } from "./address";
 import {
   normalizeMemberInternalProfile,
   type MemberInternalProfileFields,
@@ -18,14 +19,14 @@ type ImportFieldKey =
   | "street_number"
   | "postal_code"
   | "city"
-  | "country"
   | "direct_phone"
   | "direct_email";
 
 export interface ImportedMemberRow {
   rowNumber: number;
   name: string;
-  address: string | null;
+  /** Strasse / Hausnummer / PLZ / Ort — seit Migration 0013 getrennte Felder. */
+  address: Address;
   email: string | null;
   phone: string | null;
   websiteUrl: string | null;
@@ -53,7 +54,6 @@ interface AIRowEnrichment {
   street_number: string | null;
   postal_code: string | null;
   city: string | null;
-  country: string | null;
   direct_phone: string | null;
   direct_email: string | null;
   membership_fee: string | null;
@@ -64,7 +64,7 @@ const IMPORT_FIELD_LABELS: Record<ImportFieldKey, string> = {
   name: "Firmenname",
   address: "Adresse",
   website_url: "Website",
-  member_number: "Mitgliedsnummer",
+  member_number: "Kontaktnummer",
   contact_title: "Anrede / Titel",
   contact_first_name: "Vorname",
   contact_last_name: "Nachname",
@@ -73,7 +73,6 @@ const IMPORT_FIELD_LABELS: Record<ImportFieldKey, string> = {
   street_number: "Hausnummer",
   postal_code: "PLZ",
   city: "Ort",
-  country: "Land",
   direct_phone: "Direkttelefon",
   direct_email: "Direkt-E-Mail",
 };
@@ -100,7 +99,6 @@ const HEADER_ALIASES: Record<ImportFieldKey, string[]> = {
   street_number: ["street number", "house number", "hausnummer", "nummer", "no", "nr."],
   postal_code: ["postal code", "zip", "zip code", "plz", "npa"],
   city: ["city", "ort", "town", "ville"],
-  country: ["country", "land", "pays"],
   direct_phone: [
     "direct phone number",
     "phone",
@@ -138,21 +136,45 @@ function scoreAliasMatch(header: string, alias: string): number {
   return 0;
 }
 
+/**
+ * Baut die strukturierte Adresse aus den Spalten der Tabelle.
+ *
+ * Eigene Spalten für Strasse/Nr./PLZ/Ort haben Vorrang — sie sind bereits
+ * zerlegt und müssen nicht geraten werden. Nur wenn die Tabelle stattdessen
+ * eine Sammelspalte "Adresse" führt, wird sie geparst; das ist derselbe
+ * Parser wie überall sonst.
+ */
 function buildAddress(parts: {
   address: string | null;
   streetName: string | null;
   streetNumber: string | null;
   postalCode: string | null;
   city: string | null;
-  country: string | null;
-}): string | null {
-  if (parts.address) return parts.address;
+}): Address {
+  const explicit: Address = {
+    street_name: parts.streetName,
+    street_number: parts.streetNumber,
+    postal_code: parts.postalCode,
+    city: parts.city,
+  };
+  if (explicit.postal_code && explicit.city) return explicit;
 
-  const street = [parts.streetName, parts.streetNumber].filter(Boolean).join(" ").trim();
-  const locality = [parts.postalCode, parts.city].filter(Boolean).join(" ").trim();
-  const lines = [street || null, locality || null, parts.country].filter(Boolean);
+  if (parts.address) {
+    const { address, parsed } = parseAddress(parts.address);
+    if (parsed) {
+      // Explizite Spalten gewinnen Feld für Feld gegen den geparsten Rest.
+      return {
+        street_name: explicit.street_name ?? address.street_name,
+        street_number: explicit.street_number ?? address.street_number,
+        postal_code: explicit.postal_code ?? address.postal_code,
+        city: explicit.city ?? address.city,
+      };
+    }
+  }
 
-  return lines.length ? lines.join("\n") : null;
+  return explicit.street_name || explicit.postal_code || explicit.city
+    ? explicit
+    : emptyAddress();
 }
 
 function nullable(value: string | null | undefined): string | null {
@@ -304,7 +326,6 @@ async function enrichRowWithAI(args: {
               "street_number",
               "postal_code",
               "city",
-              "country",
               "direct_phone",
               "direct_email",
               "membership_fee",
@@ -329,7 +350,6 @@ async function enrichRowWithAI(args: {
       street_number: nullable(parsed.street_number) ?? args.heuristic.street_number,
       postal_code: nullable(parsed.postal_code) ?? args.heuristic.postal_code,
       city: nullable(parsed.city) ?? args.heuristic.city,
-      country: nullable(parsed.country) ?? args.heuristic.country,
       direct_phone: nullable(parsed.direct_phone) ?? args.heuristic.direct_phone,
       direct_email: nullable(parsed.direct_email) ?? args.heuristic.direct_email,
       membership_fee: nullable(parsed.membership_fee) ?? args.heuristic.membership_fee,
@@ -401,14 +421,7 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
     const heuristic: AIRowEnrichment = {
       name: nullable(read("name")),
       website_url: nullable(read("website_url")),
-      address: buildAddress({
-        address: read("address") || null,
-        streetName: read("street_name") || null,
-        streetNumber: read("street_number") || null,
-        postalCode: read("postal_code") || null,
-        city: read("city") || null,
-        country: read("country") || null,
-      }),
+      address: nullable(read("address")),
       member_number: nullable(read("member_number")),
       contact_title: nullable(read("contact_title")),
       contact_first_name: nullable(read("contact_first_name")),
@@ -418,7 +431,6 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
       street_number: nullable(read("street_number")),
       postal_code: nullable(read("postal_code")),
       city: nullable(read("city")),
-      country: nullable(read("country")),
       direct_phone: nullable(read("direct_phone")),
       direct_email: nullable(read("direct_email")),
       membership_fee: null,
@@ -443,16 +455,13 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
     const directEmail = enrichment.values.direct_email;
     const directPhone = enrichment.values.direct_phone;
     const websiteUrl = enrichment.values.website_url;
-    const address =
-      enrichment.values.address ??
-      buildAddress({
-        address: enrichment.values.address,
-        streetName: enrichment.values.street_name,
-        streetNumber: enrichment.values.street_number,
-        postalCode: enrichment.values.postal_code,
-        city: enrichment.values.city,
-        country: enrichment.values.country,
-      });
+    const address = buildAddress({
+      address: enrichment.values.address,
+      streetName: enrichment.values.street_name,
+      streetNumber: enrichment.values.street_number,
+      postalCode: enrichment.values.postal_code,
+      city: enrichment.values.city,
+    });
 
     rows.push({
       rowNumber,
@@ -471,7 +480,6 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
         street_number: enrichment.values.street_number,
         postal_code: enrichment.values.postal_code,
         city: enrichment.values.city,
-        country: enrichment.values.country,
         direct_phone: directPhone,
         direct_email: directEmail,
         membership_fee: enrichment.values.membership_fee,

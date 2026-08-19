@@ -133,10 +133,35 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
         <input name="website_url" className={input} placeholder="https://..." autoComplete="url" />
       </label>
 
-      <label className="block">
-        <span className="text-[14px] font-semibold">{copy.address}</span>
-        <textarea name="address" rows={3} required className={input} />
-      </label>
+      <fieldset className="block">
+        <legend className="text-[14px] font-semibold">{copy.address}</legend>
+        <div className="mt-2 grid gap-5 sm:grid-cols-[1fr_8rem]">
+          <label className="block">
+            <span className="text-[13px] font-semibold">{copy.street}</span>
+            <input name="street_name" required className={input} autoComplete="address-line1" />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-semibold">{copy.streetNumber}</span>
+            <input name="street_number" className={input} />
+          </label>
+        </div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-[8rem_1fr]">
+          <label className="block">
+            <span className="text-[13px] font-semibold">{copy.postalCode}</span>
+            <input
+              name="postal_code"
+              required
+              inputMode="numeric"
+              className={input}
+              autoComplete="postal-code"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-semibold">{copy.city}</span>
+            <input name="city" required className={input} autoComplete="address-level2" />
+          </label>
+        </div>
+      </fieldset>
 
       <label className="block">
         <span className="text-[14px] font-semibold">{copy.description}</span>

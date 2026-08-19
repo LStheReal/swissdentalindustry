@@ -57,7 +57,10 @@ export interface FieldDiff {
 const FIELD_LABELS: Record<keyof MemberEditableFields, string> = {
   logo_url: "Logo",
   description: "Beschreibung",
-  address: "Adresse",
+  street_name: "Strasse",
+  street_number: "Hausnummer",
+  postal_code: "PLZ",
+  city: "Ort",
   phone: "Telefon",
   email: "E-Mail",
   website_url: "Website",

@@ -14,6 +14,7 @@ import {
   type Multilingual,
 } from "@/lib/types";
 import { getPublicCopy } from "@/lib/public-copy";
+import { ADDRESS_KEYS, addressFieldLabel, formatAddress } from "@/lib/address";
 import { previewChange, confirmChange, type SubmitState } from "./actions";
 
 interface Props {
@@ -25,7 +26,10 @@ interface Props {
     description: string;
     source_lang: Locale;
     logo_url: string | null;
-    address: string | null;
+    street_name: string | null;
+    street_number: string | null;
+    postal_code: string | null;
+    city: string | null;
     phone: string | null;
     email: string | null;
     website_url: string | null;
@@ -187,15 +191,34 @@ function EditFormInner({
             />
           </label>
 
-          <label className="block">
-            <span className={label}>{t.addressLabel}</span>
-            <textarea
-              name="address"
-              rows={3}
-              defaultValue={initial.address ?? ""}
-              className={input}
-            />
-          </label>
+          <fieldset className="block">
+            <legend className={label}>{t.addressLabel}</legend>
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
+              <label className="block">
+                <span className={label}>{addressFieldLabel("street_name", locale)}</span>
+                <input name="street_name" defaultValue={initial.street_name ?? ""} className={input} />
+              </label>
+              <label className="block sm:w-32">
+                <span className={label}>{addressFieldLabel("street_number", locale)}</span>
+                <input name="street_number" defaultValue={initial.street_number ?? ""} className={input} />
+              </label>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[auto_1fr]">
+              <label className="block sm:w-32">
+                <span className={label}>{addressFieldLabel("postal_code", locale)}</span>
+                <input
+                  name="postal_code"
+                  inputMode="numeric"
+                  defaultValue={initial.postal_code ?? ""}
+                  className={input}
+                />
+              </label>
+              <label className="block">
+                <span className={label}>{addressFieldLabel("city", locale)}</span>
+                <input name="city" defaultValue={initial.city ?? ""} className={input} />
+              </label>
+            </div>
+          </fieldset>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block">
@@ -338,10 +361,15 @@ function PreviewBlock({
         </FieldPreview>
       )}
 
-      {"address" in proposed && (
+      {ADDRESS_KEYS.some((key) => key in proposed) && (
         <FieldPreview label={t.previewAddressLabel}>
           <p className="whitespace-pre-line text-sm">
-            {proposed.address || <span className="text-slate-400">—</span>}
+            {formatAddress({
+              street_name: proposed.street_name ?? current.street_name,
+              street_number: proposed.street_number ?? current.street_number,
+              postal_code: proposed.postal_code ?? current.postal_code,
+              city: proposed.city ?? current.city,
+            }) || <span className="text-slate-400">—</span>}
           </p>
         </FieldPreview>
       )}

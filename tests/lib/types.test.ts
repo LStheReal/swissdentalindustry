@@ -40,9 +40,9 @@ describe("normalizeMemberInternalProfile", () => {
   });
 
   it("macht aus leeren Strings null", () => {
-    const out = normalizeMemberInternalProfile({ city: "   ", country: "" });
+    const out = normalizeMemberInternalProfile({ city: "   ", street_name: "" });
     expect(out.city).toBeNull();
-    expect(out.country).toBeNull();
+    expect(out.street_name).toBeNull();
   });
 
   it("verträgt null/undefined", () => {

@@ -39,7 +39,17 @@ export interface Member {
   name: string;
   logo_url: string | null;
   description: Multilingual;
+  street_name: string | null;
+  street_number: string | null;
+  postal_code: string | null;
+  city: string | null;
+  /**
+   * Archiv der ursprünglichen Freitext-Adresse (Migration 0013). Wird aus den
+   * Einzelfeldern mitgeschrieben, aber nirgends mehr gelesen.
+   */
   address: string | null;
+  /** Die Adresse konnte nicht zerlegt werden und braucht eine Handprüfung. */
+  address_needs_review: boolean;
   phone: string | null;
   email: string | null;
   website_url: string | null;
@@ -64,7 +74,6 @@ export const MEMBER_INTERNAL_PROFILE_KEYS = [
   "street_number",
   "postal_code",
   "city",
-  "country",
   "direct_phone",
   "direct_email",
   "membership_fee",
@@ -133,7 +142,6 @@ export const INTERNAL_FIELD_LABELS: Record<MemberInternalProfileKey, Multilingua
   street_number: { de: "Hausnummer", fr: "Numéro", it: "Numero", en: "Number" },
   postal_code: { de: "PLZ", fr: "NPA", it: "CAP", en: "Postal code" },
   city: { de: "Ort", fr: "Localité", it: "Località", en: "City" },
-  country: { de: "Land", fr: "Pays", it: "Paese", en: "Country" },
   direct_phone: {
     de: "Direkttelefon",
     fr: "Téléphone direct",
@@ -203,7 +211,10 @@ export function normalizeMemberInternalProfile(
 export interface MemberEditableFields {
   logo_url: string | null;
   description: Multilingual;
-  address: string | null;
+  street_name: string | null;
+  street_number: string | null;
+  postal_code: string | null;
+  city: string | null;
   phone: string | null;
   email: string | null;
   website_url: string | null;
@@ -267,7 +278,9 @@ export const APPLICATION_REQUIRED_FIELDS = [
   "company",
   "contact_person",
   "email",
-  "address",
+  "street_name",
+  "postal_code",
+  "city",
   "description",
 ] as const;
 
@@ -278,7 +291,11 @@ export interface ApplicationPayload {
   email?: string;
   phone?: string;
   website_url?: string;
-  address?: string;
+  /** Firmenadresse — seit Migration 0013 in Einzelfeldern. */
+  street_name?: string;
+  street_number?: string;
+  postal_code?: string;
+  city?: string;
   description?: string;
   /** Freitext an das Sekretariat, wird nicht veröffentlicht. */
   message?: string;

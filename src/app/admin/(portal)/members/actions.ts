@@ -14,6 +14,13 @@ import {
 } from "@/lib/after-response";
 import { uploadImage } from "@/lib/storage";
 import { sanitizeExternalUrl } from "@/lib/url";
+import {
+  ADDRESS_KEYS,
+  formatAddress,
+  formatAddressOneLine,
+  normalizeAddress,
+  type Address,
+} from "@/lib/address";
 import { sendMemberWelcomeMail } from "@/lib/email";
 import {
   ensureInternalProfilesTableAvailable,
@@ -99,6 +106,29 @@ function str(formData: FormData, key: string): string | null {
   return v || null;
 }
 
+/** Die vier Adressfelder aus dem Formular. */
+function readAddress(formData: FormData): Address {
+  return normalizeAddress(
+    Object.fromEntries(ADDRESS_KEYS.map((key) => [key, str(formData, key)])) as Partial<Address>,
+  );
+}
+
+/**
+ * Adressspalten für ein INSERT/UPDATE auf `members`.
+ *
+ * `address` ist seit Migration 0013 nur noch Archiv des Freitexts. Es wird aus
+ * den Einzelfeldern mitgeschrieben, damit der Rohtext nie veraltet — gelesen
+ * wird es nicht mehr. `address_needs_review` fällt weg, sobald jemand die
+ * Adresse bewusst über das Formular gespeichert hat.
+ */
+function addressColumns(address: Address): Record<string, unknown> {
+  return {
+    ...address,
+    address: formatAddress(address) || null,
+    address_needs_review: false,
+  };
+}
+
 /**
  * Liest nur die Felder, die das Formular tatsächlich mitschickt. Seit die
  * Kontakte getrennt bearbeitet werden, enthält das Mitglieder-Formular
@@ -148,7 +178,7 @@ export async function createMember(formData: FormData) {
   const fallbackLang = readLocale(formData);
   const name = String(formData.get("name") || "").trim();
   const description = String(formData.get("description") || "").trim();
-  const address = str(formData, "address");
+  const address = readAddress(formData);
   const email = str(formData, "email");
   const image = formData.get("logo");
 
@@ -162,7 +192,7 @@ export async function createMember(formData: FormData) {
       name,
       logo_url: logoUrl,
       description: provisionalMultilingual(description),
-      address,
+      ...addressColumns(address),
       phone: str(formData, "phone"),
       email,
       website_url: sanitizeExternalUrl(str(formData, "website_url")),
@@ -187,7 +217,7 @@ export async function createMember(formData: FormData) {
     sourceLang,
     paths: ["/members", `/members/${data.id}`],
   });
-  geocodeAfterResponse({ memberId: data.id, address });
+  geocodeAfterResponse({ memberId: data.id, address: formatAddressOneLine(address) || null });
 
   // Self-Service-Link sofort erzeugen und der Firma per Mail zustellen, damit
   // der Admin nichts manuell verschicken muss. Mail-Fehler dürfen das Anlegen
@@ -222,17 +252,17 @@ export async function updateMember(id: string, formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   const description = String(formData.get("description") || "").trim();
   const originalDescription = String(formData.get("_original_description") || "").trim();
-  const address = str(formData, "address");
+  const address = readAddress(formData);
   const image = formData.get("logo");
 
   // Bestehende Firma laden, um zu prüfen, ob sich die Adresse geändert hat.
   const { data: existing } = await supabase
     .from("members")
-    .select("address, lat, lng, canton")
+    .select("street_name, street_number, postal_code, city, lat, lng, canton")
     .eq("id", id)
     .single();
 
-  const addressChanged = (existing?.address ?? null) !== address;
+  const addressChanged = formatAddress(normalizeAddress(existing)) !== formatAddress(address);
   const sourceChanged = description !== originalDescription;
   const skipTranslate = formData.get("_skip_translate") === "1";
   const effectiveSourceLangRaw = String(formData.get("_effective_source_lang") || "").trim();
@@ -253,7 +283,7 @@ export async function updateMember(id: string, formData: FormData) {
     const update: Record<string, unknown> = {
       name,
       description: descMl,
-      address,
+      ...addressColumns(address),
       phone: str(formData, "phone"),
       email: str(formData, "email"),
       website_url: sanitizeExternalUrl(str(formData, "website_url")),
@@ -281,7 +311,9 @@ export async function updateMember(id: string, formData: FormData) {
       sourceLang,
       paths: ["/members", `/members/${id}`],
     });
-    if (addressChanged) geocodeAfterResponse({ memberId: id, address });
+    if (addressChanged) {
+      geocodeAfterResponse({ memberId: id, address: formatAddressOneLine(address) || null });
+    }
 
     revalidatePath("/admin/members");
     redirect("/admin/members");
@@ -323,7 +355,9 @@ export async function updateMember(id: string, formData: FormData) {
 
   await upsertInternalProfile(supabase, id, readInternalProfile(formData));
 
-  if (addressChanged) geocodeAfterResponse({ memberId: id, address });
+  if (addressChanged) {
+    geocodeAfterResponse({ memberId: id, address: formatAddressOneLine(address) || null });
+  }
 
   revalidatePath("/admin/members");
   redirect("/admin/members");
@@ -406,7 +440,7 @@ export async function importMembers(
         const { error } = await supabase
           .from("members")
           .update({
-            address: row.address,
+            ...addressColumns(row.address),
             phone: row.phone,
             email: row.email,
             website_url: sanitizeExternalUrl(row.websiteUrl),
@@ -438,7 +472,7 @@ export async function importMembers(
           name: row.name,
           logo_url: null,
           description: emptyMultilingual(),
-          address: row.address,
+          ...addressColumns(row.address),
           phone: row.phone,
           email: row.email,
           website_url: sanitizeExternalUrl(row.websiteUrl),

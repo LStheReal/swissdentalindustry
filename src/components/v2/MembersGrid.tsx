@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { withLocalePath } from "@/lib/public-i18n";
 import { sanitizeExternalUrl } from "@/lib/url";
+import { formatAddress, formatAddressOneLine } from "@/lib/address";
 import { mlText, type Locale, type Member } from "@/lib/types";
 import { ArrowRight } from "./ui";
 
@@ -105,11 +106,12 @@ function MemberModal({
   const closeRef = useRef<HTMLButtonElement>(null);
   const description = mlText(member.description, locale);
   const websiteUrl = sanitizeExternalUrl(member.website_url);
+  const address = formatAddress(member);
   const googleMapsUrl =
     member.lat != null && member.lng != null
       ? `https://www.google.com/maps?q=${member.lat},${member.lng}`
-      : member.address
-        ? `https://www.google.com/maps/search/${encodeURIComponent(member.address)}`
+      : formatAddressOneLine(member)
+        ? `https://www.google.com/maps/search/${encodeURIComponent(formatAddressOneLine(member))}`
         : null;
 
   // ESC schliesst, Hintergrund-Scroll gesperrt, Fokus auf den Schliessen-Knopf.
@@ -157,9 +159,9 @@ function MemberModal({
         ) : null}
 
         <div className="mt-6 space-y-2 border-t border-[color:var(--border-subtle)] pt-5 text-[14.5px] leading-[1.7] text-[color:var(--text-secondary)]">
-          {member.address ? (
+          {address ? (
             <p className="break-words [overflow-wrap:anywhere]" style={{ whiteSpace: "pre-line" }}>
-              {member.address}
+              {address}
             </p>
           ) : null}
           {member.canton ? (
@@ -184,7 +186,7 @@ function MemberModal({
               </a>
             </p>
           ) : null}
-          {!member.address && !member.phone && !member.email ? <p>{copy.detail.noContact}</p> : null}
+          {!address && !member.phone && !member.email ? <p>{copy.detail.noContact}</p> : null}
         </div>
 
         {websiteUrl || googleMapsUrl ? (

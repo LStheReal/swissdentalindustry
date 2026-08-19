@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { type Member, type MemberInternalProfileFields, MEMBER_INTERNAL_PROFILE_LABELS } from "@/lib/types";
+import { formatAddress, formatAddressOneLine } from "@/lib/address";
 import { deleteMember, publishMember } from "./actions";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 
@@ -158,7 +159,7 @@ export function MembersTable({ members, internalProfiles }: Props) {
                 </p>
                 <p className="mt-0.5 truncate text-xs text-[#6b6b73]">
                   {m.canton ? `${m.canton} · ` : ""}
-                  {m.address ?? "Keine Adresse"}
+                  {formatAddressOneLine(m) || "Keine Adresse"}
                 </p>
               </div>
             </div>
@@ -268,8 +269,8 @@ export function MembersTable({ members, internalProfiles }: Props) {
                   {selected.canton && (
                     <Row label="Kanton" value={selected.canton} />
                   )}
-                  {selected.address && (
-                    <Row label="Adresse" value={selected.address} />
+                  {formatAddress(selected) && (
+                    <Row label="Adresse" value={formatAddress(selected)} />
                   )}
                   {selected.phone && (
                     <Row label="Telefon" value={selected.phone} />

@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { translateToAll } from "@/lib/translate";
 import { geocodeAddress } from "@/lib/geocode";
 import { sanitizeExternalUrl } from "@/lib/url";
+import { formatAddress, formatAddressOneLine, normalizeAddress } from "@/lib/address";
 import { saveInternalProfile } from "@/lib/member-internal-profiles";
 import {
   sendApplicationApprovedMail,
@@ -91,7 +92,7 @@ export async function approveApplication(id: string) {
   const p = app.payload;
   const name = (p.company || "").trim() || "Neue Firma";
   const description = (p.description || "").trim();
-  const address = (p.address || "").trim() || null;
+  const address = normalizeAddress(p);
   const email = (p.email || "").trim() || null;
 
   // Die Sprache steht im Antrag — die Spracherkennung via Claude (~4s) entfällt.
@@ -109,7 +110,10 @@ export async function approveApplication(id: string) {
       name,
       logo_url: app.logo_url,
       description: provisionalDescription,
-      address,
+      ...address,
+      // `address` ist seit Migration 0013 nur noch Archiv des Freitexts.
+      address: formatAddress(address) || null,
+      address_needs_review: false,
       phone: (p.phone || "").trim() || null,
       email,
       website_url: sanitizeExternalUrl(p.website_url ?? null),
@@ -200,7 +204,9 @@ export async function approveApplication(id: string) {
     try {
       const [ml, geo] = await Promise.all([
         description ? translateToAll(description, sourceLang) : Promise.resolve(null),
-        address ? geocodeAddress(address) : Promise.resolve(null),
+        formatAddressOneLine(address)
+          ? geocodeAddress(formatAddressOneLine(address))
+          : Promise.resolve(null),
       ]);
       const patch: Record<string, unknown> = {};
       if (ml) patch.description = ml;

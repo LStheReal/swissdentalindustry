@@ -631,7 +631,7 @@ export function renderAdminChangeMail(input: AdminChangeMailInput): { html: stri
 
 const FIELD_LABELS: Record<string, string> = {
   company: "Firma",
-  name: "Ansprechperson",
+  name: "Kontaktperson",
   email: "E-Mail",
   phone: "Telefon",
   website_url: "Website",
@@ -654,7 +654,7 @@ const MEMBER_FIELD_LABELS_BY_LOCALE: Record<Locale, Record<string, string>> = {
     website_url: "Website",
     description: "Beschreibung",
     logo_url: "Logo",
-    internal_profile: "Interne Mitgliedsdaten",
+    internal_profile: "Interne Kontaktdaten",
   },
   fr: {
     address: "Adresse",
@@ -663,7 +663,7 @@ const MEMBER_FIELD_LABELS_BY_LOCALE: Record<Locale, Record<string, string>> = {
     website_url: "Site web",
     description: "Description",
     logo_url: "Logo",
-    internal_profile: "Données membres internes",
+    internal_profile: "Données de contact internes",
   },
   it: {
     address: "Indirizzo",
@@ -672,7 +672,7 @@ const MEMBER_FIELD_LABELS_BY_LOCALE: Record<Locale, Record<string, string>> = {
     website_url: "Sito web",
     description: "Descrizione",
     logo_url: "Logo",
-    internal_profile: "Dati membro interni",
+    internal_profile: "Dati di contatto interni",
   },
   en: {
     address: "Address",
@@ -681,7 +681,7 @@ const MEMBER_FIELD_LABELS_BY_LOCALE: Record<Locale, Record<string, string>> = {
     website_url: "Website",
     description: "Description",
     logo_url: "Logo",
-    internal_profile: "Internal member data",
+    internal_profile: "Internal contact data",
   },
 };
 

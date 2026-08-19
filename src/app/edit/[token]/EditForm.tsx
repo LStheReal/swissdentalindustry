@@ -6,7 +6,7 @@ import {
   LOCALES,
   LOCALE_LABELS,
   MEMBER_SELF_SERVICE_PROFILE_KEYS,
-  MEMBER_INTERNAL_PROFILE_LABELS,
+  internalFieldLabel,
   emptyMemberInternalProfile,
   type Locale,
   type MemberEditableFields,
@@ -97,6 +97,7 @@ function EditFormInner({
     return (
       <PreviewBlock
         t={t}
+        locale={locale}
         current={initial}
         proposed={previewState.proposed}
         contactEmail={previewState.contact_email ?? initial.email}
@@ -130,7 +131,7 @@ function EditFormInner({
               : "text-[#4a4a51] hover:bg-white"
           }`}
         >
-          Website-Profil
+          {t.publicTabLabel}
         </button>
         <button
           type="button"
@@ -141,7 +142,7 @@ function EditFormInner({
               : "text-[#4a4a51] hover:bg-white"
           }`}
         >
-          Interne Mitgliedsdaten
+          {t.internalTabLabel}
         </button>
       </div>
 
@@ -231,20 +232,20 @@ function EditFormInner({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]">
-                Interne Mitgliedsdaten
+                {t.internalTitle}
               </p>
               <p className="mt-1 text-[13px] leading-relaxed text-[#4a4a51]">
-                Diese Angaben sind nur für Swiss Dental Industry und erscheinen nicht auf der Website.
+                {t.internalHint}
               </p>
             </div>
             <span className="font-sdi-mono rounded-[2px] bg-[#0a0a0b] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
-              Nicht öffentlich
+              {t.internalBadge}
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {MEMBER_SELF_SERVICE_PROFILE_KEYS.map((key) => (
               <label key={key} className={key === "internal_notes" ? "block sm:col-span-2" : "block"}>
-                <span className={label}>{MEMBER_INTERNAL_PROFILE_LABELS[key]}</span>
+                <span className={label}>{internalFieldLabel(key, locale)}</span>
                 {key === "internal_notes" ? (
                   <textarea
                     name={`internal_${key}`}
@@ -284,6 +285,7 @@ function EditFormInner({
 
 function PreviewBlock({
   t,
+  locale,
   current,
   proposed,
   contactEmail,
@@ -293,6 +295,7 @@ function PreviewBlock({
   onBack,
 }: {
   t: ReturnType<typeof getPublicCopy>["editForm"];
+  locale: Locale;
   current: Props["initial"];
   proposed: Partial<MemberEditableFields>;
   contactEmail: string | null;
@@ -368,12 +371,12 @@ function PreviewBlock({
       )}
 
       {proposed.internal_profile && (
-        <FieldPreview label="Interne Mitgliedsdaten (nicht öffentlich)">
+        <FieldPreview label={t.previewInternalLabel}>
           <div className="grid gap-2 text-sm sm:grid-cols-2">
             {MEMBER_SELF_SERVICE_PROFILE_KEYS.map((key) => (
               <p key={key}>
                 <span className="mr-2 text-xs font-semibold uppercase text-slate-400">
-                  {MEMBER_INTERNAL_PROFILE_LABELS[key]}
+                  {internalFieldLabel(key, locale)}
                 </span>
                 {proposed.internal_profile?.[key] || (
                   <span className="text-slate-400">—</span>

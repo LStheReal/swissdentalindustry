@@ -235,7 +235,7 @@ export function MemberForm({ action, formId = "member-form", initial }: Props) {
               <div className="flex items-center gap-2.5">
                 <span className="h-2 w-2 bg-[#0a0a0b]" />
                 <span className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.14em]">
-                  03 — Interne Mitgliedsdaten
+                  03 — Interne Firmendaten
                 </span>
               </div>
               <span className="font-sdi-mono rounded-[2px] bg-[#0a0a0b] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
@@ -244,8 +244,8 @@ export function MemberForm({ action, formId = "member-form", initial }: Props) {
             </div>
             <p className="mb-4 text-[13px] leading-relaxed text-[#6b6b73]">
               Diese Angaben sind nur für das Admin-Portal und die Mitgliederverwaltung.
-              Sie werden nicht auf der Website angezeigt. Die Ansprechpersonen der
-              Firma werden separat unter „Mitglieder“ gepflegt.
+              Sie werden nicht auf der Website angezeigt. Die Personen der Firma
+              werden separat unter „Kontakte“ gepflegt.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {COMPANY_INTERNAL_KEYS.map((key) => (

@@ -81,7 +81,7 @@ export const MEMBER_SELF_SERVICE_PROFILE_KEYS: readonly MemberInternalProfileKey
     (key) => key !== "membership_fee" && key !== "internal_notes",
   );
 
-// Felder, die zur einzelnen Ansprechperson gehören. Ein Partner kann mehrere
+// Felder, die zur einzelnen Kontakt gehören. Ein Partner kann mehrere
 // davon haben (Migration 0012) — `member_number` ist dabei der laufende Index
 // innerhalb der Firma (erste, zweite, dritte Person).
 export const CONTACT_PERSON_KEYS: readonly MemberInternalProfileKey[] = [
@@ -107,22 +107,80 @@ export interface MemberInternalProfile extends MemberInternalProfileFields {
   updated_at: string;
 }
 
-export const MEMBER_INTERNAL_PROFILE_LABELS: Record<MemberInternalProfileKey, string> = {
-  member_number: "Mitgliedsnummer",
-  contact_title: "Anrede / Titel",
-  contact_first_name: "Vorname",
-  contact_last_name: "Nachname",
-  contact_job_title: "Funktion",
-  street_name: "Strasse",
-  street_number: "Hausnummer",
-  postal_code: "PLZ",
-  city: "Ort",
-  country: "Land",
-  direct_phone: "Direkttelefon",
-  direct_email: "Direkt-E-Mail",
-  membership_fee: "Mitgliederbeitrag",
-  internal_notes: "Interne Notizen",
+// Feldbeschriftungen der internen Daten — in allen vier Sprachen, weil sie
+// sowohl im Admin-Portal (Sprachumschalter) als auch im öffentlichen
+// Self-Service-Formular (/edit/[token]) angezeigt werden.
+//
+// Terminologie: die Personen, die bei einer Mitgliedsfirma arbeiten, heissen
+// „Kontakte" — nicht „Mitglieder". Mitglied ist die Firma.
+export const INTERNAL_FIELD_LABELS: Record<MemberInternalProfileKey, Multilingual> = {
+  member_number: {
+    de: "Kontaktnummer",
+    fr: "Numéro de contact",
+    it: "Numero di contatto",
+    en: "Contact number",
+  },
+  contact_title: {
+    de: "Anrede / Titel",
+    fr: "Civilité / titre",
+    it: "Titolo",
+    en: "Salutation / title",
+  },
+  contact_first_name: { de: "Vorname", fr: "Prénom", it: "Nome", en: "First name" },
+  contact_last_name: { de: "Nachname", fr: "Nom", it: "Cognome", en: "Last name" },
+  contact_job_title: { de: "Funktion", fr: "Fonction", it: "Funzione", en: "Job title" },
+  street_name: { de: "Strasse", fr: "Rue", it: "Via", en: "Street" },
+  street_number: { de: "Hausnummer", fr: "Numéro", it: "Numero", en: "Number" },
+  postal_code: { de: "PLZ", fr: "NPA", it: "CAP", en: "Postal code" },
+  city: { de: "Ort", fr: "Localité", it: "Località", en: "City" },
+  country: { de: "Land", fr: "Pays", it: "Paese", en: "Country" },
+  direct_phone: {
+    de: "Direkttelefon",
+    fr: "Téléphone direct",
+    it: "Telefono diretto",
+    en: "Direct phone",
+  },
+  direct_email: {
+    de: "Direkt-E-Mail",
+    fr: "E-mail direct",
+    it: "E-mail diretta",
+    en: "Direct email",
+  },
+  membership_fee: {
+    de: "Mitgliederbeitrag",
+    fr: "Cotisation",
+    it: "Quota associativa",
+    en: "Membership fee",
+  },
+  internal_notes: {
+    de: "Interne Notizen",
+    fr: "Notes internes",
+    it: "Note interne",
+    en: "Internal notes",
+  },
 };
+
+/** Beschriftung eines internen Feldes in der gewünschten Sprache. */
+export function internalFieldLabel(
+  key: MemberInternalProfileKey,
+  locale: Locale,
+): string {
+  return INTERNAL_FIELD_LABELS[key][locale] || INTERNAL_FIELD_LABELS[key].de;
+}
+
+/** Alle Beschriftungen in einer Sprache — praktisch als Prop für Client-Komponenten. */
+export function internalFieldLabels(
+  locale: Locale,
+): Record<MemberInternalProfileKey, string> {
+  return Object.fromEntries(
+    MEMBER_INTERNAL_PROFILE_KEYS.map((key) => [key, internalFieldLabel(key, locale)]),
+  ) as Record<MemberInternalProfileKey, string>;
+}
+
+// Deutsche Projektion für die Stellen, die bewusst immer Deutsch bleiben
+// (Admin-Benachrichtigungsmails).
+export const MEMBER_INTERNAL_PROFILE_LABELS: Record<MemberInternalProfileKey, string> =
+  internalFieldLabels("de");
 
 export function emptyMemberInternalProfile(): MemberInternalProfileFields {
   return Object.fromEntries(

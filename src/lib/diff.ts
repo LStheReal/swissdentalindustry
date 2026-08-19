@@ -61,7 +61,7 @@ const FIELD_LABELS: Record<keyof MemberEditableFields, string> = {
   phone: "Telefon",
   email: "E-Mail",
   website_url: "Website",
-  internal_profile: "Interne Mitgliedsdaten",
+  internal_profile: "Interne Kontaktdaten",
 };
 
 const MULTILINGUAL_FIELDS = new Set<keyof MemberEditableFields>(["description"]);

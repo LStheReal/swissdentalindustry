@@ -236,6 +236,70 @@ const DICT = {
     it: "Accedi",
     en: "Sign in",
   },
+  // ─── Kontakte (Personen bei einer Mitgliedsfirma) ──────────────────────────
+  // Terminologie: Mitglied = die Firma. Die Personen dort heissen Kontakte.
+  "contacts.title": { de: "Kontakte", fr: "Contacts", it: "Contatti", en: "Contacts" },
+  "contacts.notPublic": {
+    de: "Nicht öffentlich",
+    fr: "Non public",
+    it: "Non pubblico",
+    en: "Not public",
+  },
+  "contacts.intro": {
+    de: "Kontakte dieser Mitgliedsfirma. Die Nummer ergibt sich fortlaufend — erster, zweiter, dritter Kontakt. Adresse und Logo gehören zur Firma und stehen oben.",
+    fr: "Contacts de cette entreprise membre. Le numéro suit l'ordre — premier, deuxième, troisième contact. L'adresse et le logo appartiennent à l'entreprise et figurent ci-dessus.",
+    it: "Contatti di questa azienda associata. Il numero è progressivo — primo, secondo, terzo contatto. Indirizzo e logo appartengono all'azienda e si trovano sopra.",
+    en: "Contacts at this member company. The number runs consecutively — first, second, third contact. Address and logo belong to the company and are shown above.",
+  },
+  "contacts.empty": {
+    de: "Noch kein Kontakt erfasst.",
+    fr: "Aucun contact enregistré.",
+    it: "Nessun contatto registrato.",
+    en: "No contact recorded yet.",
+  },
+  "contacts.item": { de: "Kontakt", fr: "Contact", it: "Contatto", en: "Contact" },
+  "contacts.add": {
+    de: "+ Kontakt hinzufügen",
+    fr: "+ Ajouter un contact",
+    it: "+ Aggiungi contatto",
+    en: "+ Add contact",
+  },
+  "contacts.saveNew": {
+    de: "Kontakt speichern",
+    fr: "Enregistrer le contact",
+    it: "Salva contatto",
+    en: "Save contact",
+  },
+  "contacts.remove": {
+    de: "Entfernen",
+    fr: "Supprimer",
+    it: "Rimuovi",
+    en: "Remove",
+  },
+  "contacts.removing": {
+    de: "Wird entfernt …",
+    fr: "Suppression …",
+    it: "Rimozione …",
+    en: "Removing …",
+  },
+  "contacts.saving": {
+    de: "Wird gespeichert …",
+    fr: "Enregistrement …",
+    it: "Salvataggio …",
+    en: "Saving …",
+  },
+  "contacts.creating": {
+    de: "Wird angelegt …",
+    fr: "Création …",
+    it: "Creazione …",
+    en: "Creating …",
+  },
+  "internal.title": {
+    de: "Interne Daten",
+    fr: "Données internes",
+    it: "Dati interni",
+    en: "Internal data",
+  },
 } as const satisfies Record<string, Record<Locale, string>>;
 
 export type AdminI18nKey = keyof typeof DICT;

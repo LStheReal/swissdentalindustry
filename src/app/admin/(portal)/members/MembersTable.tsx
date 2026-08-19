@@ -286,11 +286,11 @@ export function MembersTable({ members, internalProfiles }: Props) {
                 </dl>
               </section>
 
-              {/* Interne Daten */}
+              {/* Interne Daten (Firma + Hauptkontakt) */}
               {profile && (
                 <section>
                   <div className="font-sdi-mono mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
-                    Interne Mitgliedsdaten
+                    Interne Daten
                   </div>
                   <dl className="space-y-2.5">
                     {(Object.entries(MEMBER_INTERNAL_PROFILE_LABELS) as [keyof typeof MEMBER_INTERNAL_PROFILE_LABELS, string][]).map(

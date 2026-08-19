@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminT } from "@/lib/i18n-admin";
 import {
   getInternalProfileForMember,
   listContactPersons,
 } from "@/lib/member-internal-profiles";
 import {
+  internalFieldLabels,
   type Member,
   type MemberEditToken,
 } from "@/lib/types";
@@ -29,6 +31,7 @@ export default async function EditMemberPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const { locale: adminLocale, t } = await getAdminT();
 
   const [{ data: memberData }, { data: tokenData }, internalProfile, contactPersons] = await Promise.all([
     supabase.from("members").select("*").eq("id", id).maybeSingle(),
@@ -144,6 +147,22 @@ export default async function EditMemberPage({
       <div className="mt-6">
         <ContactPersonsPanel
           people={contactPersons}
+          copy={{
+            title: t("contacts.title"),
+            notPublic: t("contacts.notPublic"),
+            intro: t("contacts.intro"),
+            empty: t("contacts.empty"),
+            item: t("contacts.item"),
+            add: t("contacts.add"),
+            saveNew: t("contacts.saveNew"),
+            save: t("common.save"),
+            cancel: t("common.cancel"),
+            remove: t("contacts.remove"),
+            removing: t("contacts.removing"),
+            saving: t("contacts.saving"),
+            creating: t("contacts.creating"),
+            fieldLabels: internalFieldLabels(adminLocale),
+          }}
           addAction={async (formData: FormData) => {
             "use server";
             await addContactPersonAction(member.id, formData);

@@ -101,7 +101,7 @@ function str(formData: FormData, key: string): string | null {
 
 /**
  * Liest nur die Felder, die das Formular tatsächlich mitschickt. Seit die
- * Ansprechpersonen getrennt bearbeitet werden, enthält das Mitglieder-Formular
+ * Kontakte getrennt bearbeitet werden, enthält das Mitglieder-Formular
  * nur noch die Firmenfelder — die Personenfelder dürfen dabei nicht
  * verlorengehen (siehe `upsertInternalProfile`).
  */
@@ -122,7 +122,7 @@ async function upsertInternalProfile(
   patch: Partial<MemberInternalProfileFields>,
 ) {
   // Über den Bestand legen, statt ihn zu ersetzen: sonst löscht ein Speichern
-  // des Firmenformulars die Angaben der ersten Ansprechperson.
+  // des Firmenformulars die Angaben der ersten Kontakt.
   const existing = await getInternalProfileForMember(supabase, memberId);
   await saveInternalProfile(
     supabase,
@@ -422,7 +422,7 @@ export async function importMembers(
         const internalSaved = await saveInternalProfile(supabase, existing.id, row.internalProfile);
         if (!internalSaved) {
           throw new Error(
-            "Interne Mitgliedsdaten konnten nicht gespeichert werden, weil public.member_internal_profiles fehlt.",
+            "Interne Kontaktdaten konnten nicht gespeichert werden, weil public.member_internal_profiles fehlt.",
           );
         }
 
@@ -462,7 +462,7 @@ export async function importMembers(
       const internalSaved = await saveInternalProfile(supabase, data.id, row.internalProfile);
       if (!internalSaved) {
         throw new Error(
-          "Interne Mitgliedsdaten konnten nicht gespeichert werden, weil public.member_internal_profiles fehlt.",
+          "Interne Kontaktdaten konnten nicht gespeichert werden, weil public.member_internal_profiles fehlt.",
         );
       }
       existingByName.set(key, { id: data.id, name: row.name });
@@ -547,9 +547,9 @@ export async function sendEditLinkToMember(memberId: string) {
   revalidatePath(`/admin/members/${memberId}`);
 }
 
-// ─── Ansprechpersonen (mehrere pro Partner) ──────────────────────────────────
+// ─── Kontakte (mehrere pro Partner) ──────────────────────────────────
 
-/** Liest die Felder einer Ansprechperson aus dem Formular. */
+/** Liest die Felder einer Kontakt aus dem Formular. */
 function readContactPerson(formData: FormData): MemberInternalProfileFields {
   const partial: Partial<MemberInternalProfileFields> = {};
   for (const key of CONTACT_PERSON_KEYS) {

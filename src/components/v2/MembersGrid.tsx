@@ -15,7 +15,6 @@ export type MembersGridCopy = {
   fallbackOrg: string;
   close: string;
   detail: {
-    eyebrow: string;
     openWebsite: string;
     canton: string;
     noContact: string;
@@ -92,6 +91,11 @@ export function MembersGrid({
   );
 }
 
+/** Zeigt die URL ohne Schema und ohne abschliessenden Slash — lesbarer als der Rohwert. */
+function displayUrl(url: string): string {
+  return url.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+}
+
 function MemberModal({
   member,
   locale,
@@ -145,8 +149,7 @@ function MemberModal({
             </span>
           ) : null}
           <div className="min-w-0">
-            <span className="v2-eyebrow">{copy.detail.eyebrow}</span>
-            <h2 className="mt-2 break-words text-[clamp(24px,3vw,34px)] font-extrabold leading-[1.05] tracking-[-0.025em]">
+            <h2 className="break-words text-[clamp(24px,3vw,34px)] font-extrabold leading-[1.05] tracking-[-0.025em]">
               {member.name}
             </h2>
           </div>
@@ -176,17 +179,19 @@ function MemberModal({
               </a>
             </p>
           ) : null}
-          {member.email ? (
-            <p>
+          {websiteUrl ? (
+            <p className="break-words [overflow-wrap:anywhere]">
               <a
                 className="font-semibold text-[color:var(--red-500)] transition-colors hover:text-[color:var(--red-600)]"
-                href={`mailto:${member.email}`}
+                href={websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                {member.email}
+                {displayUrl(websiteUrl)}
               </a>
             </p>
           ) : null}
-          {!address && !member.phone && !member.email ? <p>{copy.detail.noContact}</p> : null}
+          {!address && !member.phone && !websiteUrl ? <p>{copy.detail.noContact}</p> : null}
         </div>
 
         {websiteUrl || googleMapsUrl ? (

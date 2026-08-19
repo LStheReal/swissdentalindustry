@@ -65,7 +65,6 @@ export default async function MitgliederPage() {
               fallbackOrg: copy.members.fallbackOrg,
               close: copy.members.close,
               detail: {
-                eyebrow: copy.memberDetail.eyebrow,
                 openWebsite: copy.memberDetail.openWebsite,
                 canton: copy.memberDetail.canton,
                 noContact: copy.memberDetail.noContact,

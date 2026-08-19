@@ -13,6 +13,7 @@ import {
   translateAfterResponse,
 } from "@/lib/after-response";
 import { uploadImage } from "@/lib/storage";
+import { cleanDescription, stripDuplicatedName } from "@/lib/description";
 import { sanitizeExternalUrl } from "@/lib/url";
 import {
   ADDRESS_KEYS,
@@ -177,7 +178,11 @@ export async function createMember(formData: FormData) {
 
   const fallbackLang = readLocale(formData);
   const name = String(formData.get("name") || "").trim();
-  const description = String(formData.get("description") || "").trim();
+  // Doppelte Firmennennung am Textanfang gar nicht erst speichern.
+  const description = stripDuplicatedName(
+    name,
+    String(formData.get("description") || "").trim(),
+  );
   const address = readAddress(formData);
   const email = str(formData, "email");
   const image = formData.get("logo");
@@ -216,6 +221,7 @@ export async function createMember(formData: FormData) {
     fields: { description },
     sourceLang,
     paths: ["/members", `/members/${data.id}`],
+    stripName: name,
   });
   geocodeAfterResponse({ memberId: data.id, address: formatAddressOneLine(address) || null });
 
@@ -250,7 +256,10 @@ export async function updateMember(id: string, formData: FormData) {
 
   const fallbackLang = readLocale(formData);
   const name = String(formData.get("name") || "").trim();
-  const description = String(formData.get("description") || "").trim();
+  const description = stripDuplicatedName(
+    name,
+    String(formData.get("description") || "").trim(),
+  );
   const originalDescription = String(formData.get("_original_description") || "").trim();
   const address = readAddress(formData);
   const image = formData.get("logo");
@@ -310,6 +319,7 @@ export async function updateMember(id: string, formData: FormData) {
       fields: { description },
       sourceLang,
       paths: ["/members", `/members/${id}`],
+      stripName: name,
     });
     if (addressChanged) {
       geocodeAfterResponse({ memberId: id, address: formatAddressOneLine(address) || null });
@@ -320,12 +330,12 @@ export async function updateMember(id: string, formData: FormData) {
   }
 
   // Quelltext unverändert oder skip_translate → Übersetzungen direkt speichern
-  const directDesc: Multilingual = {
+  const directDesc: Multilingual = cleanDescription(name, {
     de: String(formData.get("desc_de") || "").trim(),
     fr: String(formData.get("desc_fr") || "").trim(),
     it: String(formData.get("desc_it") || "").trim(),
     en: String(formData.get("desc_en") || "").trim(),
-  };
+  });
   descMl = directDesc;
   sourceLang = effectiveSourceLang;
 

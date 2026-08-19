@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { translateFields } from "./translate";
 import { geocodeAddress } from "./geocode";
 import { createAdminClient } from "./supabase/admin";
+import { cleanDescription } from "./description";
 import { LOCALES, type Locale, type Multilingual } from "./types";
 
 /**
@@ -31,6 +32,9 @@ export function provisionalMultilingual(text: string): Multilingual {
  * @param id       Zeilen-ID
  * @param fields   Spalte → Originaltext (leere Texte werden übersprungen)
  * @param paths    Pfade, die nach dem Nachtragen neu gebaut werden
+ * @param stripName Firmenname — entfernt eine doppelte Nennung am Textanfang,
+ *                  auch wenn die Übersetzung sie reproduziert (siehe
+ *                  lib/description.ts)
  */
 export function translateAfterResponse({
   table,
@@ -38,12 +42,14 @@ export function translateAfterResponse({
   fields,
   sourceLang,
   paths = [],
+  stripName,
 }: {
   table: string;
   id: string;
   fields: Record<string, string>;
   sourceLang: Locale;
   paths?: string[];
+  stripName?: string | null;
 }): void {
   const pending = Object.fromEntries(
     Object.entries(fields).filter(([, text]) => text.trim().length > 0),
@@ -52,7 +58,12 @@ export function translateAfterResponse({
 
   after(async () => {
     try {
-      const translated = await translateFields(pending, sourceLang);
+      const raw = await translateFields(pending, sourceLang);
+      const translated = stripName
+        ? Object.fromEntries(
+            Object.entries(raw).map(([key, ml]) => [key, cleanDescription(stripName, ml)]),
+          )
+        : raw;
       const supabase = createAdminClient();
       const { error } = await supabase.from(table).update(translated).eq("id", id);
       if (error) throw new Error(error.message);

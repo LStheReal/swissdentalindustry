@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { translateToAll } from "@/lib/translate";
+import { cleanDescription, stripDuplicatedName } from "@/lib/description";
 import { geocodeAddress } from "@/lib/geocode";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { formatAddress, formatAddressOneLine, normalizeAddress } from "@/lib/address";
@@ -91,7 +92,10 @@ export async function approveApplication(id: string) {
 
   const p = app.payload;
   const name = (p.company || "").trim() || "Neue Firma";
-  const description = (p.description || "").trim();
+  // Antragsteller tippen den Firmennamen gerne noch einmal vor die
+  // Beschreibung — hier fliegt die Doppelnennung raus, bevor sie gespeichert
+  // und in vier Sprachen übersetzt wird (siehe lib/description.ts).
+  const description = stripDuplicatedName(name, (p.description || "").trim());
   const address = normalizeAddress(p);
   const email = (p.email || "").trim() || null;
 
@@ -209,7 +213,7 @@ export async function approveApplication(id: string) {
           : Promise.resolve(null),
       ]);
       const patch: Record<string, unknown> = {};
-      if (ml) patch.description = ml;
+      if (ml) patch.description = cleanDescription(name, ml);
       if (geo) {
         patch.lat = geo.lat;
         patch.lng = geo.lng;

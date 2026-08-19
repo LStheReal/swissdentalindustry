@@ -8,6 +8,7 @@ import { describeMemberValuePair, memberFieldLabel } from "@/lib/email-templates
 import { getRecipient } from "@/lib/forms";
 import { getInternalProfileForMember } from "@/lib/member-internal-profiles";
 import { translateToAllAuto } from "@/lib/translate";
+import { cleanDescription, stripDuplicatedName } from "@/lib/description";
 import { uploadImage } from "@/lib/storage";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { ADDRESS_KEYS } from "@/lib/address";
@@ -60,6 +61,7 @@ function strOrNull(value: unknown, maxLength: number): string | null {
 function sanitizeProposed(
   raw: unknown,
   currentProfile: MemberInternalProfileFields,
+  memberName: string,
 ): Partial<MemberEditableFields> {
   const out: Partial<MemberEditableFields> = {};
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
@@ -76,7 +78,9 @@ function sanitizeProposed(
     const d = src.description as Record<string, unknown>;
     const ml = {} as Multilingual;
     for (const l of LOCALES) ml[l] = typeof d[l] === "string" ? (d[l] as string).slice(0, 4000) : "";
-    if (LOCALES.some((l) => ml[l].trim())) out.description = ml;
+    // Der Wert kam durch den Browser zurück — die Doppelnennung hier noch
+    // einmal abfangen, nicht nur beim Erzeugen der Vorschau.
+    if (LOCALES.some((l) => ml[l].trim())) out.description = cleanDescription(memberName, ml);
   }
 
   for (const key of ADDRESS_KEYS) {
@@ -112,7 +116,10 @@ export async function previewChange(
     ? (sourceLangRaw as Locale)
     : "de";
 
-  const descriptionText = String(formData.get("description") || "").trim();
+  const descriptionText = stripDuplicatedName(
+    member.name,
+    String(formData.get("description") || "").trim(),
+  );
   const phone = String(formData.get("phone") || "").trim() || null;
   const email = String(formData.get("email") || "").trim() || null;
   const websiteRaw = String(formData.get("website_url") || "").trim();
@@ -139,7 +146,7 @@ export async function previewChange(
         : Promise.resolve(null),
     ]);
     logoUrl = logo;
-    descriptionMl = descResult?.ml ?? null;
+    descriptionMl = descResult ? cleanDescription(member.name, descResult.ml) : null;
   } catch (err) {
     console.error("previewChange processing failed:", err);
     return { step: "edit", error: "processing" };
@@ -219,7 +226,7 @@ export async function confirmChange(
 
   const supabase = createAdminClient();
   const currentInternalProfile = await getInternalProfileForMember(supabase, member.id);
-  const proposed = sanitizeProposed(parsed, currentInternalProfile);
+  const proposed = sanitizeProposed(parsed, currentInternalProfile, member.name);
 
   if (Object.keys(proposed).length === 0) {
     return { step: "edit", error: "nochange" };

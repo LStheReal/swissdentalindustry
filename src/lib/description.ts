@@ -20,42 +20,80 @@
 
 import { LOCALES, type Multilingual } from "./types";
 
-/** Escaped den Namen für einen Regex und macht Whitespace tolerant. */
-function namePattern(name: string): string {
-  return name
-    .trim()
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    .replace(/\s+/g, "\\s+");
+/**
+ * Zerlegt einen Text in vergleichbare Tokens und merkt sich, wo jedes im
+ * Original anfängt.
+ *
+ * Satzzeichen INNERHALB eines Namens werden übersprungen statt getrennt:
+ * "S.A." und "SA" sowie "Bien-Air" und "BienAir" müssen als dasselbe gelten,
+ * sonst greift der Filter genau bei den Firmen nicht, die eine Rechtsform im
+ * Namen führen.
+ */
+function tokenize(text: string): { value: string; start: number }[] {
+  const out: { value: string; start: number }[] = [];
+  let current = "";
+  let start = -1;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (/[\p{L}\p{N}]/u.test(ch)) {
+      if (start < 0) start = i;
+      current += ch.toLowerCase();
+    } else if (/[.\-&'\u2019]/.test(ch)) {
+      // Bindestrich/Punkt/Apostroph im Namen: Token offen lassen.
+      continue;
+    } else {
+      if (current) out.push({ value: current, start });
+      current = "";
+      start = -1;
+    }
+  }
+  if (current) out.push({ value: current, start });
+  return out;
 }
 
 /**
  * Entfernt eine führende Doppelnennung des Firmennamens.
  *
- * Nur die *Verdopplung* fliegt raus. Eine einzelne Nennung am Anfang
- * ("Edenta AG ist als Markenname bekannt …") ist normale Prosa und bleibt
- * unangetastet — sonst würde die Reparatur mehr kaputt machen als sie heilt.
+ * Erkannt wird das Muster "<Firmenname><Firmenname…>" am Textanfang — also
+ * die alte Überschrift, die beim Übernehmen der Inhalte vor den Fliesstext
+ * geklebt wurde. Die zweite Nennung darf dabei abweichen: der Bestand enthält
+ * "PX Dental SA PX DENTAL ist …" und "Ivoclar Vivadent AG Ivoclar Vivadent
+ * zählt …", wo die Wiederholung die Rechtsform weglässt. Verlangt wird
+ * deshalb: der Text beginnt mit dem vollständigen Namen, und direkt danach
+ * beginnt er noch einmal mit dessen erstem Wort.
+ *
+ * Eine einzelne Nennung am Anfang ("Edenta AG ist als Markenname bekannt …")
+ * ist normale Prosa und bleibt unangetastet — sonst würde die Reparatur mehr
+ * kaputt machen als sie heilt.
  */
 export function stripDuplicatedName(
   name: string | null | undefined,
   text: string | null | undefined,
 ): string {
-  const value = text ?? "";
+  let value = text ?? "";
   const company = (name ?? "").trim();
   if (!company || !value.trim()) return value;
 
-  const escaped = namePattern(company);
-  // Erste Nennung nur dann wegschneiden, wenn direkt danach dieselbe Nennung
-  // wieder anfängt. Trennzeichen dazwischen (Bindestrich, Doppelpunkt, Komma)
-  // sind erlaubt.
-  const duplicate = new RegExp(`^\\s*${escaped}\\s*[-–—:,.]?\\s*(?=${escaped})`, "i");
+  const nameTokens = tokenize(company).map((t) => t.value);
+  if (!nameTokens.length) return value;
 
-  let out = value;
   // Dreifachnennungen gab es nicht, aber eine Schleife mit Deckel ist billiger
   // als die Annahme, dass es sie nie geben wird.
-  for (let i = 0; i < 5 && duplicate.test(out); i++) {
-    out = out.replace(duplicate, "");
+  for (let round = 0; round < 5; round++) {
+    const textTokens = tokenize(value);
+    if (textTokens.length <= nameTokens.length) break;
+
+    const startsWithName = nameTokens.every((t, i) => textTokens[i]?.value === t);
+    if (!startsWithName) break;
+
+    const next = textTokens[nameTokens.length];
+    if (!next || next.value !== nameTokens[0]) break;
+
+    value = value.slice(next.start);
   }
-  return out.trimStart();
+
+  return value.trimStart();
 }
 
 /** Wendet den Schutz auf alle vier Sprachslots an. */

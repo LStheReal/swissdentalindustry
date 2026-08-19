@@ -36,9 +36,34 @@ describe("stripDuplicatedName", () => {
       .toBe("Jota AG stellt Instrumente her.");
   });
 
-  it("greift nicht, wenn nur ein Präfix zufällig gleich anfängt", () => {
-    const text = "Denteo AG Denteo Solutions ist ein anderes Unternehmen.";
+  // Die zweite Nennung darf von der ersten abweichen — genau so steht es im
+  // Bestand, wo die Wiederholung die Rechtsform weglässt.
+  it("erkennt eine verkürzte zweite Nennung ohne Rechtsform", () => {
+    expect(
+      stripDuplicatedName(
+        "Ivoclar Vivadent AG",
+        "Ivoclar Vivadent AG Ivoclar Vivadent zählt zu den weltweit führenden Unternehmen.",
+      ),
+    ).toBe("Ivoclar Vivadent zählt zu den weltweit führenden Unternehmen.");
+  });
+
+  it("gleicht Rechtsform-Schreibweisen an (S.A. vs SA)", () => {
+    expect(
+      stripDuplicatedName(
+        "Bien-Air Dental S.A.",
+        "Bien-Air Dental SA Bien-Air Dental bietet ein umfassendes Produktsortiment.",
+      ),
+    ).toBe("Bien-Air Dental bietet ein umfassendes Produktsortiment.");
+    expect(
+      stripDuplicatedName("PX Dental S.A.", "PX Dental SA PX DENTAL ist ein Unternehmen der PX GROUP."),
+    ).toBe("PX DENTAL ist ein Unternehmen der PX GROUP.");
+  });
+
+  it("greift nicht, wenn nach dem Namen etwas anderes folgt", () => {
+    const text = "Denteo AG entwickelt Software für Zahnarztpraxen.";
     expect(stripDuplicatedName("Denteo AG", text)).toBe(text);
+    const other = "Denteo AG gehört zur Gruppe Denteo Holding.";
+    expect(stripDuplicatedName("Denteo AG", other)).toBe(other);
   });
 
   it("verträgt leere und fehlende Werte", () => {

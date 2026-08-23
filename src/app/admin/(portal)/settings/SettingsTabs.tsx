@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/admin/settings", label: "Allgemein" },
   { href: "/admin/settings/admins", label: "Admin-Benutzer" },
+  { href: "/admin/settings/mail-log", label: "Mail-Protokoll" },
 ];
 
 export function SettingsTabs() {

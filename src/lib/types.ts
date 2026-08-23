@@ -344,6 +344,8 @@ export interface MembershipApplication {
   kind: ApplicationKind;
   status: ApplicationStatus;
   logo_url: string | null;
+  /** Grund, warum der Logo-Upload fehlgeschlagen ist (Migration 0016). */
+  logo_error: string | null;
   rejection_reason: string | null;
   reviewed_at: string | null;
   member_id: string | null;

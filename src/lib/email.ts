@@ -96,6 +96,38 @@ async function loadTestModeFilter(): Promise<{ enabled: boolean; allow: Set<stri
  * Test-Modus: ist in app_settings `email_test_mode` aktiv, werden nur die
  * unter `email_test_recipients` aufgeführten Adressen tatsächlich angeschrieben.
  */
+/**
+ * Hält jeden Sendeversuch fest — auch die erfolgreichen und die im Test-Modus
+ * verworfenen.
+ *
+ * Vorher landete jeder Mailfehler nur auf der Server-Konsole. Auf Vercel ist
+ * die nach kurzer Zeit weg, und im Admin-Portal war sie nie sichtbar; genau
+ * deshalb liess sich "die Mail kommt nicht an" nicht beantworten. Das
+ * Protokoll selbst darf dabei nie den Versand umwerfen.
+ */
+async function logMail(entry: {
+  recipient: string;
+  subject: string;
+  status: "sent" | "failed" | "dropped_test_mode";
+  error?: string | null;
+  providerResponse?: string | null;
+  context?: string | null;
+}): Promise<void> {
+  try {
+    const supabase = createAdminClient();
+    await supabase.from("mail_log").insert({
+      recipient: entry.recipient.slice(0, 500),
+      subject: entry.subject.slice(0, 500),
+      status: entry.status,
+      error: entry.error?.slice(0, 2000) ?? null,
+      provider_response: entry.providerResponse?.slice(0, 1000) ?? null,
+      context: entry.context ?? null,
+    });
+  } catch (err) {
+    console.error("mail_log insert failed (send itself is unaffected):", err);
+  }
+}
+
 export async function sendMail({ to, subject, text, html, replyTo, attachments }: MailInput) {
   const from = process.env.MAIL_FROM || process.env.SMTP_USER;
 
@@ -103,7 +135,9 @@ export async function sendMail({ to, subject, text, html, replyTo, attachments }
   // laufen — das hat Server-Actions sekundenlang blockiert. Lieber sofort und
   // deutlich scheitern; die Aufrufer behandeln Mailfehler bereits als unkritisch.
   if (!process.env.SMTP_HOST) {
-    throw new Error("SMTP_HOST ist nicht gesetzt — es wird keine Mail verschickt.");
+    const message = "SMTP_HOST ist nicht gesetzt — es wird keine Mail verschickt.";
+    await logMail({ recipient: to, subject, status: "failed", error: message });
+    throw new Error(message);
   }
 
   const filter = await loadTestModeFilter();
@@ -114,13 +148,47 @@ export async function sendMail({ to, subject, text, html, replyTo, attachments }
       console.info(
         `[email test-mode] dropped mail to "${to}" (subject: "${subject}") — no recipient on allow-list`,
       );
+      await logMail({
+        recipient: to,
+        subject,
+        status: "dropped_test_mode",
+        error: "Test-Modus aktiv und kein Empfänger auf der Freigabeliste.",
+      });
       return;
     }
     to = allowed.join(", ");
     subject = `[TEST] ${subject}`;
   }
 
-  await getTransporter().sendMail({ from, to, subject, text, html, replyTo, attachments });
+  try {
+    const info = await getTransporter().sendMail({
+      from,
+      to,
+      subject,
+      text,
+      html,
+      replyTo,
+      attachments,
+    });
+    // Die Antwort des Servers mitschreiben. "250 Ok: queued as …" heisst
+    // angenommen — NICHT zugestellt; genau diese Unterscheidung hat hier
+    // einmal Tage gekostet.
+    await logMail({
+      recipient: to,
+      subject,
+      status: "sent",
+      providerResponse:
+        typeof info?.response === "string" ? info.response : null,
+    });
+  } catch (err) {
+    await logMail({
+      recipient: to,
+      subject,
+      status: "failed",
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
 }
 
 /** Prüft die SMTP-Verbindung (für Test/Diagnose). */

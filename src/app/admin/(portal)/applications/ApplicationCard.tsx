@@ -150,17 +150,34 @@ export function ApplicationCard({
             Vorschau
           </div>
           <div className="overflow-hidden rounded-[3px] border border-[#e2e2e7]">
-            <div className="flex h-[130px] items-center justify-center bg-[#fafaf8] p-4">
+            <div className="flex h-[150px] items-center justify-center bg-white p-4">
               {app.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={app.logo_url}
-                  alt=""
-                  className="max-h-full max-w-full object-contain"
-                />
+                // In voller Grösse anzusehen — die Vorschau ist zu klein, um
+                // ein Logo wirklich zu beurteilen.
+                <a
+                  href={app.logo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Logo in voller Grösse öffnen"
+                  className="flex h-full w-full items-center justify-center"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={app.logo_url}
+                    alt={`Logo ${p.company ?? ""}`}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </a>
+              ) : app.logo_error ? (
+                <span className="px-2 text-center text-[12px] font-semibold leading-relaxed text-[#b3000c]">
+                  Logo-Upload fehlgeschlagen
+                  <span className="mt-1 block font-normal text-[11px] text-[#6b6b73]">
+                    {app.logo_error}
+                  </span>
+                </span>
               ) : (
                 <span className="font-sdi-mono text-[13px] font-bold text-[#c4c4cc]">
-                  KEIN LOGO
+                  KEIN LOGO HOCHGELADEN
                 </span>
               )}
             </div>

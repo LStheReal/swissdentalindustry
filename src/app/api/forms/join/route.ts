@@ -82,10 +82,15 @@ export async function POST(request: Request) {
     // der Antrag NICHT ab — die Angaben sind wichtiger als das Bild, und der
     // Admin sieht beim Prüfen, dass das Logo fehlt.
     let logoUrl: string | null = null;
+    let logoError: string | null = null;
     if (logoFile) {
       try {
         logoUrl = await uploadImage("logos", logoFile);
       } catch (err) {
+        // Der Antrag ist wichtiger als das Bild — aber der Grund darf nicht
+        // verschwinden. Ohne ihn steht im Admin nur "KEIN LOGO", nicht zu
+        // unterscheiden davon, dass niemand eines hochgeladen hat.
+        logoError = err instanceof Error ? err.message : String(err);
         console.error("application logo upload failed:", err);
       }
     }
@@ -96,6 +101,7 @@ export async function POST(request: Request) {
       kind: "membership",
       status: "new",
       logo_url: logoUrl,
+      logo_error: logoError,
     });
     if (dbErr) {
       console.error("save application failed:", dbErr);

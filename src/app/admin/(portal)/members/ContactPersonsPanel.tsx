@@ -4,6 +4,8 @@ import { useState } from "react";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import {
   CONTACT_PERSON_KEYS,
+  CONTACT_ROLES,
+  type ContactRole,
   type MemberInternalProfileFields,
   type MemberInternalProfileKey,
 } from "@/lib/types";
@@ -11,6 +13,7 @@ import {
 export interface ContactPersonRow extends MemberInternalProfileFields {
   id: string;
   position: number;
+  roles: ContactRole[];
 }
 
 /**
@@ -32,6 +35,9 @@ export interface ContactPersonsCopy {
   saving: string;
   creating: string;
   fieldLabels: Record<MemberInternalProfileKey, string>;
+  roleLabels: Record<ContactRole, string>;
+  rolesLegend: string;
+  mainHint: string;
 }
 
 const input =
@@ -81,8 +87,22 @@ export function ContactPersonsPanel({
         {people.map((person) => (
           <li key={person.id} className="rounded-[2px] border border-[#e2e2e7] bg-[#fafaf8] p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]">
-                {copy.item} {person.position}
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]">
+                  {copy.item} {person.position}
+                </span>
+                {person.roles.map((role) => (
+                  <span
+                    key={role}
+                    className={`font-sdi-mono rounded-[2px] px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.08em] ${
+                      role === "main"
+                        ? "bg-[#0a0a0b] text-white"
+                        : "border border-[#c4c4cc] text-[#4a4a51]"
+                    }`}
+                  >
+                    {copy.roleLabels[role]}
+                  </span>
+                ))}
               </span>
               <form action={deleteAction.bind(null, person.id)}>
                 <SubmitButton
@@ -94,6 +114,7 @@ export function ContactPersonsPanel({
               </form>
             </div>
             <form action={updateAction.bind(null, person.id)} className="grid gap-3 sm:grid-cols-2">
+              <RolePicker copy={copy} selected={person.roles} />
               {CONTACT_PERSON_KEYS.map((key) => (
                 <label key={key} className="block">
                   <span className={label}>{copy.fieldLabels[key]}</span>
@@ -131,6 +152,7 @@ export function ContactPersonsPanel({
               {copy.item} {(people.at(-1)?.position ?? 0) + 1}
             </span>
           </div>
+          <RolePicker copy={copy} selected={[]} />
           {CONTACT_PERSON_KEYS.filter((key) => key !== "member_number").map((key) => (
             <label key={key} className="block">
               <span className={label}>{copy.fieldLabels[key]}</span>
@@ -167,5 +189,40 @@ export function ContactPersonsPanel({
         </button>
       )}
     </section>
+  );
+}
+
+/**
+ * Rollen als Mehrfachauswahl. Dieselbe Person ist häufig Haupt- UND
+ * Rechnungskontakt, deshalb Checkboxen statt einer Auswahlliste.
+ */
+function RolePicker({
+  copy,
+  selected,
+}: {
+  copy: ContactPersonsCopy;
+  selected: ContactRole[];
+}) {
+  return (
+    <fieldset className="sm:col-span-2">
+      <legend className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
+        {copy.rolesLegend}
+      </legend>
+      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
+        {CONTACT_ROLES.map((role) => (
+          <label key={role} className="flex items-center gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              name={`role_${role}`}
+              value="1"
+              defaultChecked={selected.includes(role)}
+              className="h-4 w-4 shrink-0 accent-[#e1000f]"
+            />
+            <span>{copy.roleLabels[role]}</span>
+          </label>
+        ))}
+      </div>
+      <p className="mt-1.5 text-[11.5px] leading-relaxed text-[#6b6b73]">{copy.mainHint}</p>
+    </fieldset>
   );
 }

@@ -122,6 +122,50 @@ export const COMPANY_INTERNAL_KEYS: readonly MemberInternalProfileKey[] =
 
 export type MemberInternalProfileFields = Record<MemberInternalProfileKey, string | null>;
 
+// ─── Rollen eines Kontakts ────────────────────────────────────────────────────
+// Eine Person kann mehrere halten — häufig ist dieselbe Person Haupt- und
+// Rechnungskontakt. Höchstens ein Hauptkontakt je Firma (Migration 0017).
+
+export const CONTACT_ROLES = ["main", "billing", "marketing"] as const;
+export type ContactRole = (typeof CONTACT_ROLES)[number];
+
+export const CONTACT_ROLE_LABELS: Record<ContactRole, Multilingual> = {
+  main: {
+    de: "Hauptkontakt",
+    fr: "Contact principal",
+    it: "Contatto principale",
+    en: "Main contact",
+  },
+  billing: {
+    de: "Rechnungskontakt",
+    fr: "Contact de facturation",
+    it: "Contatto di fatturazione",
+    en: "Billing contact",
+  },
+  marketing: {
+    de: "Marketingkontakt",
+    fr: "Contact marketing",
+    it: "Contatto marketing",
+    en: "Marketing contact",
+  },
+};
+
+export function contactRoleLabel(role: ContactRole, locale: Locale): string {
+  return CONTACT_ROLE_LABELS[role][locale] || CONTACT_ROLE_LABELS[role].de;
+}
+
+/** Filtert unbekannte Rollen heraus und entfernt Duplikate. */
+export function normalizeContactRoles(value: unknown): ContactRole[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<ContactRole>();
+  for (const entry of value) {
+    if (typeof entry === "string" && (CONTACT_ROLES as readonly string[]).includes(entry)) {
+      seen.add(entry as ContactRole);
+    }
+  }
+  return CONTACT_ROLES.filter((role) => seen.has(role));
+}
+
 export interface MemberInternalProfile extends MemberInternalProfileFields {
   member_id: string;
   created_at: string;

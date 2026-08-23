@@ -41,6 +41,8 @@ import {
   LOCALES,
   MEMBER_INTERNAL_PROFILE_KEYS,
   CONTACT_PERSON_KEYS,
+  CONTACT_ROLES,
+  normalizeContactRoles,
   emptyMultilingual,
   normalizeMemberInternalProfile,
   type Locale,
@@ -643,10 +645,22 @@ function readContactPerson(formData: FormData): MemberInternalProfileFields {
   return normalizeMemberInternalProfile(partial);
 }
 
+/** Angehakte Rollen aus dem Formular. */
+function readContactRoles(formData: FormData) {
+  return normalizeContactRoles(
+    CONTACT_ROLES.filter((role) => formData.get(`role_${role}`) === "1"),
+  );
+}
+
 export async function addContactPersonAction(memberId: string, formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();
-  await addContactPerson(supabase, memberId, readContactPerson(formData));
+  await addContactPerson(
+    supabase,
+    memberId,
+    readContactPerson(formData),
+    readContactRoles(formData),
+  );
   revalidatePath(`/admin/members/${memberId}`);
 }
 
@@ -657,7 +671,13 @@ export async function updateContactPersonAction(
 ) {
   await requireAdmin();
   const supabase = createAdminClient();
-  await updateContactPerson(supabase, contactId, readContactPerson(formData));
+  await updateContactPerson(
+    supabase,
+    contactId,
+    readContactPerson(formData),
+    readContactRoles(formData),
+    memberId,
+  );
   revalidatePath(`/admin/members/${memberId}`);
 }
 

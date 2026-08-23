@@ -294,6 +294,18 @@ const DICT = {
     it: "Creazione …",
     en: "Creating …",
   },
+  "contacts.rolesLegend": {
+    de: "Rollen",
+    fr: "Rôles",
+    it: "Ruoli",
+    en: "Roles",
+  },
+  "contacts.mainHint": {
+    de: "Je Firma gibt es höchstens einen Hauptkontakt — wird er hier vergeben, verliert der bisherige die Rolle.",
+    fr: "Chaque entreprise n'a qu'un seul contact principal — l'attribuer ici le retire au précédent.",
+    it: "Ogni azienda ha un solo contatto principale — assegnandolo qui, il precedente lo perde.",
+    en: "A company has at most one main contact — assigning it here removes it from the previous one.",
+  },
   "internal.title": {
     de: "Interne Daten",
     fr: "Données internes",

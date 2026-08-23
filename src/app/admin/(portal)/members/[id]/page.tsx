@@ -2,7 +2,12 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminT } from "@/lib/i18n-admin";
 import { draftedFields, effectiveMember, hasDraft } from "@/lib/member-draft";
-import { internalFieldLabel } from "@/lib/types";
+import {
+  CONTACT_ROLES,
+  contactRoleLabel,
+  internalFieldLabel,
+  type ContactRole,
+} from "@/lib/types";
 import { PublishPanel } from "../PublishPanel";
 import {
   getInternalProfileForMember,
@@ -199,6 +204,11 @@ export default async function EditMemberPage({
             saving: t("contacts.saving"),
             creating: t("contacts.creating"),
             fieldLabels: internalFieldLabels(adminLocale),
+            rolesLegend: t("contacts.rolesLegend"),
+            mainHint: t("contacts.mainHint"),
+            roleLabels: Object.fromEntries(
+              CONTACT_ROLES.map((role) => [role, contactRoleLabel(role, adminLocale)]),
+            ) as Record<ContactRole, string>,
           }}
           addAction={async (formData: FormData) => {
             "use server";

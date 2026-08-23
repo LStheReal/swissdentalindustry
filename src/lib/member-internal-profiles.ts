@@ -1,6 +1,8 @@
 import {
   emptyMemberInternalProfile,
+  normalizeContactRoles,
   normalizeMemberInternalProfile,
+  type ContactRole,
   type MemberInternalProfileFields,
 } from "./types";
 
@@ -49,35 +51,48 @@ export async function getInternalProfileForMember(
   client: MinimalSupabaseClient,
   memberId: string,
 ): Promise<MemberInternalProfileFields> {
-  // Position 1 ist die Hauptansprechperson. Alles, was schon vor den mehreren
-  // Kontaktpersonen existierte (Self-Service-Formular, Feed, Import, Mails),
-  // arbeitet weiterhin genau mit dieser einen Person.
-  const query = client.from("member_internal_profiles") as {
-    select: (query: string) => {
-      eq: (column: string, value: string) => {
-        eq: (column: string, value: number) => {
-          maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
-        };
-      };
-    };
-  };
-  const { data, error } = await query
-    .select("*")
-    .eq("member_id", memberId)
-    .eq("position", 1)
-    .maybeSingle();
+  // Der Hauptkontakt der Firma.
+  //
+  // Seit Migration 0017 hängt das an der Rolle 'main' statt an position = 1 —
+  // die Position war nur die Reihenfolge der Erfassung und hat nie bedeutet,
+  // dass diese Person die zuständige ist. Für den Bestand ist beides
+  // deckungsgleich, weil die Migration genau den Position-1-Zeilen die Rolle
+  // gegeben hat.
+  //
+  // Fallback auf die erste Position, falls eine Firma (noch) keinen
+  // Hauptkontakt markiert hat — sonst stünde das Self-Service-Formular ohne
+  // Daten da.
+  const table = client.from("member_internal_profiles") as ProfileTable;
 
-  if (error) {
+  try {
+    const byRole = await table
+      .select("*")
+      .eq("member_id", memberId)
+      .contains("roles", ["main"])
+      .maybeSingle();
+    if (byRole.error) throw byRole.error;
+    if (byRole.data) {
+      return normalizeMemberInternalProfile(
+        byRole.data as Partial<MemberInternalProfileFields>,
+      );
+    }
+
+    const first = await table
+      .select("*")
+      .eq("member_id", memberId)
+      .eq("position", 1)
+      .maybeSingle();
+    if (first.error) throw first.error;
+    return first.data
+      ? normalizeMemberInternalProfile(first.data as Partial<MemberInternalProfileFields>)
+      : emptyMemberInternalProfile();
+  } catch (error) {
     if (isMissingInternalProfilesTableError(error)) {
       logMissingTableOnce();
       return emptyMemberInternalProfile();
     }
     throw new Error(String((error as { message?: string }).message ?? error));
   }
-
-  return data
-    ? normalizeMemberInternalProfile(data as Partial<MemberInternalProfileFields>)
-    : emptyMemberInternalProfile();
 }
 
 export async function listInternalProfilesByMemberId(
@@ -139,6 +154,11 @@ type ProfileTable = {
       eq: (column: string, value: string | number) => {
         maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
       };
+      contains: (
+        column: string,
+        value: string[],
+      ) => { maybeSingle: () => Promise<{ data: unknown; error: unknown }> };
+      maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
       order: (
         column: string,
         opts: { ascending: boolean },
@@ -160,6 +180,7 @@ async function saveContactPersonAt(
   memberId: string,
   position: number,
   profile: MemberInternalProfileFields,
+  roles?: ContactRole[],
 ): Promise<boolean> {
   const table = client.from("member_internal_profiles") as ProfileTable;
   const hasAnyValue = Object.values(profile).some(Boolean);
@@ -176,9 +197,16 @@ async function saveContactPersonAt(
     if (!hasAnyValue) {
       if (existingId) ({ error } = await table.delete().eq("id", existingId));
     } else if (existingId) {
-      ({ error } = await table.update({ ...profile }).eq("id", existingId));
+      ({ error } = await table
+        .update({ ...profile, ...(roles ? { roles } : {}) })
+        .eq("id", existingId));
     } else {
-      ({ error } = await table.insert({ member_id: memberId, position, ...profile }));
+      ({ error } = await table.insert({
+        member_id: memberId,
+        position,
+        ...profile,
+        roles: roles ?? [],
+      }));
     }
 
     if (error) {
@@ -201,6 +229,8 @@ async function saveContactPersonAt(
 export interface ContactPerson extends MemberInternalProfileFields {
   id: string;
   position: number;
+  /** main | billing | marketing — eine Person kann mehrere halten. */
+  roles: ContactRole[];
 }
 
 /** Alle Kontaktpersonen einer Firma, aufsteigend nach Position. */
@@ -221,12 +251,14 @@ export async function listContactPersons(
       }
       throw new Error(String((error as { message?: string }).message ?? error));
     }
-    return ((data ?? []) as ({ id: string; position: number } & Partial<MemberInternalProfileFields>)[])
-      .map((row) => ({
-        ...normalizeMemberInternalProfile(row),
-        id: row.id,
-        position: row.position,
-      }));
+    return (
+      (data ?? []) as ({ id: string; position: number; roles?: unknown } & Partial<MemberInternalProfileFields>)[]
+    ).map((row) => ({
+      ...normalizeMemberInternalProfile(row),
+      id: row.id,
+      position: row.position,
+      roles: normalizeContactRoles(row.roles),
+    }));
   } catch (err) {
     if (isMissingInternalProfilesTableError(err)) {
       logMissingTableOnce();
@@ -244,15 +276,48 @@ export async function addContactPerson(
   client: MinimalSupabaseClient,
   memberId: string,
   profile: MemberInternalProfileFields,
+  roles: ContactRole[] = [],
 ): Promise<number> {
   const existing = await listContactPersons(client, memberId);
   const nextPosition = existing.reduce((max, p) => Math.max(max, p.position), 0) + 1;
-  await saveContactPersonAt(client, memberId, nextPosition, {
-    ...profile,
-    // Die Mitgliedsnummer ist der laufende Index innerhalb der Firma.
-    member_number: profile.member_number ?? String(nextPosition),
-  });
+
+  // Höchstens ein Hauptkontakt je Firma — die Datenbank erzwingt das über einen
+  // Unique-Index. Statt den Insert daran scheitern zu lassen, wird die Rolle
+  // hier abgegeben: der neue Kontakt übernimmt sie, der alte verliert sie.
+  if (roles.includes("main")) {
+    await clearMainRole(client, memberId);
+  }
+
+  await saveContactPersonAt(
+    client,
+    memberId,
+    nextPosition,
+    {
+      ...profile,
+      // Die Kontaktnummer ist der laufende Index innerhalb der Firma.
+      member_number: profile.member_number ?? String(nextPosition),
+    },
+    roles,
+  );
   return nextPosition;
+}
+
+/** Nimmt der bisherigen Hauptkontakt-Zeile die Rolle ab. */
+async function clearMainRole(
+  client: MinimalSupabaseClient,
+  memberId: string,
+  exceptId?: string,
+): Promise<void> {
+  const people = await listContactPersons(client, memberId);
+  const table = client.from("member_internal_profiles") as ProfileTable;
+  for (const person of people) {
+    if (person.id === exceptId) continue;
+    if (!person.roles.includes("main")) continue;
+    const { error } = await table
+      .update({ roles: person.roles.filter((r) => r !== "main") })
+      .eq("id", person.id);
+    if (error) throw new Error(String((error as { message?: string }).message ?? error));
+  }
 }
 
 /** Aktualisiert eine bestehende Kontaktperson anhand ihrer Zeilen-ID. */
@@ -260,9 +325,16 @@ export async function updateContactPerson(
   client: MinimalSupabaseClient,
   id: string,
   profile: MemberInternalProfileFields,
+  roles?: ContactRole[],
+  memberId?: string,
 ): Promise<void> {
+  if (roles?.includes("main") && memberId) {
+    await clearMainRole(client, memberId, id);
+  }
   const table = client.from("member_internal_profiles") as ProfileTable;
-  const { error } = await table.update({ ...profile }).eq("id", id);
+  const { error } = await table
+    .update({ ...profile, ...(roles ? { roles } : {}) })
+    .eq("id", id);
   if (error) throw new Error(String((error as { message?: string }).message ?? error));
 }
 

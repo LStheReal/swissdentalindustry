@@ -40,6 +40,11 @@ const ARCHIVO =
 const MONO =
   "'Space Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
+/** HTML-Escaping — auch von der Serienmail genutzt (lib/mass-mail.ts). */
+export function escapeHtml(s: string | null | undefined): string {
+  return esc(s);
+}
+
 function esc(s: string | null | undefined): string {
   if (s == null) return "";
   return String(s)
@@ -1266,4 +1271,33 @@ export function renderApplicationRejectedMail(input: ApplicationRejectedMailInpu
     (input.reason ? `${s.reasonLabel}: ${input.reason}\n\n` : "") +
     `${s.closing}\n\n${s.signOff}\nSwiss Dental Industry · SVDI`;
   return { html, text };
+}
+
+// ─── Template: Serienmail des Sekretariats ──────────────────────────────────
+//
+// Freier Text aus dem Admin-Portal, in dieselbe Hülle gesetzt wie die übrigen
+// Mitglieder-Mails, damit eine Rundmail nicht wie ein Fremdkörper aussieht.
+
+export interface MassMailInput {
+  subject: string;
+  bodyHtml: string;
+}
+
+export function renderMassMail(input: MassMailInput): { html: string } {
+  const body = `
+    ${brandRow()}
+    ${metaLabel("Swiss Dental Industry · Information")}
+    <div style="font-family:${ARCHIVO};font-size:15px;line-height:1.65;color:${COLORS.ink2};margin:0 0 8px;">
+      ${input.bodyHtml}
+    </div>
+    ${localizedSignOff("Freundliche Grüsse")}
+  `;
+  return {
+    html: shell({
+      preheader: input.subject,
+      accent: "red",
+      bodyHtml: body,
+      footerHtml: brandFooter(),
+    }),
+  };
 }

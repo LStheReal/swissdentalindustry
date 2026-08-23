@@ -21,6 +21,8 @@ export default async function PortalLayout({
     { href: "/admin/applications", label: t("nav.applications") },
     { href: "/admin/feed", label: t("nav.feed") },
     { href: "/admin/news", label: t("nav.news") },
+    { href: "/admin/mail", label: t("nav.mail") },
+    { href: "/admin/export", label: t("nav.export") },
     { href: "/admin/settings", label: t("nav.settings") },
   ];
 

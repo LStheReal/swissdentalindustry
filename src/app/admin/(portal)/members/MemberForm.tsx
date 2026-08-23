@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { translateDescriptionAction } from "./actions";
 import {
   LOCALES,
-  emptyMemberInternalProfile,
   type Locale,
   type Multilingual,
   type MemberInternalProfileFields,
@@ -52,7 +51,6 @@ export function MemberForm({
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [descLang, setDescLang] = useState<Locale>(initial?.source_lang ?? "de");
-  const internal = initial?.internal_profile ?? emptyMemberInternalProfile();
   const sourceLang = initial?.source_lang ?? "de";
 
   const initDescs = (): Record<Locale, string> => {

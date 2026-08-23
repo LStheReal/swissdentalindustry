@@ -23,6 +23,18 @@ const DICT = {
     it: "Richieste",
     en: "Applications",
   },
+  "nav.mail": {
+    de: "Serienmail",
+    fr: "Publipostage",
+    it: "Mailing",
+    en: "Mass mail",
+  },
+  "nav.export": {
+    de: "Export",
+    fr: "Export",
+    it: "Esportazione",
+    en: "Export",
+  },
   "nav.settings": {
     de: "Einstellungen",
     fr: "Paramètres",

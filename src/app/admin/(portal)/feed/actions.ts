@@ -8,7 +8,7 @@ import { geocodeAfterResponse } from "@/lib/after-response";
 import { applyMemberPatch } from "@/lib/member-write";
 import { sendChangeApprovedMail } from "@/lib/email";
 import { describeMemberValue, memberFieldLabel } from "@/lib/email-templates";
-import { getInternalProfileForMember, saveInternalProfile } from "@/lib/member-internal-profiles";
+import { saveInternalProfile } from "@/lib/member-internal-profiles";
 import { sanitizeExternalUrl } from "@/lib/url";
 import {
   ADDRESS_KEYS,

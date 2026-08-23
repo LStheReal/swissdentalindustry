@@ -55,17 +55,22 @@ function tokenize(text: string): { value: string; start: number }[] {
 /**
  * Entfernt eine führende Doppelnennung des Firmennamens.
  *
- * Erkannt wird das Muster "<Firmenname><Firmenname…>" am Textanfang — also
- * die alte Überschrift, die beim Übernehmen der Inhalte vor den Fliesstext
- * geklebt wurde. Die zweite Nennung darf dabei abweichen: der Bestand enthält
- * "PX Dental SA PX DENTAL ist …" und "Ivoclar Vivadent AG Ivoclar Vivadent
- * zählt …", wo die Wiederholung die Rechtsform weglässt. Verlangt wird
- * deshalb: der Text beginnt mit dem vollständigen Namen, und direkt danach
- * beginnt er noch einmal mit dessen erstem Wort.
+ * Der Bestand kennt zwei Formen derselben Ursache — eine Überschrift, die beim
+ * Übernehmen der alten Inhalte vor den Fliesstext geklebt wurde:
  *
- * Eine einzelne Nennung am Anfang ("Edenta AG ist als Markenname bekannt …")
- * ist normale Prosa und bleibt unangetastet — sonst würde die Reparatur mehr
- * kaputt machen als sie heilt.
+ *   A) Die Überschrift wiederholt sich wortgleich — oft in einer Kurzform des
+ *      Namens ("Denteo Denteo offers …" bei "Denteo AG") oder in einer
+ *      übersetzten Form ("Dentsply Sirona Schweiz Dentsply Sirona Schweiz …"
+ *      bei "Dentsply Sirona Switzerland").
+ *   B) Die Überschrift trägt den vollen Namen, der Fliesstext beginnt mit
+ *      derselben Firma ohne Rechtsform:
+ *      "PX Dental SA PX DENTAL ist ein Unternehmen …"
+ *      "Ivoclar Vivadent AG Ivoclar Vivadent zählt …"
+ *
+ * Beide Formen werden erkannt. Verlangt wird in beiden Fällen, dass der
+ * abgeschnittene Teil aus Wörtern des Firmennamens besteht — eine einzelne
+ * Nennung ("Edenta AG ist als Markenname bekannt …") bleibt damit unangetastet,
+ * und normale Prosa kann nicht versehentlich gekürzt werden.
  */
 export function stripDuplicatedName(
   name: string | null | undefined,
@@ -78,19 +83,46 @@ export function stripDuplicatedName(
   const nameTokens = tokenize(company).map((t) => t.value);
   if (!nameTokens.length) return value;
 
-  // Dreifachnennungen gab es nicht, aber eine Schleife mit Deckel ist billiger
-  // als die Annahme, dass es sie nie geben wird.
+  // Deckel gegen Dreifachnennungen und gegen jede Endlosschleife.
   for (let round = 0; round < 5; round++) {
-    const textTokens = tokenize(value);
-    if (textTokens.length <= nameTokens.length) break;
+    const tokens = tokenize(value);
+    let cut = -1;
 
-    const startsWithName = nameTokens.every((t, i) => textTokens[i]?.value === t);
-    if (!startsWithName) break;
+    // B) Voller Name, danach fängt die Firma noch einmal an.
+    if (
+      tokens.length > nameTokens.length &&
+      nameTokens.every((v, i) => tokens[i]?.value === v) &&
+      tokens[nameTokens.length]?.value === nameTokens[0]
+    ) {
+      cut = tokens[nameTokens.length].start;
+    }
 
-    const next = textTokens[nameTokens.length];
-    if (!next || next.value !== nameTokens[0]) break;
+    // A) Ein führender Wortlauf wiederholt sich unmittelbar und wortgleich,
+    //    und er beginnt mit dem ersten Wort des Firmennamens.
+    //
+    //    Der Lauf muss NICHT dem eingetragenen Namen entsprechen: im Bestand
+    //    steht die Überschrift auch als Kurzform ("Denteo" bei "Denteo AG")
+    //    oder übersetzt ("Dentsply Sirona Schweiz" bei "Dentsply Sirona
+    //    Switzerland"). Die wortgleiche Wiederholung ist das Signal; der
+    //    Firmenname am Anfang stellt sicher, dass wir nichts anderes kürzen.
+    //
+    //    Vom längsten zum kürzesten Lauf, damit "PX Dental PX Dental" nicht
+    //    nach dem ersten Wort abgeschnitten wird.
+    if (cut < 0 && tokens[0]?.value === nameTokens[0]) {
+      const maxRun = Math.min(8, Math.floor(tokens.length / 2));
+      for (let k = maxRun; k >= 1; k--) {
+        const repeats = Array.from({ length: k }).every(
+          (_, i) => tokens[k + i]?.value === tokens[i].value,
+        );
+        if (repeats) {
+          cut = tokens[k].start;
+          break;
+        }
+      }
+    }
 
-    value = value.slice(next.start);
+    if (cut < 0) break;
+    value = value.slice(cut);
   }
 
   return value.trimStart();

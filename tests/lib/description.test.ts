@@ -66,6 +66,34 @@ describe("stripDuplicatedName", () => {
     expect(stripDuplicatedName("Denteo AG", other)).toBe(other);
   });
 
+  // Genau der gemeldete Fall: die Wiederholung ist die Kurzform, die
+  // Firma heisst im Verzeichnis "Denteo AG".
+  it("erkennt eine wiederholte Kurzform des Namens", () => {
+    expect(
+      stripDuplicatedName("Denteo AG", "Denteo Denteo offers the ideal software for practices."),
+    ).toBe("Denteo offers the ideal software for practices.");
+  });
+
+  it("schneidet beim längsten wiederholten Lauf, nicht beim ersten Wort", () => {
+    expect(
+      stripDuplicatedName("PX Dental S.A.", "PX Dental PX Dental fertigt Präzisionsteile."),
+    ).toBe("PX Dental fertigt Präzisionsteile.");
+  });
+
+  it("erkennt eine übersetzte Wiederholung des Namens", () => {
+    expect(
+      stripDuplicatedName(
+        "Dentsply Sirona Switzerland",
+        "Dentsply Sirona Schweiz Dentsply Sirona Schweiz gilt heute als führend.",
+      ),
+    ).toBe("Dentsply Sirona Schweiz gilt heute als führend.");
+  });
+
+  it("kürzt nichts, was nicht mit dem Firmennamen beginnt", () => {
+    const text = "Sehr sehr präzise Instrumente aus der Schweiz.";
+    expect(stripDuplicatedName("Jota AG", text)).toBe(text);
+  });
+
   it("verträgt leere und fehlende Werte", () => {
     expect(stripDuplicatedName(null, "irgendwas")).toBe("irgendwas");
     expect(stripDuplicatedName("Firma", null)).toBe("");

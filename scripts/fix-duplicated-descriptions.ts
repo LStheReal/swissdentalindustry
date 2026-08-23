@@ -31,10 +31,29 @@ async function main() {
     .order("name");
   if (error) throw new Error(error.message);
 
+  // Unabhängiger Detektor: meldet JEDE führende Wortwiederholung, auch wenn
+  // der Filter sie nicht anfasst. So bleibt nichts unbemerkt, das der Filter
+  // (noch) nicht erkennt.
+  const suspicious: string[] = [];
+  const words = (t: string) => t.trim().split(/\s+/).filter(Boolean);
+
   let touched = 0;
   for (const row of (data ?? []) as { id: string; name: string; description: Multilingual }[]) {
     const cleaned = cleanDescription(row.name, row.description);
     const changed = LOCALES.filter((l) => cleaned[l] !== (row.description?.[l] ?? ""));
+
+    for (const l of LOCALES) {
+      const w = words(cleaned[l]);
+      for (let k = 1; k <= 4 && k * 2 <= w.length; k++) {
+        const a = w.slice(0, k).join(" ").toLowerCase();
+        const b = w.slice(k, k * 2).join(" ").toLowerCase();
+        if (a === b) {
+          suspicious.push(`${row.name} [${l}] ${w.slice(0, 8).join(" ")}…`);
+          break;
+        }
+      }
+    }
+
     if (!changed.length) continue;
 
     touched++;
@@ -51,6 +70,13 @@ async function main() {
         .eq("id", row.id);
       if (updErr) throw new Error(`${row.name}: ${updErr.message}`);
     }
+  }
+
+  if (suspicious.length) {
+    console.log("\nNach dem Filter noch verdächtig (bitte ansehen):");
+    for (const l of suspicious) console.log("  ", l);
+  } else {
+    console.log("\nNach dem Filter keine führende Wortwiederholung mehr gefunden.");
   }
 
   console.log(`\nBetroffene Firmen: ${touched}`);

@@ -47,7 +47,7 @@ describe("normalizeMemberInternalProfile", () => {
 
   it("verträgt null/undefined", () => {
     expect(normalizeMemberInternalProfile(null).city).toBeNull();
-    expect(normalizeMemberInternalProfile(undefined).internal_notes).toBeNull();
+    expect(normalizeMemberInternalProfile(undefined).direct_email).toBeNull();
   });
 });
 
@@ -55,8 +55,10 @@ describe("Self-Service-Whitelist", () => {
   // Mitgliedsbeitrag und interne Notizen dürfen im /edit-Formular weder
   // sichtbar noch schreibbar sein — sie sind rein intern.
   it("schliesst membership_fee und internal_notes aus", () => {
-    expect(MEMBER_SELF_SERVICE_PROFILE_KEYS).not.toContain("membership_fee");
-    expect(MEMBER_SELF_SERVICE_PROFILE_KEYS).not.toContain("internal_notes");
+    // Seit Migration 0018 liegen Beitrag und interne Notizen an der Firma,
+    // nicht mehr am Kontakt — sie können hier gar nicht mehr auftauchen.
+    expect(MEMBER_INTERNAL_PROFILE_KEYS).not.toContain("membership_fee");
+    expect(MEMBER_INTERNAL_PROFILE_KEYS).not.toContain("internal_notes");
   });
 
   it("ist eine echte Teilmenge der internen Felder", () => {

@@ -12,6 +12,7 @@ import { geocodeAddress } from "@/lib/geocode";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { formatAddress, formatAddressOneLine, normalizeAddress } from "@/lib/address";
 import { applyMemberPatch } from "@/lib/member-write";
+import { saveCompanyInternal } from "@/lib/member-company-internal";
 import { saveInternalProfile } from "@/lib/member-internal-profiles";
 import {
   sendApplicationApprovedMail,
@@ -131,7 +132,6 @@ export async function approveApplication(id: string) {
       // erst, wenn ein Admin sie im Mitglieder-Detail online schaltet.
       status: "draft",
       is_active: true,
-      employee_count: Number.isFinite(employeeCount) ? employeeCount : null,
       // Mitglied seit = Tag der Aufnahme. Wird hier gesetzt, damit der Admin
       // es nicht nachtragen muss; im Mitglieder-Formular bleibt es änderbar.
       member_since: new Date().toISOString().slice(0, 10),
@@ -189,6 +189,11 @@ export async function approveApplication(id: string) {
       ...contactAddress,
     }),
   );
+
+  // Mitarbeiterzahl ist intern und liegt in der geschützten Tabelle.
+  if (Number.isFinite(employeeCount)) {
+    await saveCompanyInternal(supabase, member.id, { employee_count: employeeCount });
+  }
 
   // Self-Service-Token erzeugen (ein aktiver pro Firma).
   const token = randomBytes(32).toString("base64url");

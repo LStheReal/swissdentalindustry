@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminT } from "@/lib/i18n-admin";
+import { getCompanyInternal } from "@/lib/member-company-internal";
 import { draftedFields, effectiveMember, hasDraft } from "@/lib/member-draft";
 import {
   CONTACT_ROLES,
@@ -44,7 +45,13 @@ export default async function EditMemberPage({
   const supabase = await createClient();
   const { locale: adminLocale, t } = await getAdminT();
 
-  const [{ data: memberData }, { data: tokenData }, internalProfile, contactPersons] = await Promise.all([
+  const [
+    { data: memberData },
+    { data: tokenData },
+    internalProfile,
+    contactPersons,
+    companyInternal,
+  ] = await Promise.all([
     supabase.from("members").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("member_edit_tokens")
@@ -54,6 +61,7 @@ export default async function EditMemberPage({
       .maybeSingle(),
     getInternalProfileForMember(supabase, id),
     listContactPersons(supabase, id),
+    getCompanyInternal(supabase, id),
   ]);
 
   if (!memberData) notFound();
@@ -166,6 +174,12 @@ export default async function EditMemberPage({
       <MemberForm
         formId={formId}
         action={updateMember.bind(null, member.id)}
+        mainContactName={
+          contactPersons
+            .filter((c) => c.roles.includes("main"))
+            .map((c) => [c.contact_first_name, c.contact_last_name].filter(Boolean).join(" "))
+            .find(Boolean) ?? null
+        }
         initial={{
           name: editing.name,
           description:
@@ -182,6 +196,9 @@ export default async function EditMemberPage({
           email: editing.email,
           website_url: editing.website_url,
           member_since: editing.member_since,
+          employee_count: companyInternal.employee_count,
+          membership_fee: companyInternal.membership_fee,
+          internal_notes: companyInternal.internal_notes,
           internal_profile: internalProfile,
         }}
       />

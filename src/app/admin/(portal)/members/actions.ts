@@ -13,6 +13,7 @@ import {
 } from "@/lib/after-response";
 import { uploadImage } from "@/lib/storage";
 import { cleanDescription, stripDuplicatedName } from "@/lib/description";
+import { saveCompanyInternal, type CompanyInternal } from "@/lib/member-company-internal";
 import {
   applyMemberPatch,
   discardMemberDraft,
@@ -107,6 +108,24 @@ async function activeEditTokenFor(
 function readLocale(formData: FormData): Locale {
   const v = String(formData.get("source_lang") || "de");
   return (LOCALES.includes(v as Locale) ? v : "de") as Locale;
+}
+
+/**
+ * Firmen-interne Felder (Migration 0018). Sie sind bewusst NICHT
+ * entwurfsfähig: sie stehen nie auf der Website, also gibt es nichts zu
+ * veröffentlichen — ein Beitrag lässt sich ändern, ohne einen Entwurf zu
+ * erzeugen.
+ */
+function readCompanyInternal(formData: FormData): Partial<CompanyInternal> {
+  const out: Partial<CompanyInternal> = {};
+  if (formData.has("employee_count")) {
+    const raw = String(formData.get("employee_count") || "").trim();
+    const parsed = Number.parseInt(raw, 10);
+    out.employee_count = raw && Number.isFinite(parsed) ? parsed : null;
+  }
+  if (formData.has("membership_fee")) out.membership_fee = str(formData, "membership_fee");
+  if (formData.has("internal_notes")) out.internal_notes = str(formData, "internal_notes");
+  return out;
 }
 
 function str(formData: FormData, key: string): string | null {
@@ -223,6 +242,7 @@ export async function createMember(formData: FormData) {
   if (error) throw new Error(error.message);
 
   await upsertInternalProfile(supabase, data.id, readInternalProfile(formData));
+  await saveCompanyInternal(supabase, data.id, readCompanyInternal(formData));
 
   translateAfterResponse({
     table: "members",
@@ -321,6 +341,7 @@ export async function updateMember(id: string, formData: FormData) {
     // Firma landet das hier im Entwurf und wartet auf "Veröffentlichen".
     const { wentLive } = await applyMemberPatch(supabase, id, update);
     await upsertInternalProfile(supabase, id, readInternalProfile(formData));
+    await saveCompanyInternal(supabase, id, readCompanyInternal(formData));
 
     translateAfterResponse({
       table: "members",
@@ -373,6 +394,7 @@ export async function updateMember(id: string, formData: FormData) {
   const { wentLive } = await applyMemberPatch(supabase, id, update);
 
   await upsertInternalProfile(supabase, id, readInternalProfile(formData));
+  await saveCompanyInternal(supabase, id, readCompanyInternal(formData));
 
   if (addressChanged && wentLive) {
     geocodeAfterResponse({ memberId: id, address: formatAddressOneLine(address) || null });
@@ -495,6 +517,10 @@ export async function importMembers(
             email: row.email,
             website_url: sanitizeExternalUrl(row.websiteUrl),
           });
+          await saveCompanyInternal(supabase, existing.id, {
+            membership_fee: row.membershipFee,
+            internal_notes: row.internalNotes,
+          });
         } catch (err) {
           skippedCount += 1;
           details.push(
@@ -545,6 +571,10 @@ export async function importMembers(
         continue;
       }
 
+      await saveCompanyInternal(supabase, data.id, {
+        membership_fee: row.membershipFee,
+        internal_notes: row.internalNotes,
+      });
       const internalSaved = await saveInternalProfile(supabase, data.id, row.internalProfile);
       if (!internalSaved) {
         throw new Error(

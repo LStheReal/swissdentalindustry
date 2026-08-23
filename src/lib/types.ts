@@ -57,8 +57,6 @@ export interface Member {
   lng: number | null;
   canton: string | null;
   member_since: string | null;
-  /** Mitarbeiterzahl — intern, nicht öffentlich (Migration 0015). */
-  employee_count: number | null;
   source_lang: Locale;
   /**
    * 'draft' = die Firma war nie öffentlich, 'published' = sie steht im
@@ -88,37 +86,21 @@ export const MEMBER_INTERNAL_PROFILE_KEYS = [
   "city",
   "direct_phone",
   "direct_email",
-  "membership_fee",
-  "internal_notes",
 ] as const;
 
 export type MemberInternalProfileKey = (typeof MEMBER_INTERNAL_PROFILE_KEYS)[number];
 
 // Interne Felder, die ein Mitglied im Self-Service (/edit/[token]) sehen und
-// ändern darf. Mitgliederbeitrag und interne Notizen bleiben ausschliesslich
-// im Admin-Portal sichtbar.
+// ändern darf. Seit Migration 0018 sind das alle verbliebenen — Beitrag und
+// interne Notizen hängen an der Firma und nicht mehr an der Person.
 export const MEMBER_SELF_SERVICE_PROFILE_KEYS: readonly MemberInternalProfileKey[] =
-  MEMBER_INTERNAL_PROFILE_KEYS.filter(
-    (key) => key !== "membership_fee" && key !== "internal_notes",
-  );
+  MEMBER_INTERNAL_PROFILE_KEYS;
 
-// Felder, die zur einzelnen Kontakt gehören. Ein Partner kann mehrere
-// davon haben (Migration 0012) — `member_number` ist dabei der laufende Index
-// innerhalb der Firma (erste, zweite, dritte Person).
-export const CONTACT_PERSON_KEYS: readonly MemberInternalProfileKey[] = [
-  "member_number",
-  "contact_title",
-  "contact_first_name",
-  "contact_last_name",
-  "contact_job_title",
-  "direct_phone",
-  "direct_email",
-];
-
-// Felder, die es pro Firma nur einmal gibt. Sie hängen weiterhin an der
-// Position-1-Zeile, werden aber getrennt von den Personen bearbeitet.
-export const COMPANY_INTERNAL_KEYS: readonly MemberInternalProfileKey[] =
-  MEMBER_INTERNAL_PROFILE_KEYS.filter((key) => !CONTACT_PERSON_KEYS.includes(key));
+// Alle Felder eines Kontakts. Seit Migration 0018 gehören auch die
+// Adressfelder dazu: sie beschreiben die Person, nicht die Firma — die
+// Firmenadresse steht in `members`.
+export const CONTACT_PERSON_KEYS: readonly MemberInternalProfileKey[] =
+  MEMBER_INTERNAL_PROFILE_KEYS;
 
 export type MemberInternalProfileFields = Record<MemberInternalProfileKey, string | null>;
 
@@ -210,6 +192,17 @@ export const INTERNAL_FIELD_LABELS: Record<MemberInternalProfileKey, Multilingua
     it: "E-mail diretta",
     en: "Direct email",
   },
+};
+
+// Firmen-interne Felder. Sie liegen auf `members` (Migration 0018) und nicht
+// auf einem Kontakt — der Beitrag hängt an der Firma, nicht an einer Person.
+export const COMPANY_INTERNAL_LABELS = {
+  employee_count: {
+    de: "Mitarbeiterzahl",
+    fr: "Nombre de collaborateurs",
+    it: "Numero di collaboratori",
+    en: "Number of employees",
+  },
   membership_fee: {
     de: "Mitgliederbeitrag",
     fr: "Cotisation",
@@ -222,7 +215,13 @@ export const INTERNAL_FIELD_LABELS: Record<MemberInternalProfileKey, Multilingua
     it: "Note interne",
     en: "Internal notes",
   },
-};
+} as const satisfies Record<string, Multilingual>;
+
+export type CompanyInternalKey = keyof typeof COMPANY_INTERNAL_LABELS;
+
+export function companyInternalLabel(key: CompanyInternalKey, locale: Locale): string {
+  return COMPANY_INTERNAL_LABELS[key][locale] || COMPANY_INTERNAL_LABELS[key].de;
+}
 
 /** Beschriftung eines internen Feldes in der gewünschten Sprache. */
 export function internalFieldLabel(

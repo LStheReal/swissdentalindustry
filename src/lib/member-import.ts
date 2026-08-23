@@ -31,6 +31,8 @@ export interface ImportedMemberRow {
   phone: string | null;
   websiteUrl: string | null;
   internalProfile: MemberInternalProfileFields;
+  membershipFee: string | null;
+  internalNotes: string | null;
 }
 
 export interface ParsedMemberImport {
@@ -482,9 +484,10 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
         city: enrichment.values.city,
         direct_phone: directPhone,
         direct_email: directEmail,
-        membership_fee: enrichment.values.membership_fee,
-        internal_notes: enrichment.values.internal_notes,
       }),
+      // Firmen-interne Angaben hängen seit Migration 0018 an der Firma.
+      membershipFee: enrichment.values.membership_fee,
+      internalNotes: enrichment.values.internal_notes,
     });
   }
 

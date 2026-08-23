@@ -77,6 +77,8 @@ describe.skipIf(!up)("anon-Key: interne Tabellen sind unsichtbar", () => {
     "member_internal_profiles",
     "member_change_requests",
     "membership_applications",
+    "member_company_internal",
+    "mail_log",
   ])("%s ist für anon nicht lesbar", async (table) => {
     const res = await fetch(restUrl(`${table}?select=*&limit=1`), {
       headers: supabaseHeaders("anon"),
@@ -94,7 +96,15 @@ describe.skipIf(!up)("anon-Key: interne Tabellen sind unsichtbar", () => {
       headers: supabaseHeaders("anon"),
     });
     const [row] = (await res.json()) as Record<string, unknown>[];
-    for (const forbidden of ["membership_fee", "internal_notes", "direct_email"]) {
+    // employee_count stand nach Migration 0015/0018 kurzzeitig auf `members`
+    // und war damit öffentlich — 0019 hat es in die geschützte Tabelle
+    // verschoben. Der Test hält fest, dass es nicht zurückwandert.
+    for (const forbidden of [
+      "membership_fee",
+      "internal_notes",
+      "employee_count",
+      "direct_email",
+    ]) {
       expect(row).not.toHaveProperty(forbidden);
     }
   });

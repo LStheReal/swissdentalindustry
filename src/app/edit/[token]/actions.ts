@@ -115,11 +115,6 @@ export async function submitChange(
   const supabase = createAdminClient();
   const currentInternalProfile = await getInternalProfileForMember(supabase, member.id);
 
-  // Admin-only-Felder stehen nicht im Formular — für Vergleich und Speicherung
-  // gilt immer der aktuelle Stand aus der Datenbank.
-  internalProfile.membership_fee = currentInternalProfile.membership_fee;
-  internalProfile.internal_notes = currentInternalProfile.internal_notes;
-
   const proposed: Partial<MemberEditableFields> = {};
   if (logoUrl) proposed.logo_url = logoUrl;
   if (descriptionMl) proposed.description = descriptionMl;

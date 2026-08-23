@@ -124,11 +124,9 @@ export async function approveChange(requestId: string) {
     const profile = normalizeMemberInternalProfile(
       internalProfile as Partial<MemberInternalProfileFields>,
     );
-    // Admin-only-Felder können über den Self-Service nie geändert werden —
-    // auch bei älteren, vor dieser Prüfung eingereichten Anfragen.
-    const current = await getInternalProfileForMember(supabase, member.id);
-    profile.membership_fee = current.membership_fee;
-    profile.internal_notes = current.internal_notes;
+    // Beitrag und interne Notizen hängen seit Migration 0018 an der Firma und
+    // sind über den Self-Service ohnehin nicht erreichbar — die frühere
+    // Rücksicherung an dieser Stelle ist damit gegenstandslos.
     await saveInternalProfile(supabase, member.id, profile);
   }
 

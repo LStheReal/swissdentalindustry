@@ -7,16 +7,7 @@ import {
 } from "@/lib/edit-token";
 import { getPublicLocale } from "@/lib/public-locale.server";
 import { getPublicCopy } from "@/lib/public-copy";
-import type { MemberInternalProfileFields } from "@/lib/types";
 import { EditForm } from "./EditForm";
-
-// Admin-only-Felder verlassen den Server nie in Richtung Edit-Link.
-function stripAdminOnlyFields(
-  profile: MemberInternalProfileFields | null | undefined,
-): MemberInternalProfileFields | null {
-  if (!profile) return null;
-  return { ...profile, membership_fee: null, internal_notes: null };
-}
 
 type Props = { params: Promise<{ token: string }> };
 
@@ -140,9 +131,9 @@ export default async function EditPage({ params }: Props) {
                       pending && "website_url" in pending
                         ? (pending.website_url ?? null)
                         : member.website_url,
-                    internal_profile: stripAdminOnlyFields(
-                      pending?.internal_profile ?? internalProfile,
-                    ),
+                    // Beitrag und interne Notizen liegen seit Migration 0018
+                    // an der Firma und sind hier gar nicht mehr erreichbar.
+                    internal_profile: pending?.internal_profile ?? internalProfile,
                   }}
                 />
               </>

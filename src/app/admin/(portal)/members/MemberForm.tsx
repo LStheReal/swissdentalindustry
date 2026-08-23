@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { translateDescriptionAction } from "./actions";
 import {
   LOCALES,
-  COMPANY_INTERNAL_KEYS,
-  MEMBER_INTERNAL_PROFILE_LABELS,
   emptyMemberInternalProfile,
   type Locale,
   type Multilingual,
@@ -31,8 +29,13 @@ interface Props {
     email: string | null;
     website_url: string | null;
     member_since: string | null;
+    employee_count: number | null;
+    membership_fee: string | null;
+    internal_notes: string | null;
     internal_profile?: MemberInternalProfileFields;
   };
+  /** Name des Hauptkontakts — nur zur Anzeige, gepflegt wird er unter „Kontakte“. */
+  mainContactName?: string | null;
 }
 
 const label =
@@ -40,7 +43,12 @@ const label =
 const input =
   "mt-1.5 w-full rounded-[2px] border border-[#c4c4cc] bg-white px-3 py-2.5 text-[13.5px] outline-none focus:border-[#0a0a0b] focus:ring-2 focus:ring-[#e1000f]/20";
 
-export function MemberForm({ action, formId = "member-form", initial }: Props) {
+export function MemberForm({
+  action,
+  formId = "member-form",
+  initial,
+  mainContactName,
+}: Props) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [descLang, setDescLang] = useState<Locale>(initial?.source_lang ?? "de");
@@ -281,27 +289,43 @@ export function MemberForm({ action, formId = "member-form", initial }: Props) {
               Sie werden nicht auf der Website angezeigt. Die Personen der Firma
               werden separat unter „Kontakte“ gepflegt.
             </p>
+            {/* Firmen-interne Felder liegen seit Migration 0018 auf `members`
+                selbst — vorher hingen sie an der Zeile des Hauptkontakts. */}
             <div className="grid gap-4 sm:grid-cols-2">
-              {COMPANY_INTERNAL_KEYS.map((key) => (
-                <label key={key} className={key === "internal_notes" ? "block sm:col-span-2" : "block"}>
-                  <span className={label}>{MEMBER_INTERNAL_PROFILE_LABELS[key]}</span>
-                  {key === "internal_notes" ? (
-                    <textarea
-                      name={`internal_${key}`}
-                      rows={4}
-                      defaultValue={internal[key] ?? ""}
-                      className={`${input} leading-relaxed`}
-                    />
-                  ) : (
-                    <input
-                      name={`internal_${key}`}
-                      type={key === "direct_email" ? "email" : "text"}
-                      defaultValue={internal[key] ?? ""}
-                      className={input}
-                    />
-                  )}
-                </label>
-              ))}
+              <label className="block">
+                <span className={label}>Mitarbeiterzahl</span>
+                <input
+                  name="employee_count"
+                  type="number"
+                  min="0"
+                  step="1"
+                  defaultValue={initial?.employee_count ?? ""}
+                  className={input}
+                />
+              </label>
+              <label className="block">
+                <span className={label}>Mitgliederbeitrag</span>
+                <input
+                  name="membership_fee"
+                  defaultValue={initial?.membership_fee ?? ""}
+                  className={input}
+                />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className={label}>Hauptkontakt</span>
+                <p className="mt-2 rounded-[2px] border border-[#e2e2e7] bg-[#fafaf8] px-3 py-2.5 text-[13.5px] text-[#4a4a51]">
+                  {mainContactName || "Noch kein Hauptkontakt markiert — unter „Kontakte“ festlegen."}
+                </p>
+              </label>
+              <label className="block sm:col-span-2">
+                <span className={label}>Interne Notizen</span>
+                <textarea
+                  name="internal_notes"
+                  rows={4}
+                  defaultValue={initial?.internal_notes ?? ""}
+                  className={`${input} leading-relaxed`}
+                />
+              </label>
             </div>
           </section>
 

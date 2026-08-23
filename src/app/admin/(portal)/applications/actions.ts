@@ -99,6 +99,7 @@ export async function approveApplication(id: string) {
   const description = stripDuplicatedName(name, (p.description || "").trim());
   const address = normalizeAddress(p);
   const email = (p.email || "").trim() || null;
+  const employeeCount = Number.parseInt((p.employee_count || "").trim(), 10);
 
   // Die Sprache steht im Antrag — die Spracherkennung via Claude (~4s) entfällt.
   const sourceLang = applicantLocale(p);
@@ -130,6 +131,7 @@ export async function approveApplication(id: string) {
       // erst, wenn ein Admin sie im Mitglieder-Detail online schaltet.
       status: "draft",
       is_active: true,
+      employee_count: Number.isFinite(employeeCount) ? employeeCount : null,
       // Mitglied seit = Tag der Aufnahme. Wird hier gesetzt, damit der Admin
       // es nicht nachtragen muss; im Mitglieder-Formular bleibt es änderbar.
       member_since: new Date().toISOString().slice(0, 10),
@@ -146,21 +148,45 @@ export async function approveApplication(id: string) {
     throw new Error(error.message);
   }
 
-  // Die Kontaktperson aus dem Antrag wird das erste Mitglied dieses Partners.
-  // Weitere Personen legt der Admin im Mitglieder-Detail an ("Mitglied
-  // hinzufügen"), fortlaufend nummeriert. Die Adresse bleibt bewusst aussen vor
-  // — sie gehört zur Firma, nicht zur Person.
-  const contact = (p.contact_person || "").trim();
-  const spaceIdx = contact.lastIndexOf(" ");
+  // Die Kontaktperson aus dem Antrag wird der erste Kontakt dieser Firma.
+  // Weitere legt der Admin im Mitglieder-Detail an, fortlaufend nummeriert.
+  //
+  // Anträge von vor Abschnitt 7 hatten nur ein einziges Namensfeld — daher der
+  // Fallback, der es am letzten Leerzeichen auftrennt.
+  const legacyName = (p.contact_person || "").trim();
+  const legacySplit = legacyName.lastIndexOf(" ");
+  const firstName =
+    (p.contact_first_name || "").trim() ||
+    (legacySplit > 0 ? legacyName.slice(0, legacySplit) : legacyName) ||
+    null;
+  const lastName =
+    (p.contact_last_name || "").trim() ||
+    (legacySplit > 0 ? legacyName.slice(legacySplit + 1) : "") ||
+    null;
+
+  // "Entspricht der Firmenadresse": das Formular deaktiviert die Felder, sie
+  // kommen also leer an. Die Firmenadresse steht hier ohnehin schon bereit.
+  const contactAddress =
+    p.contact_address_same === "1"
+      ? address
+      : normalizeAddress({
+          street_name: p.contact_street_name,
+          street_number: p.contact_street_number,
+          postal_code: p.contact_postal_code,
+          city: p.contact_city,
+        });
+
   await saveInternalProfile(
     supabase,
     member.id,
     normalizeMemberInternalProfile({
       member_number: "1",
-      contact_first_name: spaceIdx > 0 ? contact.slice(0, spaceIdx) : contact || null,
-      contact_last_name: spaceIdx > 0 ? contact.slice(spaceIdx + 1) : null,
-      direct_email: email,
-      direct_phone: (p.phone || "").trim() || null,
+      contact_first_name: firstName,
+      contact_last_name: lastName,
+      contact_job_title: (p.contact_job_title || "").trim() || null,
+      direct_email: (p.contact_email || "").trim() || email,
+      direct_phone: (p.contact_phone || "").trim() || (p.phone || "").trim() || null,
+      ...contactAddress,
     }),
   );
 

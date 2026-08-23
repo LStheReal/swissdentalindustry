@@ -27,15 +27,36 @@ export function ApplicationCard({
   const p = app.payload;
   const isOpen = app.status === "new";
 
+  const contactName = [p.contact_first_name, p.contact_last_name]
+    .filter(Boolean)
+    .join(" ")
+    // Anträge von vor Abschnitt 7 führten nur ein einziges Namensfeld.
+    .trim() || p.contact_person;
+
+  const contactAddress =
+    p.contact_address_same === "1"
+      ? formatAddress(p)
+      : formatAddress({
+          street_name: p.contact_street_name ?? null,
+          street_number: p.contact_street_number ?? null,
+          postal_code: p.contact_postal_code ?? null,
+          city: p.contact_city ?? null,
+        });
+
   const rows: [string, string | undefined][] = [
     ["Firma", p.company],
-    ["Kontaktperson", p.contact_person],
+    ["Adresse", formatAddress(p) || undefined],
     ["E-Mail", p.email],
     ["Telefon", p.phone],
     ["Website", p.website_url],
-    ["Adresse", formatAddress(p) || undefined],
+    ["Mitarbeiterzahl", p.employee_count],
     ["Beschreibung", p.description],
     ["Nachricht", p.message],
+    ["Kontakt", contactName],
+    ["Funktion", p.contact_job_title],
+    ["Kontakt E-Mail", p.contact_email],
+    ["Kontakt Telefon", p.contact_phone],
+    ["Kontakt Adresse", contactAddress || undefined],
   ];
 
   return (

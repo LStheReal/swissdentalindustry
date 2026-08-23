@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/sdi/Button";
 import { getPublicCopy } from "@/lib/public-copy";
 import { type Locale } from "@/lib/types";
+import { addressFieldLabel } from "@/lib/address";
 
 type FormState =
   | { status: "idle"; message: string }
@@ -22,6 +23,25 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
   const [pending, setPending] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoName, setLogoName] = useState<string | null>(null);
+  // "Entspricht der Firmenadresse": füllt die Felder der Kontaktperson und
+  // deaktiviert sie. Deaktivierte Felder werden nicht mitgeschickt — der
+  // Server übernimmt die Firmenadresse deshalb anhand des Flags.
+  const [sameAddress, setSameAddress] = useState(true);
+  const [companyAddress, setCompanyAddress] = useState({
+    street_name: "",
+    street_number: "",
+    postal_code: "",
+    city: "",
+  });
+  const [contactAddress, setContactAddress] = useState({
+    street_name: "",
+    street_number: "",
+    postal_code: "",
+    city: "",
+  });
+  // Angezeigt wird bei gesetztem Haken die Firmenadresse; die eigene Eingabe
+  // der Kontaktperson bleibt dahinter erhalten, falls der Haken wieder weggeht.
+  const shownContactAddress = sameAddress ? companyAddress : contactAddress;
   const logoInputRef = useRef<HTMLInputElement>(null);
   const copy = getPublicCopy(locale).membershipForm;
 
@@ -106,16 +126,59 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
 
       <p className="text-[13px] text-[color:var(--text-muted)]">{copy.requiredNote}</p>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <label className="block">
-          <span className="text-[14px] font-semibold">{copy.company}</span>
-          <input name="company" required className={input} autoComplete="organization" />
-        </label>
-        <label className="block">
-          <span className="text-[14px] font-semibold">{copy.contact}</span>
-          <input name="contact_person" required className={input} autoComplete="name" />
-        </label>
-      </div>
+      <SectionHeading>{copy.companySection}</SectionHeading>
+
+      <label className="block">
+        <span className="text-[14px] font-semibold">{copy.company}</span>
+        <input name="company" required className={input} autoComplete="organization" />
+      </label>
+
+      <fieldset className="block">
+        <legend className="text-[14px] font-semibold">{copy.address}</legend>
+        <div className="mt-2 grid gap-5 sm:grid-cols-[1fr_8rem]">
+          <label className="block">
+            <span className="text-[13px] font-semibold">{copy.street}</span>
+            <input
+              name="street_name"
+              required
+              className={input}
+              autoComplete="address-line1"
+              onChange={(e) => setCompanyAddress((a) => ({ ...a, street_name: e.target.value }))}
+            />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-semibold">{copy.streetNumber}</span>
+            <input
+              name="street_number"
+              className={input}
+              onChange={(e) => setCompanyAddress((a) => ({ ...a, street_number: e.target.value }))}
+            />
+          </label>
+        </div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-[8rem_1fr]">
+          <label className="block">
+            <span className="text-[13px] font-semibold">{copy.postalCode}</span>
+            <input
+              name="postal_code"
+              required
+              inputMode="numeric"
+              className={input}
+              autoComplete="postal-code"
+              onChange={(e) => setCompanyAddress((a) => ({ ...a, postal_code: e.target.value }))}
+            />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-semibold">{copy.city}</span>
+            <input
+              name="city"
+              required
+              className={input}
+              autoComplete="address-level2"
+              onChange={(e) => setCompanyAddress((a) => ({ ...a, city: e.target.value }))}
+            />
+          </label>
+        </div>
+      </fieldset>
 
       <div className="grid gap-5 md:grid-cols-2">
         <label className="block">
@@ -128,40 +191,16 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
         </label>
       </div>
 
-      <label className="block">
-        <span className="text-[14px] font-semibold">{copy.website}</span>
-        <input name="website_url" className={input} placeholder="https://..." autoComplete="url" />
-      </label>
-
-      <fieldset className="block">
-        <legend className="text-[14px] font-semibold">{copy.address}</legend>
-        <div className="mt-2 grid gap-5 sm:grid-cols-[1fr_8rem]">
-          <label className="block">
-            <span className="text-[13px] font-semibold">{copy.street}</span>
-            <input name="street_name" required className={input} autoComplete="address-line1" />
-          </label>
-          <label className="block">
-            <span className="text-[13px] font-semibold">{copy.streetNumber}</span>
-            <input name="street_number" className={input} />
-          </label>
-        </div>
-        <div className="mt-5 grid gap-5 sm:grid-cols-[8rem_1fr]">
-          <label className="block">
-            <span className="text-[13px] font-semibold">{copy.postalCode}</span>
-            <input
-              name="postal_code"
-              required
-              inputMode="numeric"
-              className={input}
-              autoComplete="postal-code"
-            />
-          </label>
-          <label className="block">
-            <span className="text-[13px] font-semibold">{copy.city}</span>
-            <input name="city" required className={input} autoComplete="address-level2" />
-          </label>
-        </div>
-      </fieldset>
+      <div className="grid gap-5 md:grid-cols-2">
+        <label className="block">
+          <span className="text-[14px] font-semibold">{copy.website}</span>
+          <input name="website_url" className={input} placeholder="https://..." autoComplete="url" />
+        </label>
+        <label className="block">
+          <span className="text-[14px] font-semibold">{copy.employees}</span>
+          <input name="employee_count" type="number" min="0" step="1" className={input} />
+        </label>
+      </div>
 
       <label className="block">
         <span className="text-[14px] font-semibold">{copy.description}</span>
@@ -171,6 +210,16 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
           required
           className={input}
           placeholder={copy.descriptionPlaceholder}
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[14px] font-semibold">{copy.message}</span>
+        <textarea
+          name="message"
+          rows={4}
+          className={input}
+          placeholder={copy.messagePlaceholder}
         />
       </label>
 
@@ -194,7 +243,6 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
               name="logo"
               type="file"
               accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              required
               onChange={onLogoChange}
               className="sr-only"
             />
@@ -213,15 +261,104 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
         </div>
       </div>
 
+      <SectionHeading>{copy.contactSection}</SectionHeading>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <label className="block">
+          <span className="text-[14px] font-semibold">{copy.contactLastName}</span>
+          <input name="contact_last_name" required className={input} autoComplete="family-name" />
+        </label>
+        <label className="block">
+          <span className="text-[14px] font-semibold">{copy.contactFirstName}</span>
+          <input name="contact_first_name" required className={input} autoComplete="given-name" />
+        </label>
+      </div>
+
       <label className="block">
-        <span className="text-[14px] font-semibold">{copy.message}</span>
-        <textarea
-          name="message"
-          rows={4}
-          className={input}
-          placeholder={copy.messagePlaceholder}
-        />
+        <span className="text-[14px] font-semibold">{copy.contactJobTitle}</span>
+        <input name="contact_job_title" className={input} autoComplete="organization-title" />
       </label>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <label className="block">
+          <span className="text-[14px] font-semibold">{copy.contactEmail}</span>
+          <input name="contact_email" type="email" required className={input} />
+        </label>
+        <label className="block">
+          <span className="text-[14px] font-semibold">{copy.contactPhone}</span>
+          <input name="contact_phone" className={input} />
+        </label>
+      </div>
+
+      <fieldset className="block">
+        <legend className="text-[14px] font-semibold">{copy.contactAddress}</legend>
+
+        <label className="mt-3 flex items-center gap-2.5 text-[14px]">
+          <input
+            type="checkbox"
+            name="contact_address_same"
+            value="1"
+            checked={sameAddress}
+            onChange={(e) => setSameAddress(e.target.checked)}
+            className="h-4 w-4 shrink-0 accent-[color:var(--accent,#e1000f)]"
+          />
+          <span>{copy.sameAsCompany}</span>
+        </label>
+
+        <div className="mt-4 grid gap-5 sm:grid-cols-[1fr_8rem]">
+          <label className="block">
+            <span className="text-[13px] font-semibold">{addressFieldLabel("street_name", locale)}</span>
+            <input
+              name="contact_street_name"
+              disabled={sameAddress}
+              value={shownContactAddress.street_name}
+              onChange={(e) =>
+                setContactAddress((a) => ({ ...a, street_name: e.target.value }))
+              }
+              className={`${input} disabled:bg-[#f2f2f0] disabled:text-[color:var(--text-muted)]`}
+            />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-semibold">{addressFieldLabel("street_number", locale)}</span>
+            <input
+              name="contact_street_number"
+              disabled={sameAddress}
+              value={shownContactAddress.street_number}
+              onChange={(e) =>
+                setContactAddress((a) => ({ ...a, street_number: e.target.value }))
+              }
+              className={`${input} disabled:bg-[#f2f2f0] disabled:text-[color:var(--text-muted)]`}
+            />
+          </label>
+        </div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-[8rem_1fr]">
+          <label className="block">
+            <span className="text-[13px] font-semibold">{addressFieldLabel("postal_code", locale)}</span>
+            <input
+              name="contact_postal_code"
+              inputMode="numeric"
+              disabled={sameAddress}
+              value={shownContactAddress.postal_code}
+              onChange={(e) =>
+                setContactAddress((a) => ({ ...a, postal_code: e.target.value }))
+              }
+              className={`${input} disabled:bg-[#f2f2f0] disabled:text-[color:var(--text-muted)]`}
+            />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-semibold">{addressFieldLabel("city", locale)}</span>
+            <input
+              name="contact_city"
+              disabled={sameAddress}
+              value={shownContactAddress.city}
+              onChange={(e) =>
+                setContactAddress((a) => ({ ...a, city: e.target.value }))
+              }
+              className={`${input} disabled:bg-[#f2f2f0] disabled:text-[color:var(--text-muted)]`}
+            />
+          </label>
+        </div>
+      </fieldset>
 
       <input type="hidden" name="source" value="public_join" />
       {/* Sprache mitschicken: die Zusage bzw. Ablehnung geht später in genau
@@ -248,5 +385,14 @@ export function MembershipApplicationForm({ locale }: { locale: Locale }) {
         ) : null}
       </div>
     </form>
+  );
+}
+
+/** Trennt Firma und Kontaktperson sichtbar voneinander. */
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="border-b border-[color:var(--border-default)] pb-2 pt-3 text-[13px] font-bold uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+      {children}
+    </h3>
   );
 }

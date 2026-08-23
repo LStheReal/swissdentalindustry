@@ -57,6 +57,8 @@ export interface Member {
   lng: number | null;
   canton: string | null;
   member_since: string | null;
+  /** Mitarbeiterzahl — intern, nicht öffentlich (Migration 0015). */
+  employee_count: number | null;
   source_lang: Locale;
   /**
    * 'draft' = die Firma war nie öffentlich, 'published' = sie steht im
@@ -286,29 +288,50 @@ export type ApplicationKind = "membership" | "inquiry";
  */
 export const APPLICATION_REQUIRED_FIELDS = [
   "company",
-  "contact_person",
-  "email",
   "street_name",
   "postal_code",
   "city",
+  "email",
   "description",
+  "contact_last_name",
+  "contact_first_name",
+  "contact_email",
 ] as const;
 
 export interface ApplicationPayload {
+  // ─── Firma ────────────────────────────────────────────────────────────────
   /** Offizieller Firmenname — wird als Mitgliedsname angezeigt. */
   company?: string;
-  contact_person?: string;
-  email?: string;
-  phone?: string;
-  website_url?: string;
   /** Firmenadresse — seit Migration 0013 in Einzelfeldern. */
   street_name?: string;
   street_number?: string;
   postal_code?: string;
   city?: string;
+  email?: string;
+  phone?: string;
+  website_url?: string;
+  /** Mitarbeiterzahl — intern. */
+  employee_count?: string;
   description?: string;
   /** Freitext an das Sekretariat, wird nicht veröffentlicht. */
   message?: string;
+
+  // ─── Kontaktperson ────────────────────────────────────────────────────────
+  contact_last_name?: string;
+  contact_first_name?: string;
+  contact_job_title?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  contact_street_name?: string;
+  contact_street_number?: string;
+  contact_postal_code?: string;
+  contact_city?: string;
+  /** "1" = Adresse der Kontaktperson entspricht der Firmenadresse. */
+  contact_address_same?: string;
+
+  /** Altbestand: vor Abschnitt 7 wurde nur ein Namensfeld erhoben. */
+  contact_person?: string;
+
   source?: string;
   /** Sprache des Formulars — bestimmt die Sprache von Zusage/Ablehnung. */
   locale?: string;

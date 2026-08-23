@@ -24,6 +24,7 @@ function member(overrides: Partial<Member> = {}): Member {
     lng: null,
     canton: null,
     member_since: null,
+    employee_count: null,
     source_lang: "de",
     status: "published",
     draft: null,

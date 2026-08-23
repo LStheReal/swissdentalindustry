@@ -58,7 +58,17 @@ export interface Member {
   canton: string | null;
   member_since: string | null;
   source_lang: Locale;
+  /**
+   * 'draft' = die Firma war nie öffentlich, 'published' = sie steht im
+   * Verzeichnis. Unabhängig davon, ob unveröffentlichte Änderungen anliegen —
+   * dafür gibt es `draft` (Migration 0014).
+   */
   status: MemberStatus;
+  /**
+   * Noch nicht veröffentlichte Änderungen an den öffentlichen Feldern.
+   * `null` = der veröffentlichte Stand ist aktuell. Siehe lib/member-draft.ts.
+   */
+  draft: import("./member-draft").MemberDraft | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

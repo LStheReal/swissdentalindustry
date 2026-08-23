@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminT } from "@/lib/i18n-admin";
+import { draftedFields, effectiveMember, hasDraft } from "@/lib/member-draft";
+import { internalFieldLabel } from "@/lib/types";
+import { PublishPanel } from "../PublishPanel";
 import {
   getInternalProfileForMember,
   listContactPersons,
@@ -16,6 +19,9 @@ import { LogoUploadField } from "../LogoUploadField";
 import { ContactPersonsPanel } from "../ContactPersonsPanel";
 import {
   updateMember,
+  publishMember,
+  unpublishMember,
+  discardDraft,
   generateEditLink,
   revokeEditLink,
   sendEditLinkToMember,
@@ -53,6 +59,12 @@ export default async function EditMemberPage({
   const editUrl = token ? `${appUrl}/edit/${token.token}` : null;
   const status = member.status === "published" ? "Publiziert" : "Entwurf";
   const formId = `member-form-${member.id}`;
+  // Bearbeitet wird immer der Entwurfsstand; öffentlich ist er erst nach
+  // "Veröffentlichen".
+  const editing = effectiveMember(member);
+  const pendingFields = draftedFields(member).map((key) =>
+    key === "description" ? "Beschreibung" : (internalFieldLabel(key as never, adminLocale) ?? key),
+  );
 
   return (
     <div className="overflow-hidden border border-[#e2e2e7] bg-white">
@@ -69,6 +81,7 @@ export default async function EditMemberPage({
               <span className={member.status === "published" ? "text-[#1f8a5b]" : "text-[#a66a00]"}>
                 ● {status}
               </span>
+              {hasDraft(member) && <span className="text-[#a66a00]">◐ Unveröffentlichte Änderung</span>}
               {member.canton && <span>{member.canton}</span>}
               {member.member_since && <span>Seit {member.member_since}</span>}
             </div>
@@ -80,7 +93,7 @@ export default async function EditMemberPage({
                 <select
                   form={formId}
                   name="source_lang"
-                  defaultValue={member.source_lang}
+                  defaultValue={editing.source_lang}
                   className="mt-2 w-full rounded-[2px] border border-[#c4c4cc] bg-white px-3 py-2.5 text-[13.5px] outline-none focus:border-[#0a0a0b] focus:ring-2 focus:ring-[#e1000f]/20"
                 >
                   <option value="de">Deutsch</option>
@@ -92,6 +105,26 @@ export default async function EditMemberPage({
               <span className="font-sdi-mono mt-1.5 block text-[10.5px] uppercase tracking-[0.04em] text-[#6b6b73]">
                 Wird beim Speichern aus der Beschreibung automatisch erkannt · Auswahl dient nur als Fallback
               </span>
+            </div>
+
+            <div className="mt-6 max-w-[640px]">
+              <PublishPanel
+                status={member.status}
+                hasDraft={hasDraft(member)}
+                pendingFields={pendingFields}
+                onPublish={async () => {
+                  "use server";
+                  await publishMember(member.id);
+                }}
+                onUnpublish={async () => {
+                  "use server";
+                  await unpublishMember(member.id);
+                }}
+                onDiscard={async () => {
+                  "use server";
+                  await discardDraft(member.id);
+                }}
+              />
             </div>
 
             <div className="mt-6 max-w-[640px]">
@@ -120,7 +153,7 @@ export default async function EditMemberPage({
             </div>
           </div>
           <div className="mt-8 w-full max-w-[320px] space-y-5 lg:mt-16">
-            <LogoUploadField formId={formId} initialLogoUrl={member.logo_url} />
+            <LogoUploadField formId={formId} initialLogoUrl={editing.logo_url} />
           </div>
         </div>
       </div>
@@ -129,21 +162,21 @@ export default async function EditMemberPage({
         formId={formId}
         action={updateMember.bind(null, member.id)}
         initial={{
-          name: member.name,
+          name: editing.name,
           description:
-            member.description[member.source_lang] || member.description.de,
-          descriptions: member.description,
-          source_lang: member.source_lang,
-          logo_url: member.logo_url,
-          street_name: member.street_name,
-          street_number: member.street_number,
-          postal_code: member.postal_code,
-          city: member.city,
-          address_needs_review: member.address_needs_review,
-          phone: member.phone,
-          email: member.email,
-          website_url: member.website_url,
-          member_since: member.member_since,
+            editing.description[editing.source_lang] || editing.description.de,
+          descriptions: editing.description,
+          source_lang: editing.source_lang,
+          logo_url: editing.logo_url,
+          street_name: editing.street_name,
+          street_number: editing.street_number,
+          postal_code: editing.postal_code,
+          city: editing.city,
+          address_needs_review: editing.address_needs_review,
+          phone: editing.phone,
+          email: editing.email,
+          website_url: editing.website_url,
+          member_since: editing.member_since,
           internal_profile: internalProfile,
         }}
       />

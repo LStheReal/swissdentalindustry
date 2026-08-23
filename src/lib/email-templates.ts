@@ -1049,7 +1049,7 @@ const APPLICATION_APPROVED: Record<Locale, ApplicationApprovedStrings> = {
     // Bewusst ohne Firmennamen — die deutsche Zusage begrüsst allgemein.
     greeting: () => `Willkommen bei<br>Swiss Dental Industry.`,
     intro:
-      "Ihr Antrag wurde geprüft und angenommen — Ihre Firma ist ab sofort im Mitgliederverzeichnis eingetragen.",
+      "Ihr Antrag wurde geprüft und angenommen — herzlich willkommen bei Swiss Dental Industry. Ihr Profil wird vom Sekretariat aufgeschaltet und erscheint dann im Mitgliederverzeichnis.",
     internalNote:
       "Bitte ergänzen Sie über den folgenden Link noch Ihre internen Angaben (Kontaktperson, Anschrift, Direktkontakt). Über denselben Link können Sie Ihr Profil jederzeit aktualisieren — Änderungen werden vom Sekretariat geprüft und danach live geschaltet.",
     cta: "Angaben ergänzen",
@@ -1062,7 +1062,7 @@ const APPLICATION_APPROVED: Record<Locale, ApplicationApprovedStrings> = {
     eyebrow: "Adhésion · Acceptation",
     greeting: () => `Bienvenue chez<br>Swiss Dental Industry.`,
     intro:
-      "Votre demande a été examinée et acceptée — votre entreprise figure désormais dans le répertoire des membres.",
+      "Votre demande a été examinée et acceptée — bienvenue chez Swiss Dental Industry. Votre profil sera mis en ligne par le secrétariat et figurera ensuite dans le répertoire des membres.",
     internalNote:
       "Merci de compléter vos données internes (personne de contact, adresse, contact direct) via le lien ci-dessous. Ce même lien vous permet de mettre à jour votre profil à tout moment — les modifications sont vérifiées par le secrétariat avant publication.",
     cta: "Compléter les données",
@@ -1075,7 +1075,7 @@ const APPLICATION_APPROVED: Record<Locale, ApplicationApprovedStrings> = {
     eyebrow: "Adesione · Accettazione",
     greeting: () => `Benvenuti in<br>Swiss Dental Industry.`,
     intro:
-      "La vostra richiesta è stata esaminata e accettata — la vostra azienda è ora iscritta nell'elenco dei membri.",
+      "La vostra richiesta è stata esaminata e accettata — benvenuti in Swiss Dental Industry. Il vostro profilo verrà pubblicato dal segretariato e comparirà quindi nell'elenco dei membri.",
     internalNote:
       "Vi preghiamo di completare i vostri dati interni (persona di contatto, indirizzo, contatto diretto) tramite il link seguente. Lo stesso link vi permette di aggiornare il profilo in qualsiasi momento — le modifiche vengono verificate dalla segreteria prima della pubblicazione.",
     cta: "Completare i dati",
@@ -1088,7 +1088,7 @@ const APPLICATION_APPROVED: Record<Locale, ApplicationApprovedStrings> = {
     eyebrow: "Membership · Accepted",
     greeting: () => `Welcome to<br>Swiss Dental Industry.`,
     intro:
-      "Your application has been reviewed and accepted — your company is now listed in the member directory.",
+      "Your application has been reviewed and accepted — welcome to Swiss Dental Industry. Your profile will be put online by the secretariat and will then appear in the member directory.",
     internalNote:
       "Please complete your internal details (contact person, address, direct contact) using the link below. The same link lets you update your profile at any time — changes are reviewed by the secretariat before going live.",
     cta: "Complete your details",

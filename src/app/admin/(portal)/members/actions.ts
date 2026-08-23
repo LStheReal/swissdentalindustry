@@ -13,6 +13,12 @@ import {
 } from "@/lib/after-response";
 import { uploadImage } from "@/lib/storage";
 import { cleanDescription, stripDuplicatedName } from "@/lib/description";
+import {
+  applyMemberPatch,
+  discardMemberDraft,
+  publishMemberRow,
+  unpublishMemberRow,
+} from "@/lib/member-write";
 import { sanitizeExternalUrl } from "@/lib/url";
 import {
   ADDRESS_KEYS,
@@ -205,7 +211,9 @@ export async function createMember(formData: FormData) {
       lng: null,
       canton: null,
       source_lang: sourceLang,
-      status: "published",
+      // Neu angelegte Firmen sind Entwurf. Öffentlich werden sie erst, wenn
+      // jemand im Mitglieder-Detail "Veröffentlichen" klickt.
+      status: "draft",
       is_active: true,
     })
     .select("id")
@@ -297,7 +305,6 @@ export async function updateMember(id: string, formData: FormData) {
       website_url: sanitizeExternalUrl(str(formData, "website_url")),
       member_since: str(formData, "member_since"),
       source_lang: sourceLang,
-      status: "published",
     };
     if (removeLogo) update.logo_url = null;
     else if (newLogoUrl) update.logo_url = newLogoUrl;
@@ -308,8 +315,9 @@ export async function updateMember(id: string, formData: FormData) {
       update.lng = null;
       update.canton = null;
     }
-    const { error } = await supabase.from("members").update(update).eq("id", id);
-    if (error) throw new Error(error.message);
+    // Speichern veröffentlicht nicht mehr: bei einer bereits öffentlichen
+    // Firma landet das hier im Entwurf und wartet auf "Veröffentlichen".
+    const { wentLive } = await applyMemberPatch(supabase, id, update);
     await upsertInternalProfile(supabase, id, readInternalProfile(formData));
 
     translateAfterResponse({
@@ -320,7 +328,9 @@ export async function updateMember(id: string, formData: FormData) {
       paths: ["/members", `/members/${id}`],
       stripName: name,
     });
-    if (addressChanged) {
+    // Nur geokodieren, wenn die Adresse tatsächlich schon öffentlich ist.
+    // Sonst holt das Veröffentlichen die Koordinaten nach.
+    if (addressChanged && wentLive) {
       geocodeAfterResponse({ memberId: id, address: formatAddressOneLine(address) || null });
     }
 
@@ -343,13 +353,12 @@ export async function updateMember(id: string, formData: FormData) {
   const update: Record<string, unknown> = {
     name,
     description: descMl,
-    address,
+    ...addressColumns(address),
     phone: str(formData, "phone"),
     email: str(formData, "email"),
     website_url: sanitizeExternalUrl(str(formData, "website_url")),
     member_since: str(formData, "member_since"),
     source_lang: sourceLang,
-    status: "published",
   };
   if (removeLogo) update.logo_url = null;
   else if (newLogoUrl) update.logo_url = newLogoUrl;
@@ -359,12 +368,11 @@ export async function updateMember(id: string, formData: FormData) {
     update.canton = null;
   }
 
-  const { error } = await supabase.from("members").update(update).eq("id", id);
-  if (error) throw new Error(error.message);
+  const { wentLive } = await applyMemberPatch(supabase, id, update);
 
   await upsertInternalProfile(supabase, id, readInternalProfile(formData));
 
-  if (addressChanged) {
+  if (addressChanged && wentLive) {
     geocodeAfterResponse({ memberId: id, address: formatAddressOneLine(address) || null });
   }
 
@@ -373,15 +381,45 @@ export async function updateMember(id: string, formData: FormData) {
 }
 
 
+/**
+ * Die einzige Stelle, an der Inhalte einer Firma öffentlich werden.
+ *
+ * Übernimmt den Entwurf in den veröffentlichten Stand und schaltet die Firma
+ * online. Alles andere — Speichern, Freigeben einer Self-Service-Änderung,
+ * Annehmen eines Antrags — ändert daran nichts.
+ */
 export async function publishMember(id: string) {
   await requireAdmin();
   const supabase = createAdminClient();
 
-  const { error } = await supabase
-    .from("members")
-    .update({ status: "published" })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+  const { published, addressChanged, address } = await publishMemberRow(supabase, id);
+  if (published && addressChanged) {
+    geocodeAfterResponse({ memberId: id, address });
+  }
+
+  revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${id}`);
+  revalidatePath("/members");
+  revalidatePath(`/members/${id}`);
+}
+
+/** Nimmt die Firma von der Website. Der Inhalt bleibt erhalten. */
+export async function unpublishMember(id: string) {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  await unpublishMemberRow(supabase, id);
+
+  revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${id}`);
+  revalidatePath("/members");
+  revalidatePath(`/members/${id}`);
+}
+
+/** Verwirft die unveröffentlichten Änderungen; der Live-Stand bleibt stehen. */
+export async function discardDraft(id: string) {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  await discardMemberDraft(supabase, id);
 
   revalidatePath("/admin/members");
   revalidatePath(`/admin/members/${id}`);
@@ -446,19 +484,22 @@ export async function importMembers(
 
       const existing = existingByName.get(key);
       if (existing) {
-        const { error } = await supabase
-          .from("members")
-          .update({
+        // Auch der Import veröffentlicht nicht: bei einer bereits öffentlichen
+        // Firma landen die Änderungen im Entwurf.
+        try {
+          await applyMemberPatch(supabase, existing.id, {
             ...addressColumns(row.address),
             phone: row.phone,
             email: row.email,
             website_url: sanitizeExternalUrl(row.websiteUrl),
-          })
-          .eq("id", existing.id);
-
-        if (error) {
+          });
+        } catch (err) {
           skippedCount += 1;
-          details.push(`Zeile ${row.rowNumber}: "${row.name}" konnte nicht aktualisiert werden (${error.message}).`);
+          details.push(
+            `Zeile ${row.rowNumber}: "${row.name}" konnte nicht aktualisiert werden (${
+              err instanceof Error ? err.message : String(err)
+            }).`,
+          );
           continue;
         }
 

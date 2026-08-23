@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodeAfterResponse } from "@/lib/after-response";
+import { applyMemberPatch } from "@/lib/member-write";
 import { sendChangeApprovedMail } from "@/lib/email";
 import { describeMemberValue, memberFieldLabel } from "@/lib/email-templates";
 import { getInternalProfileForMember, saveInternalProfile } from "@/lib/member-internal-profiles";
@@ -111,12 +112,12 @@ export async function approveChange(requestId: string) {
     update.address = formatAddress(mergedAddress) || null;
   }
 
+  // Freigeben heisst geprüft, nicht öffentlich. Bei einer bereits
+  // veröffentlichten Firma landet die Änderung im Entwurf und wartet dort auf
+  // "Veröffentlichen" — das ist der Punkt von Abschnitt 6.
+  let wentLive = false;
   if (Object.keys(update).length > 0) {
-    const { error: updErr } = await supabase
-      .from("members")
-      .update(update)
-      .eq("id", member.id);
-    if (updErr) throw new Error(updErr.message);
+    ({ wentLive } = await applyMemberPatch(supabase, member.id, update));
   }
 
   if (internalProfile) {
@@ -131,7 +132,7 @@ export async function approveChange(requestId: string) {
     await saveInternalProfile(supabase, member.id, profile);
   }
 
-  if (addressChanged) {
+  if (addressChanged && wentLive) {
     geocodeAfterResponse({
       memberId: member.id,
       address: formatAddressOneLine(mergedAddress) || null,

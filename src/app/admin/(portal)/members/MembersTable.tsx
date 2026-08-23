@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { type Member, type MemberInternalProfileFields, MEMBER_INTERNAL_PROFILE_LABELS } from "@/lib/types";
 import { formatAddress, formatAddressOneLine } from "@/lib/address";
+import { effectiveMember, hasDraft } from "@/lib/member-draft";
 import { deleteMember, publishMember } from "./actions";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 
@@ -48,6 +49,9 @@ export function MembersTable({ members, internalProfiles }: Props) {
   }, []);
 
   const profile = selected ? (internalProfiles[selected.id] ?? null) : null;
+  // Die Schublade zeigt den Stand, den der Admin bearbeitet — also inklusive
+  // unveröffentlichter Änderungen. Was davon online steht, sagt das Badge.
+  const view = selected ? effectiveMember(selected) : null;
 
   const filtered = (() => {
     const q = query.trim().toLowerCase();
@@ -163,12 +167,13 @@ export function MembersTable({ members, internalProfiles }: Props) {
                 </p>
               </div>
             </div>
-            <span
-              className={`font-sdi-mono whitespace-nowrap text-[10.5px] font-bold uppercase tracking-[0.08em] ${
-                m.status === "published" ? "text-[#1f8a5b]" : "text-[#a66a00]"
-              }`}
-            >
-              ● {m.status === "published" ? "Publiziert" : "Entwurf"}
+            <span className="font-sdi-mono flex flex-col whitespace-nowrap text-[10.5px] font-bold uppercase tracking-[0.08em]">
+              <span className={m.status === "published" ? "text-[#1f8a5b]" : "text-[#a66a00]"}>
+                ● {m.status === "published" ? "Publiziert" : "Entwurf"}
+              </span>
+              {hasDraft(m) && (
+                <span className="text-[#a66a00]">◐ Änderung offen</span>
+              )}
             </span>
             <span className="font-sdi-mono whitespace-nowrap text-[11.5px] text-[#6b6b73]">
               {formatDate(m.updated_at)}
@@ -177,13 +182,13 @@ export function MembersTable({ members, internalProfiles }: Props) {
               className="flex flex-nowrap items-center gap-1.5 lg:justify-end"
               onClick={(e) => e.stopPropagation()}
             >
-              {m.status === "draft" && (
+              {(m.status === "draft" || hasDraft(m)) && (
                 <form action={publishMember.bind(null, m.id)}>
                   <SubmitButton
-                    pendingLabel="Wird aktiviert …"
+                    pendingLabel="Wird veröffentlicht …"
                     className="min-w-[74px] whitespace-nowrap rounded-[3px] border border-[#1f8a5b] bg-[#1f8a5b] px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#18724b]"
                   >
-                    Activate
+                    Veröffentlichen
                   </SubmitButton>
                 </form>
               )}
@@ -221,21 +226,21 @@ export function MembersTable({ members, internalProfiles }: Props) {
           selected ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {selected && (
+        {selected && view && (
           <>
             {/* Header */}
             <div className="flex items-start justify-between border-b border-[#e2e2e7] px-6 py-5">
               <div className="flex items-center gap-3.5 min-w-0">
                 <div className="font-sdi-mono flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[2px] border border-[#e2e2e7] bg-[#fafaf8] text-[11px] font-bold text-[#0a0a0b]">
-                  {selected.logo_url ? (
+                  {view.logo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={selected.logo_url} alt="" className="h-full w-full object-contain p-1" />
+                    <img src={view.logo_url} alt="" className="h-full w-full object-contain p-1" />
                   ) : (
-                    initials(selected.name)
+                    initials(view.name)
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate font-extrabold tracking-[-0.02em]">{selected.name}</p>
+                  <p className="truncate font-extrabold tracking-[-0.02em]">{view.name}</p>
                   <span
                     className={`font-sdi-mono mt-0.5 block text-[10px] font-bold uppercase tracking-[0.08em] ${
                       selected.status === "published" ? "text-[#1f8a5b]" : "text-[#a66a00]"
@@ -243,6 +248,11 @@ export function MembersTable({ members, internalProfiles }: Props) {
                   >
                     ● {selected.status === "published" ? "Publiziert" : "Entwurf"}
                   </span>
+                  {hasDraft(selected) && (
+                    <span className="font-sdi-mono mt-0.5 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#a66a00]">
+                      ◐ Unveröffentlichte Änderung
+                    </span>
+                  )}
                 </div>
               </div>
               <button
@@ -266,23 +276,23 @@ export function MembersTable({ members, internalProfiles }: Props) {
                   Öffentliche Angaben
                 </div>
                 <dl className="space-y-2.5">
-                  {selected.canton && (
-                    <Row label="Kanton" value={selected.canton} />
+                  {view.canton && (
+                    <Row label="Kanton" value={view.canton} />
                   )}
-                  {formatAddress(selected) && (
-                    <Row label="Adresse" value={formatAddress(selected)} />
+                  {formatAddress(view) && (
+                    <Row label="Adresse" value={formatAddress(view)} />
                   )}
-                  {selected.phone && (
-                    <Row label="Telefon" value={selected.phone} />
+                  {view.phone && (
+                    <Row label="Telefon" value={view.phone} />
                   )}
-                  {selected.email && (
-                    <Row label="E-Mail" value={selected.email} link={`mailto:${selected.email}`} />
+                  {view.email && (
+                    <Row label="E-Mail" value={view.email} link={`mailto:${view.email}`} />
                   )}
-                  {selected.website_url && (
-                    <Row label="Website" value={selected.website_url} link={selected.website_url} external />
+                  {view.website_url && (
+                    <Row label="Website" value={view.website_url} link={view.website_url} external />
                   )}
-                  {selected.member_since && (
-                    <Row label="Mitglied seit" value={selected.member_since} />
+                  {view.member_since && (
+                    <Row label="Mitglied seit" value={view.member_since} />
                   )}
                 </dl>
               </section>

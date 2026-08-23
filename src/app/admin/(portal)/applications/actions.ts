@@ -11,6 +11,7 @@ import { cleanDescription, stripDuplicatedName } from "@/lib/description";
 import { geocodeAddress } from "@/lib/geocode";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { formatAddress, formatAddressOneLine, normalizeAddress } from "@/lib/address";
+import { applyMemberPatch } from "@/lib/member-write";
 import { saveInternalProfile } from "@/lib/member-internal-profiles";
 import {
   sendApplicationApprovedMail,
@@ -55,12 +56,12 @@ async function loadApplication(
 }
 
 /**
- * Antrag annehmen: legt die Firma an, erzeugt den Self-Service-Link und
- * schickt die Zusage.
+ * Antrag annehmen: legt die Firma als ENTWURF an, erzeugt den
+ * Self-Service-Link und schickt die Zusage.
  *
- * Der Antrag enthält bereits alle öffentlichen Angaben (das Formular erzwingt
- * sie), deshalb wird direkt veröffentlicht — der Admin hat den Inhalt in der
- * Vorschau gesehen und gibt mit dem Klick genau das frei.
+ * Annehmen und Veröffentlichen sind bewusst zwei Schritte. Der Antrag ist
+ * damit entschieden und die Firma aufgenommen, aber im Verzeichnis steht sie
+ * erst, wenn jemand sie ausdrücklich online schaltet.
  */
 export async function approveApplication(id: string) {
   await requireAdmin();
@@ -125,7 +126,9 @@ export async function approveApplication(id: string) {
       lng: null,
       canton: null,
       source_lang: sourceLang,
-      status: "published",
+      // Annehmen heisst aufgenommen, nicht veröffentlicht. Die Firma erscheint
+      // erst, wenn ein Admin sie im Mitglieder-Detail online schaltet.
+      status: "draft",
       is_active: true,
       // Mitglied seit = Tag der Aufnahme. Wird hier gesetzt, damit der Admin
       // es nicht nachtragen muss; im Mitglieder-Formular bleibt es änderbar.
@@ -220,9 +223,10 @@ export async function approveApplication(id: string) {
         patch.canton = geo.canton;
       }
       if (Object.keys(patch).length > 0) {
-        await supabase.from("members").update(patch).eq("id", member.id);
-        revalidatePath("/members");
-        revalidatePath(`/members/${member.id}`);
+        // Über den einen Schreibpfad: die Firma ist gerade als Entwurf
+        // angelegt worden, die Anreicherung darf daran nichts ändern.
+        await applyMemberPatch(supabase, member.id, patch);
+        revalidatePath(`/admin/members/${member.id}`);
       }
     } catch (err) {
       console.error("post-approval enrichment failed:", err);

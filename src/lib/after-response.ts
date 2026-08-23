@@ -4,6 +4,7 @@ import { translateFields } from "./translate";
 import { geocodeAddress } from "./geocode";
 import { createAdminClient } from "./supabase/admin";
 import { cleanDescription } from "./description";
+import { applyMemberPatch } from "./member-write";
 import { LOCALES, type Locale, type Multilingual } from "./types";
 
 /**
@@ -65,8 +66,14 @@ export function translateAfterResponse({
           )
         : raw;
       const supabase = createAdminClient();
-      const { error } = await supabase.from(table).update(translated).eq("id", id);
-      if (error) throw new Error(error.message);
+      // Firmen laufen über den einen Schreibpfad, damit eine nachgereichte
+      // Übersetzung nicht an der Entwurfs-Regel vorbei live geht.
+      if (table === "members") {
+        await applyMemberPatch(supabase, id, translated);
+      } else {
+        const { error } = await supabase.from(table).update(translated).eq("id", id);
+        if (error) throw new Error(error.message);
+      }
       for (const path of paths) revalidatePath(path);
     } catch (err) {
       console.error(`deferred translation for ${table}/${id} failed:`, err);

@@ -18,7 +18,7 @@ export async function V2Footer() {
           </p>
           <a
             href="mailto:info@swissdentalindustry.ch"
-            className="mt-5 inline-flex items-center gap-2 font-mono text-[12.5px] tracking-[0.04em] text-[color:var(--red-400)] transition-colors hover:text-white"
+            className="mt-4 inline-flex items-center gap-2 py-2 font-mono text-[12.5px] tracking-[0.04em] text-[color:var(--red-400)] transition-colors hover:text-white"
             style={{ fontFamily: "var(--font-mono)" }}
           >
             <span className="inline-block h-[6px] w-[6px] rounded-full bg-[color:var(--red-500)] v2-pulse" aria-hidden />
@@ -43,12 +43,6 @@ export async function V2Footer() {
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="v2-container overflow-hidden">
-        <span className="v2-footer__wordmark" aria-hidden>
-          {copy.meta.siteTitle.toUpperCase()}
-        </span>
       </div>
 
       <div className="border-t border-white/10">

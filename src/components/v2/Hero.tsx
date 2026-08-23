@@ -95,9 +95,8 @@ export function V2Hero({ content }: { content: V2HeroContent }) {
       </svg>
       <span className="v2-hero__scan" aria-hidden />
 
-      {/* Technical corner marks */}
+      {/* Technical corner mark */}
       <span className="v2-hero__corner top-5 left-5" style={{ fontFamily: "var(--font-mono)" }}>SVDI / ASDI</span>
-      <span className="v2-hero__corner top-5 right-5" style={{ fontFamily: "var(--font-mono)" }}>EST. 1956</span>
 
       <div className="v2-container flex flex-1 flex-col justify-center pt-[clamp(56px,9vh,110px)] pb-10">
         <div className="v2-eyebrow v2-load" style={{ "--v2-d": 0 } as React.CSSProperties}>

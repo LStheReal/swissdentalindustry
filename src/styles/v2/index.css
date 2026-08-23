@@ -486,6 +486,16 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
 .v2-locale:hover { color: var(--ink-950); }
 .v2-locale.is-active { color: var(--red-500); }
 
+/* Der Sprachumschalter war 21×25px gross — auf dem Handy zu klein, um ihn
+   sicher zu treffen. Die Schrift bleibt, die Fläche wird auf ~44px gebracht. */
+@media (max-width: 640px) {
+  .v2-locale {
+    padding: 12px 10px;
+    min-width: 44px;
+    text-align: center;
+  }
+}
+
 /* Burger → X */
 .v2-burger {
   display: inline-flex;
@@ -757,8 +767,14 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
   color: #fff;
 }
 @media (max-width: 640px) {
-  .v2-acc__head { grid-template-columns: 40px minmax(0, 1fr) 34px; gap: 12px; }
-  .v2-acc__text { padding-left: 52px; }
+  /* Die Regel deklarierte drei Spalten (40px | 1fr | 34px), obwohl der Kopf
+     nur zwei Kinder hat: Titel und Symbol. Der Titel landete damit in der
+     40 px schmalen Spalte und lief über — jedes Wort auf einer eigenen Zeile
+     ("Close / to / users"). Zwei Spalten, wie im Markup. */
+  .v2-acc__head { grid-template-columns: minmax(0, 1fr) 34px; gap: 12px; }
+  /* Der Einzug nahm dem Fliesstext 52 von 335 px, ohne etwas auszurichten. */
+  .v2-acc__text { padding-left: 0; }
+  .v2-acc__title { font-size: clamp(19px, 5.4vw, 24px); }
 }
 
 /* ------------------------------------------------------------
@@ -1061,22 +1077,12 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
   display: inline-block;
 }
 .v2-footer__link:hover { color: #fff; transform: translateX(4px); }
-.v2-footer__wordmark {
-  display: block;
-  width: 100%;
-  margin-top: clamp(40px, 6vw, 72px);
-  font-weight: 800;
-  font-size: clamp(26px, 6.2vw, 92px);
-  letter-spacing: -0.04em;
-  line-height: 0.9;
-  white-space: nowrap;
-  text-align: center;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.16);
-  user-select: none;
-  transition: -webkit-text-stroke-color 0.5s var(--v2-ease);
+
+/* Fusszeilen-Links sind auf dem Handy Tap-Ziele, keine Hover-Ziele: 14.5px
+   Text ergab 22px hohe Flächen. Die Schrift bleibt, die Trefferfläche wächst. */
+@media (max-width: 640px) {
+  .v2-footer__link { padding-block: 9px; }
 }
-.v2-footer:hover .v2-footer__wordmark { -webkit-text-stroke-color: rgba(255, 255, 255, 0.3); }
 
 .v2-totop {
   display: inline-flex;

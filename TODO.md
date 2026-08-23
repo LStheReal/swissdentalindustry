@@ -42,7 +42,8 @@ Ein Commit je Abschnitt, Migrationen 0013–0019 auf Prod angewendet und verifiz
 - [ ] **`rua=` in den DMARC-Record aufnehmen**, sonst entstehen weiterhin keine Reports und niemand erfährt warum.
 - [ ] Danach: einen Antrag annehmen und prüfen, ob die Zusage ankommt (Mail-Protokoll unter Einstellungen zeigt jetzt Antwort und Fehler je Nachricht).
 - [ ] Fachlich prüfen: Rechnungs- und Marketingkontakte sind noch nirgends vergeben (der Billing-Export ist deshalb leer in den Kontaktspalten).
-- [ ] Nur 2 von 36 Mitgliedern haben eine Website-URL hinterlegt — die neue Zeile im Popup bleibt sonst leer.
+- [x] 2026-08-23 Website-URLs nachgetragen: 2 → 29 von 36. Die alte WordPress-Seite enthält KEINE Firmen-Websites (alle 29 Profilseiten geprüft — nur Name und Beschreibung), also aus den E-Mail-Domains abgeleitet und jede per HTTP geprüft. Auf den Ursprung normalisiert, damit keine sprachspezifische Unterseite gespeichert wird. Direkt live geschrieben (kein Entwurf), Sicherung in scratchpad/website-url-backup.json.
+- [ ] **DU:** 7 Firmen ohne URL — bei der geplanten Rundmail miterheben: Curaden AG (E-Mail-Domain führt auf einen Shop), Mikrona Group AG (führt auf eine KFO-Praxis), E.M.S., Edenta AG, Gaba Schweiz AG (colpal.com/Colgate, antwortet nicht), Saremco Dental AG (keine E-Mail hinterlegt), Testeintrag „louise".
 - [ ] Entscheiden: im Popup stehen jetzt die URL als Text UND der Knopf „Open website". Soll der Knopf weg?
 
 ## Tests (2026-07-29)

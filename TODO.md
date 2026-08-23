@@ -21,6 +21,30 @@
 - [ ] **DU:** `ANTHROPIC_API_KEY` setzen — lokal in `.env.local`, auf Vercel für Production + Preview (danach redeploy). Ohne Key bleiben Beschreibungen unübersetzt (kein Fehler).
 - [ ] **DU:** SMTP-Zugang neu erstellen (SMTP_HOST/PORT/USER/PASS + MAIL_FROM) — lokal und auf Vercel. Bis dahin verschickt die Seite keine Mails.
 
+## 2026-08-23 — Change Request (13 Abschnitte) komplett umgesetzt
+Ein Commit je Abschnitt, Migrationen 0013–0019 auf Prod angewendet und verifiziert.
+- [x] §1 Personen bei einer Mitgliedsfirma heissen „Kontakte". DB-Spaltennamen bewusst NICHT umbenannt (kein funktionaler Gewinn, hätte das laufende Deployment im Fenster zwischen Migration und Deploy gebrochen). Nebenbefund: interne Feldbeschriftungen waren nur deutsch, wurden aber auf der viersprachigen Edit-Seite gerendert → jetzt mehrsprachig.
+- [x] §2 Adresse in Strasse/Nr./PLZ/Ort zerlegt (0013), Land ersatzlos gestrichen. Backfill bevorzugt die bereits zerlegte Adresse aus dem ASDI-Import (33 von 36), Parser nur für den Rest. 36/36 aufgelöst, 0 zur Handprüfung.
+- [x] §3 Doppelte Firmennamen entfernt. Ursache NICHT in Übersetzung/Import — kam mit den WordPress-Altdaten. Schutz an jeder Schreibstelle + Reparaturskript mit unabhängigem Detektor (fand die Dentsply-Variante).
+- [x] §4 Popup: Label und E-Mail raus, Website-URL rein.
+- [x] §5 Edit-Link: Intro, Bestätigungsschritt entfernt (Speichern reicht), kein Datenverlust mehr (sessionStorage), Logo-Darstellung und Responsive repariert. Zwei hartkodierte deutsche Strings auf einer viersprachigen Seite gefunden.
+- [x] §6 Entwurf/Veröffentlicht getrennt (0014). Alle Schreibpfade laufen über lib/member-write.ts; nur „Veröffentlichen" macht etwas öffentlich. Test fand dabei einen echten Bypass in der Antrags-Anreicherung.
+- [x] §7 Mitglied-werden-Formular exakt nach Feldliste, inkl. „Entspricht der Firmenadresse". Logo nicht mehr Pflicht.
+- [x] §8 Logo-Upload-Fehler werden gespeichert und angezeigt; Mail-Protokoll (0016) + Admin-Ansicht.
+- [x] §9 Kontakt-Rollen main/billing/marketing (0017), höchstens ein Hauptkontakt je Firma.
+- [x] §10 Firmen-interne Felder in eigene geschützte Tabelle (0019) — der erste Versuch (0018, Spalten auf `members`) war ein Datenleck, das der anon-Test sofort meldete.
+- [x] §11 Serienmail mit Platzhaltern, Vorschau und Bestätigung.
+- [x] §12 Excel-Export mit Filter Haupt-/Rechnungs-/alle Kontakte.
+- [x] §13 „EST. 1956" und Footer-Schriftzug entfernt; echter Mobile-Bug im Accordion-Grid behoben; Tap-Ziele 16 → 0 zu klein.
+
+### DU — offen, braucht Zugänge die ich nicht habe
+- [ ] **DKIM für freshnow.ch veröffentlichen.** Das ist die Ursache der nicht ankommenden Mails: SPF ist korrekt, DMARC steht auf `p=reject`, DKIM fehlt ganz. Ohne DKIM hängt die Zustellung allein an der SPF-Ausrichtung; bricht die (Weiterleitung, Alias, Relay), verwirft der Empfänger stumm — nachdem Infomaniak schon „250 queued" gemeldet hat.
+- [ ] **`rua=` in den DMARC-Record aufnehmen**, sonst entstehen weiterhin keine Reports und niemand erfährt warum.
+- [ ] Danach: einen Antrag annehmen und prüfen, ob die Zusage ankommt (Mail-Protokoll unter Einstellungen zeigt jetzt Antwort und Fehler je Nachricht).
+- [ ] Fachlich prüfen: Rechnungs- und Marketingkontakte sind noch nirgends vergeben (der Billing-Export ist deshalb leer in den Kontaktspalten).
+- [ ] Nur 2 von 36 Mitgliedern haben eine Website-URL hinterlegt — die neue Zeile im Popup bleibt sonst leer.
+- [ ] Entscheiden: im Popup stehen jetzt die URL als Text UND der Knopf „Open website". Soll der Knopf weg?
+
 ## Tests (2026-07-29)
 - [x] Testsuite nach Vorbild EusiApp/Funity: Vitest (`tests/lib|security|db|migrations|meta`) + Playwright (`tests-e2e`), `run-tests.sh`, `npm test` in CI. 128 Vitest- + 10 Browser-Tests, alle grün. Details: `docs/testing.md`.
 - [x] Backend verifiziert: 36 Mitglieder lesbar, anon-Schreibzugriff gesperrt, Schema deckt sich mit dem Code, Admin-Portal ohne Session gesperrt, alle Admin-Actions rufen `requireAdmin()`.

@@ -8,10 +8,10 @@ import { describeMemberValuePair, memberFieldLabel } from "@/lib/email-templates
 import { getRecipient } from "@/lib/forms";
 import { getInternalProfileForMember } from "@/lib/member-internal-profiles";
 import { translateToAllAuto } from "@/lib/translate";
-import { cleanDescription, stripDuplicatedName } from "@/lib/description";
 import { uploadImage } from "@/lib/storage";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { ADDRESS_KEYS } from "@/lib/address";
+import { cleanDescription, stripDuplicatedName } from "@/lib/description";
 import {
   LOCALES,
   MEMBER_SELF_SERVICE_PROFILE_KEYS,
@@ -23,10 +23,8 @@ import {
 } from "@/lib/types";
 
 export interface SubmitState {
-  step?: "edit" | "preview" | "done";
+  step?: "edit" | "done";
   error?: string;
-  proposed?: Partial<MemberEditableFields>;
-  contact_email?: string | null;
 }
 
 function eq(a: unknown, b: unknown): boolean {
@@ -46,64 +44,25 @@ function readInternalProfile(formData: FormData): MemberInternalProfileFields {
   );
 }
 
-function strOrNull(value: unknown, maxLength: number): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed ? trimmed.slice(0, maxLength) : null;
+function field(formData: FormData, key: string, maxLength: number): string | null {
+  const value = String(formData.get(key) || "").trim();
+  return value ? value.slice(0, maxLength) : null;
 }
 
 /**
- * Whitelistet und validiert ein vom Client zurückgereichtes `proposed`-Objekt.
- * Der Wert durchläuft den Browser (hidden input) und ist damit frei
- * manipulierbar — ohne diese Prüfung könnten beliebige Member-Spalten
- * (status, source_lang, fremde logo_url …) in den Change-Request gelangen.
+ * Speichert die Änderungen einer Firma als Vorschlag für die Prüfung.
+ *
+ * Ein Schritt, kein Bestätigen mehr. Vorher musste die Firma ihre eigenen
+ * Eingaben erst in einer Vorschau abnicken, bevor überhaupt etwas gespeichert
+ * wurde — wer dort abbrach oder den Tab schloss, verlor alles, und geprüft
+ * wird ohnehin im Sekretariat.
+ *
+ * Der Wegfall der Vorschau schliesst nebenbei eine Angriffsfläche: der
+ * Vorschlag lief bisher als verstecktes Feld durch den Browser und musste
+ * serverseitig gegen Mass Assignment gefiltert werden. Jetzt entsteht er
+ * ausschliesslich hier und verlässt den Server nie.
  */
-function sanitizeProposed(
-  raw: unknown,
-  currentProfile: MemberInternalProfileFields,
-  memberName: string,
-): Partial<MemberEditableFields> {
-  const out: Partial<MemberEditableFields> = {};
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
-  const src = raw as Record<string, unknown>;
-
-  // Logos akzeptieren wir nur, wenn sie aus unserem eigenen Upload-Bucket
-  // stammen (previewChange hat sie dorthin geschrieben).
-  const logoPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/`;
-  if (typeof src.logo_url === "string" && src.logo_url.startsWith(logoPrefix)) {
-    out.logo_url = src.logo_url;
-  }
-
-  if (src.description && typeof src.description === "object" && !Array.isArray(src.description)) {
-    const d = src.description as Record<string, unknown>;
-    const ml = {} as Multilingual;
-    for (const l of LOCALES) ml[l] = typeof d[l] === "string" ? (d[l] as string).slice(0, 4000) : "";
-    // Der Wert kam durch den Browser zurück — die Doppelnennung hier noch
-    // einmal abfangen, nicht nur beim Erzeugen der Vorschau.
-    if (LOCALES.some((l) => ml[l].trim())) out.description = cleanDescription(memberName, ml);
-  }
-
-  for (const key of ADDRESS_KEYS) {
-    if (key in src) out[key] = strOrNull(src[key], 200);
-  }
-  if ("phone" in src) out.phone = strOrNull(src.phone, 100);
-  if ("email" in src) out.email = strOrNull(src.email, 200);
-  if ("website_url" in src) out.website_url = sanitizeExternalUrl(strOrNull(src.website_url, 500));
-
-  if (src.internal_profile && typeof src.internal_profile === "object") {
-    const profile = normalizeMemberInternalProfile(
-      src.internal_profile as Partial<MemberInternalProfileFields>,
-    );
-    // Admin-only-Felder bleiben unverändert auf dem aktuellen Stand.
-    profile.membership_fee = currentProfile.membership_fee;
-    profile.internal_notes = currentProfile.internal_notes;
-    out.internal_profile = profile;
-  }
-
-  return out;
-}
-
-export async function previewChange(
+export async function submitChange(
   token: string,
   _prev: SubmitState,
   formData: FormData,
@@ -120,18 +79,19 @@ export async function previewChange(
     member.name,
     String(formData.get("description") || "").trim(),
   );
-  const phone = String(formData.get("phone") || "").trim() || null;
-  const email = String(formData.get("email") || "").trim() || null;
+  const phone = field(formData, "phone", 100);
+  const email = field(formData, "email", 200);
   const websiteRaw = String(formData.get("website_url") || "").trim();
   const website_url = sanitizeExternalUrl(websiteRaw);
   if (websiteRaw && !website_url) return { step: "edit", error: "website" };
+
   const logoFile = formData.get("logo");
   const internalProfile = readInternalProfile(formData);
 
-  // Nur neu übersetzen, wenn der Source-Text sich gegenüber dem aktuellen Live-
-  // Stand wirklich unterscheidet. Sonst würde LLM-Drift (Claude
-  // non-deterministic) bei jedem Submit eine "Änderung" erzeugen, obwohl die
-  // Firma die Beschreibung gar nicht angefasst hat.
+  // Nur neu übersetzen, wenn der Quelltext sich gegenüber dem Live-Stand
+  // wirklich unterscheidet. Sonst würde die Nicht-Determiniertheit des Modells
+  // bei jedem Absenden eine "Änderung" erzeugen, obwohl die Firma die
+  // Beschreibung gar nicht angefasst hat.
   const liveSourceText = (member.description?.[sourceLang] ?? "").trim();
   const descriptionChanged =
     descriptionText.length > 0 && descriptionText !== liveSourceText;
@@ -148,15 +108,15 @@ export async function previewChange(
     logoUrl = logo;
     descriptionMl = descResult ? cleanDescription(member.name, descResult.ml) : null;
   } catch (err) {
-    console.error("previewChange processing failed:", err);
+    console.error("submitChange processing failed:", err);
     return { step: "edit", error: "processing" };
   }
 
   const supabase = createAdminClient();
   const currentInternalProfile = await getInternalProfileForMember(supabase, member.id);
 
-  // Admin-only-Felder waren nie im Formular — für den Vergleich und die
-  // Speicherung gilt immer der aktuelle Stand aus der Datenbank.
+  // Admin-only-Felder stehen nicht im Formular — für Vergleich und Speicherung
+  // gilt immer der aktuelle Stand aus der Datenbank.
   internalProfile.membership_fee = currentInternalProfile.membership_fee;
   internalProfile.internal_notes = currentInternalProfile.internal_notes;
 
@@ -164,7 +124,7 @@ export async function previewChange(
   if (logoUrl) proposed.logo_url = logoUrl;
   if (descriptionMl) proposed.description = descriptionMl;
   for (const key of ADDRESS_KEYS) {
-    const value = String(formData.get(key) || "").trim().slice(0, 200) || null;
+    const value = field(formData, key, 200);
     if (!eq(value, member[key])) proposed[key] = value;
   }
   if (!eq(phone, member.phone)) proposed.phone = phone;
@@ -178,7 +138,6 @@ export async function previewChange(
     return { step: "edit", error: "nochange" };
   }
 
-  // Duplicate-Check: existiert bereits eine offene Anfrage mit exakt diesem Inhalt?
   const { data: pending } = await supabase
     .from("member_change_requests")
     .select("proposed")
@@ -189,53 +148,16 @@ export async function previewChange(
     return { step: "edit", error: "duplicate" };
   }
 
-  return {
-    step: "preview",
-    proposed,
-    contact_email: email || member.email,
-  };
-}
-
-async function deleteOpenRequests(supabase: ReturnType<typeof createAdminClient>, memberId: string) {
   // Pro Firma soll immer nur die jüngste offene Anfrage existieren — ältere
   // pending Einreichungen werden überschrieben.
-  const { error } = await supabase
+  const { error: delErr } = await supabase
     .from("member_change_requests")
     .delete()
-    .eq("member_id", memberId)
+    .eq("member_id", member.id)
     .eq("status", "pending");
-  if (error) console.error("delete previous pending failed:", error);
-}
+  if (delErr) console.error("delete previous pending failed:", delErr);
 
-export async function confirmChange(
-  token: string,
-  _prev: SubmitState,
-  formData: FormData,
-): Promise<SubmitState> {
-  const member = await getMemberByToken(token);
-  if (!member) return { step: "edit", error: "invalid" };
-
-  const raw = String(formData.get("proposed") || "");
-  const contactEmail = strOrNull(formData.get("contact_email"), 200) || member.email;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { step: "edit", error: "processing" };
-  }
-
-  const supabase = createAdminClient();
-  const currentInternalProfile = await getInternalProfileForMember(supabase, member.id);
-  const proposed = sanitizeProposed(parsed, currentInternalProfile, member.name);
-
-  if (Object.keys(proposed).length === 0) {
-    return { step: "edit", error: "nochange" };
-  }
-
-  // Alte offene Anfrage(n) dieser Firma überschreiben — es soll nur die
-  // jüngste Einreichung im Feed des Admin-Portals erscheinen.
-  await deleteOpenRequests(supabase, member.id);
-
+  const contactEmail = email || member.email;
   const { error } = await supabase.from("member_change_requests").insert({
     member_id: member.id,
     proposed,
@@ -248,8 +170,8 @@ export async function confirmChange(
     return { step: "edit", error: "save" };
   }
 
-  // Admin asynchron informieren — ein Mail-Fehler darf den User-Flow nicht
-  // umwerfen, der Vorschlag liegt bereits im Feed.
+  // Admin informieren — ein Mail-Fehler darf den Ablauf nicht umwerfen, der
+  // Vorschlag liegt bereits im Feed.
   try {
     const to = await getRecipient("admin_notification_email");
     if (to) {
@@ -258,11 +180,13 @@ export async function confirmChange(
         const pair = describeMemberValuePair(key, currentRecord[key], value);
         return { label: memberFieldLabel(key), ...pair };
       });
-      const totalFields = 10; // street_name, street_number, postal_code, city, phone, email, website_url, description, logo_url, internal_profile
+      // street_name, street_number, postal_code, city, phone, email,
+      // website_url, description, logo_url, internal_profile
+      const totalFields = 10;
       await sendAdminChangeNotification({
         to,
         memberName: member.name,
-        contactEmail: contactEmail,
+        contactEmail,
         submittedAt: new Date(),
         changedCount: diff.length,
         totalFields,

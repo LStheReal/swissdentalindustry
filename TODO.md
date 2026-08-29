@@ -101,3 +101,10 @@ Ein Commit je Abschnitt, Migrationen 0013–0019 auf Prod angewendet und verifiz
 - [x] Gegen die echte Prod-DB verifiziert: 3 Personen anlegen → Nummerierung 1/2/3, Firmenformular-Speichern lässt alle bestehen, Einzelprofil liefert weiterhin Person 1. Anon kann interne Profile weiterhin nicht lesen (RLS nach Migration geprüft). 172 Tests + Build grün, deployed.
 - [x] Test-Mitglieder „TEst" und „asdg" auf draft gesetzt (waren im öffentlichen Verzeichnis) — 46 veröffentlichte Mitglieder. Reversibel.
 - [ ] **DU:** Einmal im Admin einen Antrag annehmen und prüfen, dass die Zusage-Mail ankommt — geht erst zuverlässig nach dem Provider-Wechsel.
+
+## 2026-08-23 — Alles deployed
+- [x] 18 Commits (§1–§13) auf `main` gepusht, Vercel-Production-Deploy grün (41s, Ready). Vorher geprüft: 19/19 Migrationen auf Prod angewendet, tsc 0, eslint 0, 220 Tests grün, Build grün.
+- [x] Auf der Live-URL nachgeprüft: 35 Mitglieder (Zähler stimmt), kein „louise" mehr, keine doppelten Firmennamen, „EST. 1956" weg, /join hat die getrennten Adressfelder + Kontaktperson und das Logo ist nicht mehr Pflicht.
+- [ ] **DU — wichtig:** `swissdentalindustry.ch` zeigt weiterhin auf die alte WordPress-Seite. Auf Vercel liegen nur freshnow.ch / funity.ch / eusiapp.ch. Die neue Seite läuft bis zur DNS-Umstellung nur unter der Vercel-URL.
+- [ ] **DU:** Admin-Passwort rotieren (stand im Klartext im Chat).
+- [ ] **DU:** Mailversand hängt weiter an Infomaniak (quittiert mit 250, stellt nicht zu). §8 macht Fehler jetzt sichtbar, behebt den Provider aber nicht — betrifft auch die Rundmail aus §11.

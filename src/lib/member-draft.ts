@@ -20,7 +20,7 @@
 // direkt in die Spalten geschrieben — es gibt ja nichts, was dadurch live
 // gehen könnte.
 
-import type { Member } from "./types";
+import { internalFieldLabel, type Locale, type Member, type Multilingual } from "./types";
 
 /** Felder, die den öffentlichen Auftritt ausmachen und deshalb Entwurf sein können. */
 export const DRAFTABLE_KEYS = [
@@ -83,4 +83,64 @@ export function draftedFields(member: Member): DraftableKey[] {
       key in draft &&
       JSON.stringify(draft[key] ?? null) !== JSON.stringify(member[key] ?? null),
   );
+}
+
+// ─── Beschriftungen für das Publish-Panel ────────────────────────────────────
+//
+// Diese Beschriftungen gehören zu DRAFTABLE_KEYS (Member-Feldern) — einer
+// anderen Schlüsselmenge als MemberInternalProfileKey (Kontakt-/Firmenfelder
+// in member_internal_profiles). Eine frühere Fassung dieser Seite hat versucht,
+// beide mit derselben Funktion (internalFieldLabel) zu beschriften; die beiden
+// Mengen überschneiden sich nur bei den vier Adressfeldern, und für jeden
+// anderen Schlüssel (phone, email, name, logo_url, …) schlug die Suche fehl —
+// ohne Rückfallwert stürzte das die ganze Seite ab, sobald ein Entwurf eines
+// dieser Felder enthielt. Deshalb: eine eigene, vollständige Tabelle für genau
+// diese Schlüsselmenge, mit garantiertem Rückfallwert.
+const DRAFTABLE_FIELD_LABELS: Record<DraftableKey, Multilingual> = {
+  name: { de: "Firmenname", fr: "Nom de l'entreprise", it: "Nome dell'azienda", en: "Company name" },
+  logo_url: { de: "Logo", fr: "Logo", it: "Logo", en: "Logo" },
+  description: { de: "Beschreibung", fr: "Description", it: "Descrizione", en: "Description" },
+  // Die vier Adressfelder gehören auch zu MemberInternalProfileKey — hier
+  // absichtlich nicht dupliziert, siehe draftableFieldLabel() unten.
+  street_name: { de: "Strasse", fr: "Rue", it: "Via", en: "Street" },
+  street_number: { de: "Hausnummer", fr: "Numéro", it: "Numero", en: "Number" },
+  postal_code: { de: "PLZ", fr: "NPA", it: "CAP", en: "Postal code" },
+  city: { de: "Ort", fr: "Localité", it: "Località", en: "City" },
+  // Reiner Archiv-Spiegel der vier Felder oben (siehe address.ts) — trägt
+  // keine eigene Information und wird im Publish-Panel bewusst nicht
+  // separat angezeigt. Hier trotzdem beschriftet, falls sie je woanders
+  // auftaucht.
+  address: { de: "Adresse", fr: "Adresse", it: "Indirizzo", en: "Address" },
+  phone: { de: "Telefon", fr: "Téléphone", it: "Telefono", en: "Phone" },
+  email: { de: "E-Mail", fr: "E-mail", it: "E-mail", en: "Email" },
+  website_url: { de: "Website", fr: "Site web", it: "Sito web", en: "Website" },
+  member_since: { de: "Mitglied seit", fr: "Membre depuis", it: "Membro dal", en: "Member since" },
+  source_lang: {
+    de: "Sprache der Firma",
+    fr: "Langue de l'entreprise",
+    it: "Lingua dell'azienda",
+    en: "Company language",
+  },
+};
+
+const ADDRESS_COMPONENT_KEYS = new Set<DraftableKey>([
+  "street_name",
+  "street_number",
+  "postal_code",
+  "city",
+]);
+
+/**
+ * Beschriftung eines Draftable-Feldes für das Publish-Panel. Fällt für einen
+ * unbekannten Schlüssel auf den Schlüssel selbst zurück statt zu werfen — ein
+ * unschönes Label ist ein kleiner Schönheitsfehler, ein Absturz der ganzen
+ * Seite ist keiner.
+ */
+export function draftableFieldLabel(key: DraftableKey, locale: Locale): string {
+  // Die vier Adressfelder haben ihre Beschriftung schon bei
+  // MemberInternalProfileKey — von dort übernehmen statt zu duplizieren,
+  // damit Wortlaut und Übersetzung nicht auseinanderlaufen.
+  if (ADDRESS_COMPONENT_KEYS.has(key)) return internalFieldLabel(key as never, locale);
+  const entry = DRAFTABLE_FIELD_LABELS[key];
+  return entry?.[locale] || entry?.de || key;
 }

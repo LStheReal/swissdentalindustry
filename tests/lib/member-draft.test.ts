@@ -3,13 +3,14 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   DRAFTABLE_KEYS,
+  draftableFieldLabel,
   draftedFields,
   effectiveMember,
   hasDraft,
   pickDraftable,
   pickNonDraftable,
 } from "@/lib/member-draft";
-import { emptyMultilingual, type Member } from "@/lib/types";
+import { LOCALES, emptyMultilingual, type Member } from "@/lib/types";
 
 function member(overrides: Partial<Member> = {}): Member {
   return {
@@ -99,6 +100,49 @@ function sourceFiles(dir: string, acc: string[] = []): string[] {
   }
   return acc;
 }
+
+/**
+ * Der eigentliche Vorfall: das Publish-Panel beschriftet jedes Feld, in dem
+ * sich Entwurf und Live-Stand unterscheiden — für JEDES Feld aus
+ * DRAFTABLE_KEYS, nicht nur für die, die zufällig auch in
+ * MemberInternalProfileKey vorkommen. Die ursprüngliche Fassung rief dafür
+ * internalFieldLabel() auf, dessen Tabelle nur die vier Adressfelder mit
+ * DRAFTABLE_KEYS teilt — für phone, email, name, logo_url, website_url,
+ * member_since, source_lang und address gab es dort keinen Eintrag, und ohne
+ * Rückfallwert warf das eine TypeError, die die ganze Seite abstürzen liess.
+ *
+ * Dieser Test geht die komplette Liste durch — bei einer künftig neu
+ * hinzugefügten DRAFTABLE_KEY schlägt er sofort fehl, statt erst beim Klick
+ * auf "Bearbeiten" im Portal.
+ */
+describe("draftableFieldLabel — jedes entwurfsfähige Feld hat eine Beschriftung", () => {
+  it("wirft für keinen Schlüssel und keine Sprache", () => {
+    for (const key of DRAFTABLE_KEYS) {
+      for (const locale of LOCALES) {
+        expect(() => draftableFieldLabel(key, locale)).not.toThrow();
+      }
+    }
+  });
+
+  it("liefert für jeden Schlüssel und jede Sprache einen nicht-leeren Text", () => {
+    for (const key of DRAFTABLE_KEYS) {
+      for (const locale of LOCALES) {
+        expect(draftableFieldLabel(key, locale).trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("stimmt bei den vier Adressfeldern mit den Kontakt-Beschriftungen überein", () => {
+    // Diese vier existieren in beiden Schlüsselmengen — der Wortlaut darf
+    // nicht auseinanderlaufen, sonst zeigt das Publish-Panel etwas anderes
+    // als das Kontaktformular für dasselbe Feld.
+    for (const key of ["street_name", "street_number", "postal_code", "city"] as const) {
+      expect(draftableFieldLabel(key, "de")).toBe(
+        { street_name: "Strasse", street_number: "Hausnummer", postal_code: "PLZ", city: "Ort" }[key],
+      );
+    }
+  });
+});
 
 describe("Veröffentlichen passiert nur an einer Stelle", () => {
   const files = sourceFiles(join(ROOT, "src"));

@@ -2,11 +2,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminT } from "@/lib/i18n-admin";
 import { getCompanyInternal } from "@/lib/member-company-internal";
-import { draftedFields, effectiveMember, hasDraft } from "@/lib/member-draft";
+import { draftableFieldLabel, draftedFields, effectiveMember, hasDraft } from "@/lib/member-draft";
 import {
   CONTACT_ROLES,
   contactRoleLabel,
-  internalFieldLabel,
   type ContactRole,
 } from "@/lib/types";
 import { PublishPanel } from "../PublishPanel";
@@ -75,9 +74,13 @@ export default async function EditMemberPage({
   // Bearbeitet wird immer der Entwurfsstand; öffentlich ist er erst nach
   // "Veröffentlichen".
   const editing = effectiveMember(member);
-  const pendingFields = draftedFields(member).map((key) =>
-    key === "description" ? "Beschreibung" : (internalFieldLabel(key as never, adminLocale) ?? key),
-  );
+  // "address" ist nur der Archiv-Spiegel der vier Adressfelder (siehe
+  // lib/address.ts) und trägt keine eigene Information — sie ändert sich
+  // immer zusammen mit street_name/street_number/postal_code/city, deshalb
+  // hier ausgeblendet, damit das Panel nicht zweimal dasselbe zeigt.
+  const pendingFields = draftedFields(member)
+    .filter((key) => key !== "address")
+    .map((key) => draftableFieldLabel(key, adminLocale));
 
   return (
     <div className="overflow-hidden border border-[#e2e2e7] bg-white">

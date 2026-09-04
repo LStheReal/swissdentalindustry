@@ -223,12 +223,23 @@ export function companyInternalLabel(key: CompanyInternalKey, locale: Locale): s
   return COMPANY_INTERNAL_LABELS[key][locale] || COMPANY_INTERNAL_LABELS[key].de;
 }
 
-/** Beschriftung eines internen Feldes in der gewünschten Sprache. */
+/**
+ * Beschriftung eines internen Feldes in der gewünschten Sprache.
+ *
+ * Fällt für einen Schlüssel ausserhalb von MemberInternalProfileKey auf den
+ * Schlüssel selbst zurück statt zu werfen. TypeScript verhindert das im
+ * Normalfall — ein Aufrufer, der den Typ mit `as never` erzwingt (wie es die
+ * ursprüngliche Fassung des Publish-Panels tat), müsste sonst darauf
+ * vertrauen, dass jeder künftige Aufrufer diese Regel nie bricht. Ein
+ * unschönes Label ist ein kleiner Fehler; ein Absturz der ganzen Seite ist
+ * keiner.
+ */
 export function internalFieldLabel(
   key: MemberInternalProfileKey,
   locale: Locale,
 ): string {
-  return INTERNAL_FIELD_LABELS[key][locale] || INTERNAL_FIELD_LABELS[key].de;
+  const entry = INTERNAL_FIELD_LABELS[key];
+  return entry?.[locale] || entry?.de || key;
 }
 
 /** Alle Beschriftungen in einer Sprache — praktisch als Prop für Client-Komponenten. */

@@ -644,16 +644,6 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
   pointer-events: none;
 }
 
-.v2-hero__corner {
-  position: absolute;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: rgba(12, 12, 13, 0.4);
-  z-index: 1;
-}
-
 /* Headline word reveal — visible without JS, masked rise with it */
 .v2-word {
   display: inline-block;

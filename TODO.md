@@ -37,6 +37,17 @@ Ein Commit je Abschnitt, Migrationen 0013–0019 auf Prod angewendet und verifiz
 - [x] §12 Excel-Export mit Filter Haupt-/Rechnungs-/alle Kontakte.
 - [x] §13 „EST. 1956" und Footer-Schriftzug entfernt; echter Mobile-Bug im Accordion-Grid behoben; Tap-Ziele 16 → 0 zu klein.
 
+## 2026-09-16 — Admin-Absturz (Mitglieder, Bearbeiten, Sprachwechsel) behoben
+- [x] **Ursache:** nicht der Beschriftungsfehler von 84786b1, sondern sharp. Alle 56 Produktions-500er hatten denselben Grund: `libvips-cpp.so.8.18.3` fehlte auf Vercel. Zwei sharp-Kopien im Baum (0.35.3 unsere, 0.34.5 von Next); das Tracing nahm für 0.35 das Addon mit, nicht aber libvips. Lokal im Build nachgestellt. Fix: sharp exakt auf 0.34.5 (= Next), dazu Lazy-Import — ein Ladefehler trifft nur noch den Logo-Upload.
+- [x] **Gleicher Fehler legte das öffentliche Antragsformular lahm** (POST /api/forms/join → 500). Seit dadf282 wieder ok; Prod-Smoke prüft das jetzt sessionfrei (GET → 405).
+- [x] Sicherheit: Guard-Test fand Action-Dateien nur über den Namen `actions.ts` → `locale-actions.ts` war ungeschützt. Jetzt über die "use server"-Direktive, plus Route-Handler und Inline-Actions.
+- [x] Rückfrage vor allen 9 unumkehrbaren Aktionen (Mitglied/News/Antrag/Anfrage/Kontakt/Admin löschen, Entwurf verwerfen, offline nehmen, Edit-Link widerrufen/erneuern). Vorher: ein Fehlklick löschte eine Firma samt Kontakten und Notizen.
+- [x] Tempo: Funktionen nach dub1 (DB in eu-west-1). Exportseite 5.2 s → 0.24 s (N+1: eine Abfrage je Firma × 3 Filter), übrige Admin-Seiten ~0.9 s → ~0.3 s. Export-Ausgabe gegen Prod-Daten byte-identisch geprüft.
+- [x] „Übersicht" und „Sprache" in der Admin-Navigation übersetzt.
+- [x] Geprüft auf Prod, eingeloggt: 51 Admin-Seiten × 4 Sprachen ohne Fehler, Klickpfade Bearbeiten + Sprachwechsel, Rückfrage (Abbrechen/OK) mit blockiertem Submit, Mobilansicht 390 px ohne Querscroll. 239 Tests grün.
+- [ ] Hinweis Daten: Beschreibung von Axis Dental beginnt mit „Axis Dental Sarl Founded in 1995, Axis Dental …" — sieht nach Überschrift+Text aus, die der Detektor nicht erfasst (kein Wort-Duplikat). Nicht angefasst.
+- [ ] Hinweis: Seiteninhalte im Admin (Überschriften, Formularlabels) sind grösstenteils fest Deutsch; nur Navigation und Kontakte-Panel folgen der Portalsprache.
+
 ### DU — offen, braucht Zugänge die ich nicht habe
 - [ ] **DKIM für freshnow.ch veröffentlichen.** Das ist die Ursache der nicht ankommenden Mails: SPF ist korrekt, DMARC steht auf `p=reject`, DKIM fehlt ganz. Ohne DKIM hängt die Zustellung allein an der SPF-Ausrichtung; bricht die (Weiterleitung, Alias, Relay), verwirft der Empfänger stumm — nachdem Infomaniak schon „250 queued" gemeldet hat.
 - [ ] **`rua=` in den DMARC-Record aufnehmen**, sonst entstehen weiterhin keine Reports und niemand erfährt warum.

@@ -32,14 +32,27 @@ const PUBLIC_ACTIONS = new Set<string>([
   "src/app/admin/reset-password/actions.ts::setNewPassword",
 ]);
 
-function walk(dir: string): string[] {
+function walkSources(dir: string): string[] {
   const out: string[] = [];
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
-    if (statSync(full).isDirectory()) out.push(...walk(full));
-    else if (name === "actions.ts") out.push(full);
+    if (statSync(full).isDirectory()) out.push(...walkSources(full));
+    else if (/\.(ts|tsx)$/.test(name)) out.push(full);
   }
   return out;
+}
+
+/** Datei ist ein Server-Action-Modul: "use server" als erste Anweisung. */
+function isServerActionModule(src: string): boolean {
+  const withoutComments = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  return /^\s*["']use server["']/.test(withoutComments);
+}
+
+// Früher: nur Dateien mit dem Namen "actions.ts". Damit fiel
+// (portal)/locale-actions.ts durch den Scan — eine Action-Datei mit anderem
+// Namen war unsichtbar. Massgeblich ist die Direktive, nicht der Dateiname.
+function walk(dir: string): string[] {
+  return walkSources(dir).filter((f) => isServerActionModule(readFileSync(f, "utf8")));
 }
 
 /** Grobe, aber ausreichende Zerlegung: Top-Level-Funktionen enden auf "\n}". */
@@ -108,6 +121,69 @@ describe("Admin Server Actions sind auth-geschützt", () => {
     expect(src).toMatch(/auth\.updateUser\(/);
     // Kein Service-Role-Client: sonst könnte die Action fremde Konten ändern.
     expect(src).not.toMatch(/createAdminClient/);
+  });
+
+  it("findet auch Action-Dateien, die nicht actions.ts heissen", () => {
+    const names = actionFiles.map((f) => relative(ROOT, f));
+    expect(names).toContain("src/app/admin/(portal)/locale-actions.ts");
+  });
+
+  it("jede Route unter /admin ruft requireAdmin() in jedem Handler auf", () => {
+    // Route-Handler laufen wie Server Actions NICHT durch das Portal-Layout.
+    const routes = walkSources(PORTAL).filter((f) => /\/route\.ts$/.test(f));
+    expect(routes.length).toBeGreaterThan(0);
+    const unguarded: string[] = [];
+    for (const file of routes) {
+      const src = readFileSync(file, "utf8");
+      const re = /export\s+async\s+function\s+(GET|POST|PUT|PATCH|DELETE)\b/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src))) {
+        const end = src.indexOf("\n}", m.index);
+        const body = src.slice(m.index, end === -1 ? undefined : end);
+        if (!/requireAdmin\s*\(/.test(body)) unguarded.push(`${relative(ROOT, file)}::${m[1]}`);
+      }
+    }
+    expect(unguarded).toEqual([]);
+  });
+
+  it("Inline-Actions in Seiten rufen nur selbst geschützte Actions auf", () => {
+    // z.B. members/[id]/page.tsx: onPublish={async () => { "use server"; await publishMember(id) }}
+    // Die Closure selbst hat keinen Guard — sie ist nur sicher, weil das, was
+    // sie aufruft, einen hat.
+    const guarded = new Set<string>();
+    for (const file of actionFiles) {
+      const rel = relative(ROOT, file);
+      for (const { name, body } of exportedActions(readFileSync(file, "utf8"))) {
+        if (!PUBLIC_ACTIONS.has(`${rel}::${name}`) && /requireAdmin\s*\(/.test(body)) {
+          guarded.add(name);
+        }
+      }
+    }
+
+    const offenders: string[] = [];
+    for (const file of walkSources(join(PORTAL, "(portal)"))) {
+      const src = readFileSync(file, "utf8");
+      if (isServerActionModule(src)) continue;
+      const re = /["']use server["'];?/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src))) {
+        // Körper bis zur schliessenden Klammer derselben Ebene.
+        let depth = 1;
+        let i = m.index;
+        while (i < src.length && depth > 0) {
+          i++;
+          if (src[i] === "{") depth++;
+          else if (src[i] === "}") depth--;
+        }
+        const body = src.slice(m.index, i);
+        const calls = [...body.matchAll(/await\s+(\w+)\s*\(/g)].map((c) => c[1]);
+        if (calls.length === 0 || !calls.every((c) => guarded.has(c) || c === "requireAdmin")) {
+          const line = src.slice(0, m.index).split("\n").length;
+          offenders.push(`${relative(ROOT, file)}:${line} → ${calls.join(", ") || "(kein Aufruf)"}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 
   it("schützt das Portal-Layout zusätzlich", () => {

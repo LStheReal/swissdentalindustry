@@ -1,5 +1,4 @@
 import { createAdminClient } from "./supabase/admin";
-import sharp from "sharp";
 
 export type BucketName = "logos" | "news";
 
@@ -9,7 +8,43 @@ type PreparedUpload = {
   ext: string;
 };
 
-async function prepareLogoUpload(file: File): Promise<PreparedUpload> {
+/**
+ * sharp wird erst geladen, wenn tatsächlich ein Logo verarbeitet wird — nicht
+ * beim Import dieser Datei.
+ *
+ * sharp ist ein natives Modul (libvips). Mit einem statischen Import lädt jede
+ * Seite, deren Modulgraph irgendwo storage.ts enthält, beim Start die native
+ * Bibliothek mit. Genau das hat am 2026-09-16 das halbe Admin-Portal und das
+ * öffentliche Antragsformular lahmgelegt: auf Vercel fehlte die libvips-Datei
+ * (siehe package.json — sharp ist deshalb exakt auf die Version gepinnt, die
+ * Next.js selbst mitbringt), und schon das Öffnen der Mitgliederliste oder das
+ * Umschalten der Sprache endete in einem 500 — obwohl dabei nie ein Bild
+ * verarbeitet wird.
+ *
+ * Jetzt trifft ein solcher Fehler nur noch den Upload selbst, und dort fangen
+ * die Aufrufer ihn ab (Antrag wird trotzdem gespeichert, der Grund steht beim
+ * Antrag).
+ *
+ * Bewusst KEIN Rückfall auf "Originaldatei hochladen": das Neu-Kodieren ist
+ * zugleich die Bereinigung. Ein SVG mit eingebettetem Script würde sonst
+ * unverändert im öffentlichen Bucket liegen.
+ */
+let sharpModule: Promise<typeof import("sharp")> | null = null;
+async function loadSharp() {
+  sharpModule ??= import("sharp").then((m) => m.default ?? m).catch((err) => {
+    // Nicht dauerhaft zwischenspeichern — ein vorübergehender Fehler soll den
+    // nächsten Versuch nicht auch scheitern lassen.
+    sharpModule = null;
+    throw new Error(
+      `Bildverarbeitung nicht verfügbar: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  });
+  return sharpModule;
+}
+
+/** Exportiert für tests/meta/sharp-native-deploy.test.ts. */
+export async function prepareLogoUpload(file: File): Promise<PreparedUpload> {
+  const sharp = await loadSharp();
   const input = Buffer.from(await file.arrayBuffer());
   const baseImage = sharp(input, { failOn: "none" }).rotate();
   const metadata = await baseImage.metadata();

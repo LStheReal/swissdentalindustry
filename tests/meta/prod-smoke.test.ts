@@ -74,6 +74,24 @@ describe.skipIf(!enabled)("Prod-Smoke: Admin und Self-Service", () => {
     expect(res.headers.get("location") ?? "").toContain("/admin/login");
   });
 
+  // Ein GET auf eine reine POST-Route muss 405 liefern. Ein 5xx heisst: das
+  // Modul der Route lässt sich gar nicht erst laden. So war es 2026-09-16 bei
+  // /api/forms/join — sharp fand auf Vercel seine native Bibliothek nicht
+  // (siehe tests/meta/sharp-native-deploy.test.ts). Derselbe Ladefehler legte
+  // das Admin-Portal lahm, ist dort aber ohne Session nicht sichtbar, weil der
+  // Proxy vorher auf den Login umleitet. Diese Route ist der sessionfreie
+  // Kanarienvogel dafür.
+  it.each(["/api/forms/join", "/api/forms/contact"])(
+    "%s lässt sich laden (GET → 405 statt 5xx)",
+    async (path) => {
+      const res = await fetch(`${PROD_URL}${path}`, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(20_000),
+      });
+      expect(res.status, `${path} → ${res.status}`).toBe(405);
+    },
+  );
+
   it("ein unbekannter Edit-Token zeigt eine Fehlerseite statt 5xx", async () => {
     const r = await get("/edit/__vitest_unknown_token__");
     expect(r.status).toBeLessThan(500);

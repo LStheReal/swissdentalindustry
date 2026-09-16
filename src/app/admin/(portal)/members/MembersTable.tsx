@@ -201,6 +201,7 @@ export function MembersTable({ members, internalProfiles }: Props) {
               <form action={deleteMember.bind(null, m.id)}>
                 <SubmitButton
                   pendingLabel="Wird gelöscht …"
+                  confirm={`„${m.name}“ endgültig löschen?\n\nAuch alle Kontakte, der Mitgliederbeitrag, interne Notizen und der Bearbeitungs-Link der Firma werden gelöscht. Das lässt sich nicht rückgängig machen.`}
                   className="min-w-[74px] whitespace-nowrap rounded-[3px] border border-[#e1000f] px-2.5 py-1.5 text-[11px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
                 >
                   Löschen

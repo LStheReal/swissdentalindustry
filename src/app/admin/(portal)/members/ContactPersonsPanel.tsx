@@ -31,6 +31,7 @@ export interface ContactPersonsCopy {
   save: string;
   cancel: string;
   remove: string;
+  removeConfirm: string;
   removing: string;
   saving: string;
   creating: string;
@@ -107,6 +108,7 @@ export function ContactPersonsPanel({
               <form action={deleteAction.bind(null, person.id)}>
                 <SubmitButton
                   pendingLabel={copy.removing}
+                  confirm={copy.removeConfirm}
                   className="rounded-[3px] border border-[#e1000f] px-3 py-1.5 text-[12px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
                 >
                   {copy.remove}

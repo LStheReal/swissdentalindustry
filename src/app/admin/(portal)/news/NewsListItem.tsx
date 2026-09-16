@@ -129,6 +129,7 @@ export function NewsListItem({
         <form action={deleteNews.bind(null, id)}>
           <SubmitButton
             pendingLabel="Wird gelöscht …"
+            confirm={`News „${title}“ endgültig löschen?`}
             className="rounded-[3px] border border-[#ffb6b6] px-3 py-1.5 text-[12.5px] font-semibold text-[#ff1d1d] hover:bg-[#fff1f1]"
           >
             Löschen

@@ -81,7 +81,11 @@ export function EditLinkPanel({
             <button
               type="button"
               disabled={pending}
-              onClick={() => run(onGenerate)}
+              onClick={() => {
+                // Ein neuer Link macht den bisherigen ungültig — auch den, den
+                // die Firma bereits per Mail bekommen hat.
+                if (window.confirm("Neuen Link erzeugen? Der bisherige Link funktioniert danach nicht mehr — auch nicht der, den die Firma schon per Mail bekommen hat.")) run(onGenerate);
+              }}
               className="rounded-[3px] border border-[#c4c4cc] bg-white px-3 py-1.5 text-[11.5px] font-semibold disabled:opacity-60"
             >
               Neu
@@ -89,7 +93,9 @@ export function EditLinkPanel({
             <button
               type="button"
               disabled={pending}
-              onClick={() => run(onRevoke)}
+              onClick={() => {
+                if (window.confirm("Link widerrufen? Die Firma kann ihr Profil danach nicht mehr über diesen Link bearbeiten.")) run(onRevoke);
+              }}
               className="rounded-[3px] border border-[#e1000f] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#e1000f] disabled:opacity-60"
             >
               Widerrufen

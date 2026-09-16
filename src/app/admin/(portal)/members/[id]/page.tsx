@@ -220,6 +220,7 @@ export default async function EditMemberPage({
             save: t("common.save"),
             cancel: t("common.cancel"),
             remove: t("contacts.remove"),
+            removeConfirm: t("contacts.removeConfirm"),
             removing: t("contacts.removing"),
             saving: t("contacts.saving"),
             creating: t("contacts.creating"),

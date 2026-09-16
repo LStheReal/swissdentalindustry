@@ -78,6 +78,7 @@ export function InquiryCard({
             <form action={deleteAction}>
               <SubmitButton
                 pendingLabel="Wird gelöscht …"
+                confirm="Diese Anfrage endgültig löschen?"
                 className="rounded-[3px] border border-[#e1000f] px-3.5 py-2 text-[12.5px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
               >
                 Löschen

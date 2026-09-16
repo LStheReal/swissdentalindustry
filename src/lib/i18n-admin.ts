@@ -289,6 +289,12 @@ const DICT = {
     it: "Rimuovi",
     en: "Remove",
   },
+  "contacts.removeConfirm": {
+    de: "Diesen Kontakt endgültig entfernen?",
+    fr: "Supprimer définitivement ce contact ?",
+    it: "Rimuovere definitivamente questo contatto?",
+    en: "Remove this contact permanently?",
+  },
   "contacts.removing": {
     de: "Wird entfernt …",
     fr: "Suppression …",

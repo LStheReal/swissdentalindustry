@@ -69,6 +69,7 @@ export function PublishPanel({
           <form action={onDiscard}>
             <SubmitButton
               pendingLabel="Wird verworfen …"
+              confirm="Alle unveröffentlichten Änderungen verwerfen? Sie gehen verloren."
               className="rounded-[3px] border border-[#c4c4cc] px-3.5 py-2 text-[12.5px] font-semibold hover:bg-[#f2f2f0]"
             >
               Änderungen verwerfen
@@ -79,6 +80,7 @@ export function PublishPanel({
           <form action={onUnpublish}>
             <SubmitButton
               pendingLabel="Wird offline genommen …"
+              confirm="Firma von der Website nehmen? Sie verschwindet sofort aus dem öffentlichen Verzeichnis."
               className="rounded-[3px] border border-[#e1000f] px-3.5 py-2 text-[12.5px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
             >
               Von der Website nehmen

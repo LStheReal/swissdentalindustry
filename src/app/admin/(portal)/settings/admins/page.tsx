@@ -73,6 +73,7 @@ export default async function AdminUsersPage() {
                     <input type="hidden" name="user_id" value={a.user_id} />
                     <SubmitButton
                       pendingLabel="Wird entfernt …"
+                      confirm={`${a.email ?? "Diese Person"} als Admin entfernen? Der Zugang zum Portal geht sofort verloren.`}
                       className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-red-400 hover:bg-red-50 hover:text-red-700"
                     >
                       Entfernen

@@ -14,11 +14,13 @@ export function MobileNav({
   locale,
   email,
   logoutLabel,
+  languageLabel,
 }: {
   items: NavItem[];
   locale: Locale;
   email: string;
   logoutLabel: string;
+  languageLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -112,7 +114,7 @@ export function MobileNav({
 
           <div className="mt-auto border-t border-[#e2e2e7] pt-5">
             <div className="font-sdi-mono mb-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9595a0]">
-              Sprache
+              {languageLabel}
             </div>
             <LocaleSwitcher current={locale} />
             <p className="mt-4 truncate text-[11.5px] text-[#6b6b73]" title={email}>

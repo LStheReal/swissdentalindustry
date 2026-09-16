@@ -16,7 +16,7 @@ export default async function PortalLayout({
   const { locale, t } = await getAdminT();
 
   const navItems = [
-    { href: "/admin", label: "Übersicht" },
+    { href: "/admin", label: t("dashboard.overview") },
     { href: "/admin/members", label: t("nav.members") },
     { href: "/admin/applications", label: t("nav.applications") },
     { href: "/admin/feed", label: t("nav.feed") },
@@ -35,6 +35,7 @@ export default async function PortalLayout({
           locale={locale}
           email={admin.email ?? ""}
           logoutLabel={t("nav.logout")}
+          languageLabel={t("nav.language")}
         />
         <div className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[240px_1fr] lg:overflow-hidden">
           <aside className="hidden flex-col border-b border-[#e2e2e7] bg-[#fafaf8] p-5 lg:flex lg:h-full lg:border-b-0 lg:border-r">
@@ -60,7 +61,7 @@ export default async function PortalLayout({
 
             <div className="mt-auto border-t border-[#e2e2e7] pt-5">
               <div className="font-sdi-mono mb-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9595a0]">
-                Sprache
+                {t("nav.language")}
               </div>
               <LocaleSwitcher current={locale} />
               <p

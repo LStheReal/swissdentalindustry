@@ -41,6 +41,7 @@ const DICT = {
     it: "Impostazioni",
     en: "Settings",
   },
+  "nav.language": { de: "Sprache", fr: "Langue", it: "Lingua", en: "Language" },
   "nav.logout": { de: "Abmelden", fr: "Déconnexion", it: "Esci", en: "Log out" },
   "dashboard.overview": { de: "Übersicht", fr: "Aperçu", it: "Panoramica", en: "Overview" },
   "dashboard.greetingMorning": {

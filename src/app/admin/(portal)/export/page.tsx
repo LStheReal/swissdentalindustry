@@ -3,7 +3,7 @@ import {
   EXPORT_COLUMNS,
   EXPORT_FILTERS,
   EXPORT_FILTER_LABELS,
-  buildExportRows,
+  buildExportRowsForFilters,
   summarise,
 } from "@/lib/member-export";
 
@@ -14,12 +14,11 @@ export default async function ExportPage() {
 
   // Zeilenzahl je Filter vorab zeigen — sonst lädt man eine Datei herunter und
   // stellt erst in Excel fest, dass sie leer ist.
-  const counts = await Promise.all(
-    EXPORT_FILTERS.map(async (filter) => ({
-      filter,
-      ...summarise(await buildExportRows(supabase, filter)),
-    })),
-  );
+  const rowsByFilter = await buildExportRowsForFilters(supabase, EXPORT_FILTERS);
+  const counts = EXPORT_FILTERS.map((filter) => ({
+    filter,
+    ...summarise(rowsByFilter[filter]),
+  }));
 
   return (
     <div className="overflow-hidden border border-[#e2e2e7] bg-white">

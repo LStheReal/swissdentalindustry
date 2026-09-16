@@ -12,7 +12,7 @@ import {
   unknownPlaceholders,
   type MassMailRecipient,
 } from "@/lib/mass-mail";
-import { listContactPersons } from "@/lib/member-internal-profiles";
+import { listContactPersonsByMember } from "@/lib/member-internal-profiles";
 import type { Member } from "@/lib/types";
 
 function appBaseUrl(): string {
@@ -61,8 +61,14 @@ async function collectRecipients(): Promise<{
   const recipients: MassMailRecipient[] = [];
   const skipped: { company: string; reason: string }[] = [];
 
+  // Eine Abfrage für alle Firmen statt einer je Firma.
+  const contactsByMember = await listContactPersonsByMember(
+    supabase,
+    members.map((m) => m.id),
+  );
+
   for (const member of members) {
-    const contacts = await listContactPersons(supabase, member.id);
+    const contacts = contactsByMember.get(member.id) ?? [];
     const main = contacts.find((c) => c.roles.includes("main"));
 
     const email = (main?.direct_email || member.email || "").trim();

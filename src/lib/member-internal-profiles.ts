@@ -233,6 +233,67 @@ export interface ContactPerson extends MemberInternalProfileFields {
   roles: ContactRole[];
 }
 
+type ContactRow = { id: string; member_id: string; position: number; roles?: unknown } &
+  Partial<MemberInternalProfileFields>;
+
+function toContactPerson(row: ContactRow): ContactPerson {
+  return {
+    ...normalizeMemberInternalProfile(row),
+    id: row.id,
+    position: row.position,
+    roles: normalizeContactRoles(row.roles),
+  };
+}
+
+/**
+ * Alle Kontaktpersonen mehrerer Firmen in EINER Abfrage, je Firma nach
+ * Position sortiert.
+ *
+ * Für Export und Serienmail. Die haben vorher listContactPersons() je Firma
+ * nacheinander aufgerufen — bei 35 Firmen 35 Abfragen, und die Exportseite
+ * tat das dreimal (je Filter). Da die Funktionen in einer anderen Region
+ * laufen als die Datenbank, kostete jede Abfrage eine Atlantiküberquerung:
+ * die Exportseite brauchte 5–7 Sekunden.
+ */
+export async function listContactPersonsByMember(
+  client: MinimalSupabaseClient,
+  memberIds: string[],
+): Promise<Map<string, ContactPerson[]>> {
+  const out = new Map<string, ContactPerson[]>(memberIds.map((id) => [id, []]));
+  if (!memberIds.length) return out;
+
+  const query = client.from("member_internal_profiles") as {
+    select: (q: string) => {
+      in: (
+        column: string,
+        values: string[],
+      ) => {
+        order: (
+          column: string,
+          opts: { ascending: boolean },
+        ) => Promise<{ data: unknown[] | null; error: unknown }>;
+      };
+    };
+  };
+  const { data, error } = await query
+    .select("*")
+    .in("member_id", memberIds)
+    .order("position", { ascending: true });
+
+  if (error) {
+    if (isMissingInternalProfilesTableError(error)) {
+      logMissingTableOnce();
+      return out;
+    }
+    throw new Error(String((error as { message?: string }).message ?? error));
+  }
+
+  for (const row of (data ?? []) as ContactRow[]) {
+    out.get(row.member_id)?.push(toContactPerson(row));
+  }
+  return out;
+}
+
 /** Alle Kontaktpersonen einer Firma, aufsteigend nach Position. */
 export async function listContactPersons(
   client: MinimalSupabaseClient,

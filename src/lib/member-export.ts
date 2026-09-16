@@ -7,7 +7,7 @@
 
 import { formatAddress } from "./address";
 import { listCompanyInternal } from "./member-company-internal";
-import { listContactPersons } from "./member-internal-profiles";
+import { listContactPersonsByMember, type ContactPerson } from "./member-internal-profiles";
 import type { createAdminClient } from "./supabase/admin";
 import { CONTACT_ROLE_LABELS, type ContactRole, type Member } from "./types";
 
@@ -73,6 +73,18 @@ export async function buildExportRows(
   supabase: Client,
   filter: ExportFilter,
 ): Promise<ExportRow[]> {
+  return (await buildExportRowsForFilters(supabase, [filter]))[filter];
+}
+
+/**
+ * Mehrere Filter aus einem einzigen Datenstand — für die Exportseite, die alle
+ * drei Zeilenzahlen zeigt. Drei Abfragen insgesamt, unabhängig von der Zahl
+ * der Firmen und Filter.
+ */
+export async function buildExportRowsForFilters<F extends ExportFilter>(
+  supabase: Client,
+  filters: readonly F[],
+): Promise<Record<F, ExportRow[]>> {
   const { data, error } = await supabase
     .from("members")
     .select("*")
@@ -80,11 +92,23 @@ export async function buildExportRows(
   if (error) throw new Error(error.message);
 
   const members = (data ?? []) as Member[];
-  const internal = await listCompanyInternal(
-    supabase,
-    members.map((m) => m.id),
-  );
+  const ids = members.map((m) => m.id);
+  const [internal, contactsByMember] = await Promise.all([
+    listCompanyInternal(supabase, ids),
+    listContactPersonsByMember(supabase, ids),
+  ]);
 
+  return Object.fromEntries(
+    filters.map((filter) => [filter, rowsFor(members, internal, contactsByMember, filter)]),
+  ) as Record<F, ExportRow[]>;
+}
+
+function rowsFor(
+  members: Member[],
+  internal: Awaited<ReturnType<typeof listCompanyInternal>>,
+  contactsByMember: Map<string, ContactPerson[]>,
+  filter: ExportFilter,
+): ExportRow[] {
   const rows: ExportRow[] = [];
 
   for (const member of members) {
@@ -111,7 +135,7 @@ export async function buildExportRows(
       "Interne Notizen": company.internal_notes,
     };
 
-    const allContacts = await listContactPersons(supabase, member.id);
+    const allContacts = contactsByMember.get(member.id) ?? [];
     const contacts =
       filter === "all"
         ? allContacts

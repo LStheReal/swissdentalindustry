@@ -836,10 +836,26 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
     box-shadow: var(--shadow-md);
   }
 }
+/* "Bewegung reduzieren": kein Autoplay, aber dieselben zwei Reihen zum
+   Wischen — statt einer 18 Zeilen langen Liste. Der Rand rechts blendet aus
+   und zeigt, dass es weitergeht. Die Schleifen-Kopien entfallen. */
 @media (prefers-reduced-motion: reduce) {
-  .v2-logo-rows { mask-image: none; -webkit-mask-image: none; padding-inline: 20px; }
-  .v2-logo-rows__track { animation: none; width: auto; flex-wrap: wrap; gap: 12px; }
-  .v2-logo-rows__tile { margin-right: 0; }
+  .v2-logo-rows {
+    mask-image: linear-gradient(to right, black 82%, transparent);
+    -webkit-mask-image: linear-gradient(to right, black 82%, transparent);
+  }
+  .v2-logo-rows__track {
+    animation: none;
+    width: auto;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--v2-gutter, 20px);
+    padding-inline: var(--v2-gutter, 20px);
+    scrollbar-width: none;
+  }
+  .v2-logo-rows__track::-webkit-scrollbar { display: none; }
+  .v2-logo-rows__tile { scroll-snap-align: start; }
   .v2-logo-rows__tile--dup { display: none; }
 }
 

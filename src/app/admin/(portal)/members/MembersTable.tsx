@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { type Member, type MemberInternalProfileFields, MEMBER_INTERNAL_PROFILE_LABELS } from "@/lib/types";
+import { type Member, type MemberInternalProfileFields, internalFieldLabels } from "@/lib/types";
+import { formatAdminDate } from "@/lib/admin-i18n";
+import { useAdminT } from "@/components/admin/AdminI18n";
 import { formatAddress, formatAddressOneLine } from "@/lib/address";
 import { effectiveMember, hasDraft } from "@/lib/member-draft";
 import { deleteMember, publishMember } from "./actions";
@@ -18,15 +20,6 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("de-CH", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
-}
-
 interface Props {
   members: Member[];
   internalProfiles: Record<string, MemberInternalProfileFields>;
@@ -35,6 +28,8 @@ interface Props {
 type StatusFilter = "all" | "published" | "draft";
 
 export function MembersTable({ members, internalProfiles }: Props) {
+  const { t, locale } = useAdminT();
+  const formatDate = (value: string | null) => formatAdminDate(value, locale);
   const [selected, setSelected] = useState<Member | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -79,9 +74,9 @@ export function MembersTable({ members, internalProfiles }: Props) {
   })();
 
   const statusLabel: Record<StatusFilter, string> = {
-    all: "Status: Alle",
-    published: "Status: Publiziert",
-    draft: "Status: Entwurf",
+    all: t("members.statusAll"),
+    published: t("members.statusPublished"),
+    draft: t("members.statusDraft"),
   };
 
   function cycleStatus() {
@@ -102,15 +97,15 @@ export function MembersTable({ members, internalProfiles }: Props) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Firma oder Kanton suchen..."
-            className="flex-1 bg-transparent text-[13px] text-[#0a0a0b] placeholder:text-[#9595a0] outline-none"
+            placeholder={t("members.search")}
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-[#0a0a0b] placeholder:text-[#9595a0] outline-none"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
               className="text-[#9595a0] hover:text-[#0a0a0b]"
-              aria-label="Suche löschen"
+              aria-label={t("members.clearSearch")}
             >
               ×
             </button>
@@ -132,23 +127,23 @@ export function MembersTable({ members, internalProfiles }: Props) {
       <div className="overflow-hidden border border-[#e2e2e7] bg-white">
         <div className="font-sdi-mono grid grid-cols-[48px_minmax(0,1fr)_150px_96px_240px] items-center gap-3.5 border-b border-[#e2e2e7] bg-[#fafaf8] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6b6b73] max-lg:hidden">
           <span />
-          <span>Firma · Standort</span>
-          <span>Status</span>
-          <span>Geändert</span>
+          <span>{t("members.colCompany")}</span>
+          <span>{t("field.status")}</span>
+          <span>{t("field.changed")}</span>
           <span />
         </div>
         {filtered.length === 0 && (
           <div className="px-4 py-8 text-center text-[13px] text-[#6b6b73]">
-            Keine Einträge gefunden.
+            {t("members.noResults")}
           </div>
         )}
         {filtered.map((m) => (
           <div
             key={m.id}
             onClick={() => setSelected(m)}
-            className="grid cursor-pointer gap-3.5 border-b border-[#ececf0] px-4 py-3.5 last:border-b-0 hover:bg-[#fafaf8] lg:grid-cols-[48px_minmax(0,1fr)_150px_96px_240px] lg:items-center"
+            className="grid cursor-pointer grid-cols-[minmax(0,1fr)] gap-3 border-b border-[#ececf0] px-4 py-3.5 last:border-b-0 hover:bg-[#fafaf8] lg:grid-cols-[48px_minmax(0,1fr)_150px_96px_240px] lg:items-center lg:gap-3.5"
           >
-            <div className="flex items-center gap-3 lg:contents">
+            <div className="flex min-w-0 items-center gap-3 lg:contents">
               <div className="font-sdi-mono flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[2px] border border-[#e2e2e7] bg-[#fafaf8] text-[10px] font-bold text-[#0a0a0b]">
                 {m.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -163,32 +158,35 @@ export function MembersTable({ members, internalProfiles }: Props) {
                 </p>
                 <p className="mt-0.5 truncate text-xs text-[#6b6b73]">
                   {m.canton ? `${m.canton} · ` : ""}
-                  {formatAddressOneLine(m) || "Keine Adresse"}
+                  {formatAddressOneLine(m) || t("members.noAddress")}
                 </p>
               </div>
             </div>
-            <span className="font-sdi-mono flex flex-col whitespace-nowrap text-[10.5px] font-bold uppercase tracking-[0.08em]">
-              <span className={m.status === "published" ? "text-[#1f8a5b]" : "text-[#a66a00]"}>
-                ● {m.status === "published" ? "Publiziert" : "Entwurf"}
+            {/* Mobil: Status und Datum auf einer Zeile; ab lg eigene Spalten. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 lg:contents">
+              <span className="font-sdi-mono flex flex-col whitespace-nowrap text-[10.5px] font-bold uppercase tracking-[0.08em]">
+                <span className={m.status === "published" ? "text-[#1f8a5b]" : "text-[#a66a00]"}>
+                  ● {m.status === "published" ? t("common.published") : t("common.draft")}
+                </span>
+                {hasDraft(m) && (
+                  <span className="text-[#a66a00]">{t("members.changeOpen")}</span>
+                )}
               </span>
-              {hasDraft(m) && (
-                <span className="text-[#a66a00]">◐ Änderung offen</span>
-              )}
-            </span>
-            <span className="font-sdi-mono whitespace-nowrap text-[11.5px] text-[#6b6b73]">
-              {formatDate(m.updated_at)}
-            </span>
+              <span className="font-sdi-mono whitespace-nowrap text-[11.5px] text-[#6b6b73]">
+                {formatDate(m.updated_at)}
+              </span>
+            </div>
             <div
-              className="flex flex-nowrap items-center gap-1.5 lg:justify-end"
+              className="flex flex-wrap items-center gap-1.5 *:grow lg:flex-nowrap lg:justify-end lg:*:grow-0"
               onClick={(e) => e.stopPropagation()}
             >
               {(m.status === "draft" || hasDraft(m)) && (
                 <form action={publishMember.bind(null, m.id)}>
                   <SubmitButton
-                    pendingLabel="Wird veröffentlicht …"
-                    className="min-w-[74px] whitespace-nowrap rounded-[3px] border border-[#1f8a5b] bg-[#1f8a5b] px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#18724b]"
+                    pendingLabel={t("members.publishing")}
+                    className="w-full min-w-[74px] whitespace-nowrap lg:w-auto rounded-[3px] border border-[#1f8a5b] bg-[#1f8a5b] px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#18724b]"
                   >
-                    Veröffentlichen
+                    {t("members.publish")}
                   </SubmitButton>
                 </form>
               )}
@@ -196,15 +194,15 @@ export function MembersTable({ members, internalProfiles }: Props) {
                 href={`/admin/members/${m.id}`}
                 className="min-w-[86px] whitespace-nowrap rounded-[3px] border border-[#c4c4cc] px-2.5 py-1.5 text-[11px] font-semibold text-center hover:bg-[#fafaf8]"
               >
-                Bearbeiten
+                {t("common.edit")}
               </Link>
               <form action={deleteMember.bind(null, m.id)}>
                 <SubmitButton
-                  pendingLabel="Wird gelöscht …"
-                  confirm={`„${m.name}“ endgültig löschen?\n\nAuch alle Kontakte, der Mitgliederbeitrag, interne Notizen und der Bearbeitungs-Link der Firma werden gelöscht. Das lässt sich nicht rückgängig machen.`}
-                  className="min-w-[74px] whitespace-nowrap rounded-[3px] border border-[#e1000f] px-2.5 py-1.5 text-[11px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
+                  pendingLabel={t("common.deleting")}
+                  confirm={t("members.deleteConfirm", { name: m.name })}
+                  className="w-full min-w-[74px] whitespace-nowrap lg:w-auto rounded-[3px] border border-[#e1000f] px-2.5 py-1.5 text-[11px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
                 >
-                  Löschen
+                  {t("common.delete")}
                 </SubmitButton>
               </form>
             </div>
@@ -247,11 +245,11 @@ export function MembersTable({ members, internalProfiles }: Props) {
                       selected.status === "published" ? "text-[#1f8a5b]" : "text-[#a66a00]"
                     }`}
                   >
-                    ● {selected.status === "published" ? "Publiziert" : "Entwurf"}
+                    ● {selected.status === "published" ? t("common.published") : t("common.draft")}
                   </span>
                   {hasDraft(selected) && (
                     <span className="font-sdi-mono mt-0.5 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#a66a00]">
-                      ◐ Unveröffentlichte Änderung
+                      {t("members.unpublishedChange")}
                     </span>
                   )}
                 </div>
@@ -259,7 +257,7 @@ export function MembersTable({ members, internalProfiles }: Props) {
               <button
                 onClick={() => setSelected(null)}
                 className="ml-4 shrink-0 rounded-[2px] p-1.5 text-[#6b6b73] hover:bg-[#f0f0f3] hover:text-[#0a0a0b]"
-                aria-label="Schliessen"
+                aria-label={t("common.close")}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="3" y1="3" x2="13" y2="13" />
@@ -274,26 +272,26 @@ export function MembersTable({ members, internalProfiles }: Props) {
               {/* Öffentliche Info */}
               <section>
                 <div className="font-sdi-mono mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#e1000f]">
-                  Öffentliche Angaben
+                  {t("members.publicInfo")}
                 </div>
                 <dl className="space-y-2.5">
                   {view.canton && (
-                    <Row label="Kanton" value={view.canton} />
+                    <Row label={t("field.canton")} value={view.canton} />
                   )}
                   {formatAddress(view) && (
-                    <Row label="Adresse" value={formatAddress(view)} />
+                    <Row label={t("field.address")} value={formatAddress(view)} />
                   )}
                   {view.phone && (
-                    <Row label="Telefon" value={view.phone} />
+                    <Row label={t("field.phone")} value={view.phone} />
                   )}
                   {view.email && (
-                    <Row label="E-Mail" value={view.email} link={`mailto:${view.email}`} />
+                    <Row label={t("field.email")} value={view.email} link={`mailto:${view.email}`} />
                   )}
                   {view.website_url && (
-                    <Row label="Website" value={view.website_url} link={view.website_url} external />
+                    <Row label={t("field.website")} value={view.website_url} link={view.website_url} external />
                   )}
                   {view.member_since && (
-                    <Row label="Mitglied seit" value={view.member_since} />
+                    <Row label={t("field.memberSince")} value={view.member_since} />
                   )}
                 </dl>
               </section>
@@ -302,10 +300,10 @@ export function MembersTable({ members, internalProfiles }: Props) {
               {profile && (
                 <section>
                   <div className="font-sdi-mono mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
-                    Interne Daten
+                    {t("internal.title")}
                   </div>
                   <dl className="space-y-2.5">
-                    {(Object.entries(MEMBER_INTERNAL_PROFILE_LABELS) as [keyof typeof MEMBER_INTERNAL_PROFILE_LABELS, string][]).map(
+                    {(Object.entries(internalFieldLabels(locale)) as [keyof MemberInternalProfileFields, string][]).map(
                       ([key, label]) => {
                         const val = profile[key];
                         if (!val) return null;
@@ -319,11 +317,11 @@ export function MembersTable({ members, internalProfiles }: Props) {
               {/* Meta */}
               <section>
                 <div className="font-sdi-mono mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
-                  Meta
+                  {t("members.meta")}
                 </div>
                 <dl className="space-y-2.5">
-                  <Row label="Erstellt" value={formatDate(selected.created_at)} />
-                  <Row label="Geändert" value={formatDate(selected.updated_at)} />
+                  <Row label={t("field.created")} value={formatDate(selected.created_at)} />
+                  <Row label={t("field.changed")} value={formatDate(selected.updated_at)} />
                   <Row label="ID" value={selected.id} mono />
                 </dl>
               </section>
@@ -335,7 +333,7 @@ export function MembersTable({ members, internalProfiles }: Props) {
                 href={`/admin/members/${selected.id}`}
                 className="block w-full rounded-[3px] bg-[#0a0a0b] px-4 py-2.5 text-center text-[13px] font-semibold text-white hover:bg-[#26262b]"
               >
-                Bearbeiten
+                {t("common.edit")}
               </Link>
             </div>
           </>

@@ -21,6 +21,11 @@
 - [ ] **DU:** `ANTHROPIC_API_KEY` setzen — lokal in `.env.local`, auf Vercel für Production + Preview (danach redeploy). Ohne Key bleiben Beschreibungen unübersetzt (kein Fehler).
 - [ ] **DU:** SMTP-Zugang neu erstellen (SMTP_HOST/PORT/USER/PASS + MAIL_FROM) — lokal und auf Vercel. Bis dahin verschickt die Seite keine Mails.
 
+## 2026-09-24 — Mitgliederseite mobil (Safari) repariert
+
+- 2026-09-24 — Louise meldete: öffentliche Mitgliederseite auf dem Handy kaputt, einige Logos ausserhalb des Bildschirms. In Chrome (375px) nicht reproduzierbar → Safari-spezifisch: Grid ohne grid-cols (implizite auto-Spalte) + Logo-img nur mit max-width:82% → Safari nimmt Original-Dateibreite als Mindestbreite, Karten/Logos ragen raus. Fix (nicht committed): grid-cols-[minmax(0,1fr)], Logo feste Box 82%×76px + object-fit:contain, gleiches Muster im Popup und auf /members/[id]. Nebenbei Admin-Mitgliederliste mobil (Zeilen-Überlauf) behoben. Auf echtem iPhone noch zu bestätigen.
+- [ ] Auf echtem iPhone prüfen, dann committen + deployen
+
 ## 2026-08-23 — Change Request (13 Abschnitte) komplett umgesetzt
 Ein Commit je Abschnitt, Migrationen 0013–0019 auf Prod angewendet und verifiziert.
 - [x] §1 Personen bei einer Mitgliedsfirma heissen „Kontakte". DB-Spaltennamen bewusst NICHT umbenannt (kein funktionaler Gewinn, hätte das laufende Deployment im Fenster zwischen Migration und Deploy gebrochen). Nebenbefund: interne Feldbeschriftungen waren nur deutsch, wurden aber auf der viersprachigen Edit-Seite gerendert → jetzt mehrsprachig.

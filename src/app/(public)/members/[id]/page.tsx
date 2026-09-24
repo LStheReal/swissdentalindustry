@@ -73,7 +73,7 @@ export default async function MemberDetailPage({ params }: Props) {
               data-v2-reveal="left"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={member.logo_url} alt={member.name} className="max-h-full max-w-full object-contain" />
+              <img src={member.logo_url} alt={member.name} className="h-full w-full object-contain" />
             </div>
           ) : null}
           <div className="min-w-0">

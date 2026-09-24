@@ -35,7 +35,13 @@ export function MembersGrid({
 
   return (
     <>
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-v2-stagger>
+      {/* minmax(0,1fr) statt der impliziten auto-Spalte: sonst weitet Safari die
+          Spalte auf die Originalbreite grosser Logo-Dateien und die Karten ragen
+          über den Bildschirmrand. */}
+      <div
+        className="grid grid-cols-[minmax(0,1fr)] gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        data-v2-stagger
+      >
         {members.map((member) => {
           const description = mlText(member.description, locale);
           return (
@@ -145,7 +151,7 @@ function MemberModal({
           {member.logo_url ? (
             <span className="flex h-[92px] w-[150px] shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-subtle)] bg-white p-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={member.logo_url} alt="" className="max-h-full max-w-full object-contain" />
+              <img src={member.logo_url} alt="" className="h-full w-full object-contain" />
             </span>
           ) : null}
           <div className="min-w-0">

@@ -890,6 +890,7 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
    ------------------------------------------------------------ */
 .v2-member-card {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   height: 100%;
   border-radius: 14px;
@@ -915,9 +916,12 @@ html:has(.v2-root)::-webkit-scrollbar { display: none; }
     radial-gradient(circle at 50% 120%, rgba(225, 0, 15, 0.035), transparent 60%),
     var(--ink-50);
 }
+/* Feste Box statt max-width/max-height: Safari nimmt sonst bei Flex-Items die
+   Originalbreite der Datei als Mindestbreite und das Logo ragt aus der Karte. */
 .v2-member-card__logo img {
-  max-height: 76px;
-  max-width: 82%;
+  width: 82%;
+  height: 76px;
+  min-width: 0;
   object-fit: contain;
   filter: grayscale(1);
   opacity: 0.75;

@@ -24,7 +24,9 @@
 ## 2026-09-24 — Mitgliederseite mobil (Safari) repariert
 
 - 2026-09-24 — Louise meldete: öffentliche Mitgliederseite auf dem Handy kaputt, einige Logos ausserhalb des Bildschirms. In Chrome (375px) nicht reproduzierbar → Safari-spezifisch: Grid ohne grid-cols (implizite auto-Spalte) + Logo-img nur mit max-width:82% → Safari nimmt Original-Dateibreite als Mindestbreite, Karten/Logos ragen raus. Fix (nicht committed): grid-cols-[minmax(0,1fr)], Logo feste Box 82%×76px + object-fit:contain, gleiches Muster im Popup und auf /members/[id]. Nebenbei Admin-Mitgliederliste mobil (Zeilen-Überlauf) behoben. Auf echtem iPhone noch zu bestätigen.
-- [ ] Auf echtem iPhone prüfen, dann committen + deployen
+- 2026-09-24 (2) — Alles committet + deployt: 44f5bc6 Admin-Übersetzung aller Seiten (lag seit 16.09. uncommittet), 1b052e4 Mitgliederseite mobil, 51b301d Seiten scrollten auf dem Handy seitlich (Reveal-Elemente von rechts, Kontaktseite 12px zu breit; .v2-root overflow-x: clip). Prod-Test: 176 öffentliche URLs (4 Sprachen) 200; Admin 16 Seiten × 4 Sprachen ohne Fehler und ohne deutsche Reste in FR/IT/EN (News-Detail nicht testbar, keine News vorhanden); Mobil: Mitglieder-Logos, Popup, Menü, Sprachwechsel, Admin-Mitgliederliste ok. Offen: echtes iPhone (Safari) prüfen; getrackte iCloud-Kopie src/components/v2/Fx 2.tsx entfernen.
+- [ ] Auf echtem iPhone (Safari) prüfen
+- [ ] Getrackte iCloud-Kopie `src/components/v2/Fx 2.tsx` löschen
 
 ## 2026-08-23 — Change Request (13 Abschnitte) komplett umgesetzt
 Ein Commit je Abschnitt, Migrationen 0013–0019 auf Prod angewendet und verifiziert.

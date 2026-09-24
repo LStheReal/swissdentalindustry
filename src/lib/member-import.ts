@@ -5,6 +5,7 @@ import {
   normalizeMemberInternalProfile,
   type MemberInternalProfileFields,
 } from "./types";
+import { makeT, type AdminT } from "./admin-i18n";
 
 type ImportFieldKey =
   | "name"
@@ -190,7 +191,7 @@ function rowSnapshot(cells: Map<string, string>) {
   );
 }
 
-function readSpreadsheet(fileName: string, buffer: Buffer) {
+function readSpreadsheet(fileName: string, buffer: Buffer, t: AdminT) {
   const workbook = XLSX.read(buffer, {
     type: "buffer",
     dense: true,
@@ -199,7 +200,7 @@ function readSpreadsheet(fileName: string, buffer: Buffer) {
 
   const firstSheetName = workbook.SheetNames[0];
   if (!firstSheetName) {
-    throw new Error(`Die Datei "${fileName}" enthält kein Tabellenblatt.`);
+    throw new Error(t("import.errNoSheet", { file: fileName }));
   }
 
   const sheet = workbook.Sheets[firstSheetName];
@@ -210,7 +211,7 @@ function readSpreadsheet(fileName: string, buffer: Buffer) {
   });
 
   if (!rows.length) {
-    throw new Error(`Die Datei "${fileName}" ist leer.`);
+    throw new Error(t("import.errEmpty", { file: fileName }));
   }
 
   return rows;
@@ -370,32 +371,31 @@ async function enrichRowWithAI(args: {
 const ALLOWED_IMPORT_EXTENSIONS = [".xlsx", ".xls", ".csv"];
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024; // 5 MB
 
-export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMemberImport> {
+export async function parseMemberImportSpreadsheet(
+  file: File,
+  t: AdminT = makeT("de"),
+): Promise<ParsedMemberImport> {
   const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
   if (!ALLOWED_IMPORT_EXTENSIONS.includes(ext)) {
-    throw new Error(
-      `Nicht unterstütztes Dateiformat "${ext}". Erlaubt: ${ALLOWED_IMPORT_EXTENSIONS.join(", ")}.`,
-    );
+    throw new Error(t("import.errFormat", { ext, allowed: ALLOWED_IMPORT_EXTENSIONS.join(", ") }));
   }
   if (file.size > MAX_IMPORT_BYTES) {
-    throw new Error("Die Datei ist zu gross (max. 5 MB).");
+    throw new Error(t("import.errTooLarge"));
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const matrix = readSpreadsheet(file.name, buffer);
+  const matrix = readSpreadsheet(file.name, buffer, t);
   const rawHeaders = (matrix[0] ?? []).map((cell) => normalizeCell(cell));
   const headers = rawHeaders.filter(Boolean);
 
   if (!headers.length) {
-    throw new Error("Die erste Zeile der Datei enthält keine Spaltenüberschriften.");
+    throw new Error(t("import.errNoHeaders"));
   }
 
   const { mappedHeaders, aiApplied } = await mapHeaders(headers);
 
   if (!mappedHeaders.name) {
-    throw new Error(
-      "Keine Firmen-Spalte erkannt. Erwartet wird z.B. eine Spalte wie Company, Firma oder Firmenname.",
-    );
+    throw new Error(t("import.errNoCompanyColumn"));
   }
 
   const rows: ImportedMemberRow[] = [];
@@ -450,7 +450,7 @@ export async function parseMemberImportSpreadsheet(file: File): Promise<ParsedMe
 
     const name = enrichment.values.name ?? heuristic.name ?? null;
     if (!name) {
-      skippedRows.push(`Zeile ${rowNumber}: Firmenname fehlt.`);
+      skippedRows.push(t("import.rowNameMissing", { row: rowNumber }));
       continue;
     }
 

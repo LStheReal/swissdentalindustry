@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { login, type LoginState } from "./actions";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 export default function LoginPage() {
   return (
@@ -16,6 +17,7 @@ export default function LoginPage() {
 
 function LoginForm() {
   const params = useSearchParams();
+  const { t } = useAdminT();
   const redirectTo = params.get("redirect") || "/admin";
   const [state, formAction, pending] = useActionState<LoginState, FormData>(
     login,
@@ -40,7 +42,7 @@ function LoginForm() {
             priority
           />
           <p className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
-            Superadmin-Anmeldung
+            {t("login.title")}
           </p>
         </div>
 
@@ -48,7 +50,7 @@ function LoginForm() {
 
         <label className="block">
           <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em]">
-            E-Mail
+            {t("login.email")}
           </span>
           <input
             name="email"
@@ -61,7 +63,7 @@ function LoginForm() {
 
         <label className="block">
           <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em]">
-            Passwort
+            {t("login.password")}
           </span>
           <input
             name="password"
@@ -74,7 +76,7 @@ function LoginForm() {
 
         {(state.error || params.get("error") === "not_admin") && (
           <p className="text-sm text-[#e1000f]">
-            {state.error ?? "Dieses Konto hat keine Superadmin-Berechtigung."}
+            {state.error ?? t("login.errNotAdmin")}
           </p>
         )}
 
@@ -83,14 +85,14 @@ function LoginForm() {
           disabled={pending}
           className="w-full rounded-[3px] bg-[#e1000f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#c9000d] disabled:opacity-60"
         >
-          {pending ? "Anmelden …" : "Anmelden"}
+          {pending ? t("login.signingIn") : t("login.submit")}
         </button>
 
         <Link
           href="/admin/forgot"
           className="block text-center text-[12px] text-[#6b6b73] underline underline-offset-2 hover:text-[#0a0a0b]"
         >
-          Passwort vergessen?
+          {t("login.forgot")}
         </Link>
         </div>
       </form>

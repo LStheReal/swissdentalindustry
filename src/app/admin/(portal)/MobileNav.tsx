@@ -8,6 +8,7 @@ import { logout } from "../login/actions";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import type { NavItem } from "./NavLinks";
 import type { Locale } from "@/lib/types";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 export function MobileNav({
   items,
@@ -22,6 +23,7 @@ export function MobileNav({
   logoutLabel: string;
   languageLabel: string;
 }) {
+  const { t } = useAdminT();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -41,7 +43,7 @@ export function MobileNav({
         </Link>
         <button
           onClick={() => setOpen(true)}
-          aria-label="Menü öffnen"
+          aria-label={t("nav.openMenu")}
           className="rounded-[2px] p-1.5 hover:bg-[#e7e5df]"
         >
           <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -75,7 +77,7 @@ export function MobileNav({
           />
           <button
             onClick={() => setOpen(false)}
-            aria-label="Menü schließen"
+            aria-label={t("nav.closeMenu")}
             className="rounded-[2px] p-1.5 hover:bg-[#e7e5df]"
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -86,7 +88,7 @@ export function MobileNav({
 
         <div className="flex flex-1 flex-col overflow-y-auto p-5">
           <div className="font-sdi-mono mb-2 pl-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9595a0]">
-            Navigation
+            {t("nav.navigation")}
           </div>
           <nav className="flex flex-col gap-0.5">
             {items.map((item) => {

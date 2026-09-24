@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 export function NewNewsMenu() {
+  const { t } = useAdminT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -23,7 +25,7 @@ export function NewNewsMenu() {
         onClick={() => setOpen((o) => !o)}
         className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
       >
-        Neue News
+        {t("news.new")}
       </button>
 
       {open && (
@@ -35,8 +37,8 @@ export function NewNewsMenu() {
           >
             <span className="text-lg">✏️</span>
             <div>
-              <p className="font-medium">Blog-Beitrag</p>
-              <p className="text-xs text-slate-400">Eigenen Text verfassen</p>
+              <p className="font-medium">{t("news.typeBlog")}</p>
+              <p className="text-xs text-slate-400">{t("news.typeBlogHint")}</p>
             </div>
           </Link>
           <div className="border-t border-slate-100" />
@@ -47,8 +49,8 @@ export function NewNewsMenu() {
           >
             <span className="text-lg">🔗</span>
             <div>
-              <p className="font-medium">Link einfügen</p>
-              <p className="text-xs text-slate-400">Externe URL verlinken</p>
+              <p className="font-medium">{t("news.typeLink")}</p>
+              <p className="text-xs text-slate-400">{t("news.typeLinkHint")}</p>
             </div>
           </Link>
           <div className="border-t border-slate-100" />
@@ -59,8 +61,8 @@ export function NewNewsMenu() {
           >
             <span className="text-lg">▶️</span>
             <div>
-              <p className="font-medium">YouTube Video</p>
-              <p className="text-xs text-slate-400">Video einbetten</p>
+              <p className="font-medium">{t("news.typeYoutube")}</p>
+              <p className="text-xs text-slate-400">{t("news.typeYoutubeHint")}</p>
             </div>
           </Link>
         </div>

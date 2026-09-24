@@ -9,22 +9,23 @@ import {
   type Multilingual,
 } from "@/lib/types";
 import { SubmitButton } from "@/components/admin/SubmitButton";
+import { adminDateLocale, formatAdminDateTime, getAdminT, type AdminI18nKey } from "@/lib/i18n-admin";
+import type { Locale } from "@/lib/types";
 import { approveChange, rejectChange } from "./actions";
 import { MemberFilter } from "./MemberFilter";
 
-function timeAgo(iso: string): { label: string; days: number } {
+function timeAgo(iso: string, locale: Locale): { label: string; days: number } {
   const ms = Date.now() - new Date(iso).getTime();
   const min = Math.floor(ms / 60000);
   const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+  // Intl liefert die korrekte Grammatik je Sprache ("vor 5 Minuten",
+  // "il y a 5 minutes", "5 minuti fa", "5 minutes ago").
+  const rtf = new Intl.RelativeTimeFormat(adminDateLocale(locale), { numeric: "auto" });
   let label: string;
-  if (min < 1) label = "gerade eben";
-  else if (min < 60) label = `vor ${min} Minute${min === 1 ? "" : "n"}`;
-  else if (min < 24 * 60) {
-    const h = Math.floor(min / 60);
-    label = `vor ${h} Stunde${h === 1 ? "" : "n"}`;
-  } else {
-    label = `vor ${days} Tag${days === 1 ? "" : "en"}`;
-  }
+  if (min < 1) label = rtf.format(0, "second");
+  else if (min < 60) label = rtf.format(-min, "minute");
+  else if (min < 24 * 60) label = rtf.format(-Math.floor(min / 60), "hour");
+  else label = rtf.format(-days, "day");
   return { label, days };
 }
 
@@ -162,6 +163,7 @@ export default async function FeedPage({
   searchParams: Promise<{ member?: string }>;
 }) {
   const { member: memberFilter } = await searchParams;
+  const { t, locale } = await getAdminT();
   const supabase = await createClient();
   const { data } = await supabase
     .from("member_change_requests")
@@ -186,21 +188,24 @@ export default async function FeedPage({
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="font-sdi-mono mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#e1000f]">
-            | Freigabe-Workflow
+            {t("feed.eyebrow")}
           </div>
           <h1 className="text-[28px] font-extrabold tracking-[-0.025em]">
-            Änderungs-Feed
+            {t("feed.title")}
           </h1>
           <p className="mt-1.5 text-[13.5px] text-[#6b6b73]">
             {memberFilter
-              ? `${filtered.length} von ${requests.length} Anforderung${
-                  requests.length === 1 ? "" : "en"
-                } offen`
-              : `${requests.length} Anforderung${
-                  requests.length === 1 ? "" : "en"
-                } offen`}
+              ? t("feed.openCountFiltered", {
+                  shown: filtered.length,
+                  count: requests.length,
+                  requests: t(requests.length === 1 ? "feed.requestOne" : "feed.requestMany"),
+                })
+              : t("feed.openCount", {
+                  count: requests.length,
+                  requests: t(requests.length === 1 ? "feed.requestOne" : "feed.requestMany"),
+                })}
             {" · "}
-            Links der aktuelle Stand, rechts der Vorschlag der Firma.
+            {t("feed.explain")}
           </p>
         </div>
         {uniqueMembers.length > 1 && (
@@ -210,7 +215,7 @@ export default async function FeedPage({
 
       {filtered.length === 0 ? (
         <div className="border border-[#e2e2e7] bg-[#fafaf8] p-8 text-sm text-[#6b6b73]">
-          Keine offenen Änderungen.
+          {t("feed.empty")}
         </div>
       ) : (
         <ul className="space-y-6">
@@ -224,6 +229,7 @@ export default async function FeedPage({
                   emptyMemberInternalProfile(),
               },
               req.proposed,
+              locale,
             );
             return (
               <li
@@ -242,16 +248,16 @@ export default async function FeedPage({
                       <div className="font-sdi-mono mt-1 flex flex-wrap items-center gap-2 text-[11px] font-bold tracking-[0.04em] text-[#6b6b73]">
                       <span
                         className={`rounded-[2px] px-2 py-0.5 ${ageColor(
-                          timeAgo(req.submitted_at).days,
+                          timeAgo(req.submitted_at, locale).days,
                         )}`}
                       >
-                        {timeAgo(req.submitted_at).label}
+                        {timeAgo(req.submitted_at, locale).label}
                       </span>
                       <span>
-                        {new Date(req.submitted_at).toLocaleString("de-CH")}
+                        {formatAdminDateTime(req.submitted_at, locale)}
                       </span>
                       <span>·</span>
-                      <span>{diffs.length} Felder geändert</span>
+                      <span>{t("feed.fieldsChanged", { count: diffs.length })}</span>
                       {req.contact_email && (
                         <>
                           <span>·</span>
@@ -264,27 +270,27 @@ export default async function FeedPage({
                   <div className="flex gap-2">
                     <form action={approveChange.bind(null, req.id)}>
                       <SubmitButton
-                        pendingLabel="Wird freigegeben …"
+                        pendingLabel={t("feed.approving")}
                         className="rounded-[3px] bg-[#1f8a5b] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#176b45]"
                       >
-                        Freigeben & publizieren
+                        {t("feed.approve")}
                       </SubmitButton>
                     </form>
                     <form action={rejectChange.bind(null, req.id)}>
                       <SubmitButton
-                        pendingLabel="Wird abgelehnt …"
+                        pendingLabel={t("feed.rejecting")}
                         className="rounded-[3px] border border-[#c4c4cc] bg-white px-4 py-2 text-[12.5px] font-semibold hover:bg-[#f2f2f0]"
                       >
-                        Ablehnen
+                        {t("common.reject")}
                       </SubmitButton>
                     </form>
                   </div>
                 </div>
 
                 <div className="font-sdi-mono grid grid-cols-[130px_1fr_1fr] border-b border-[#e2e2e7] px-5 py-2.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#6b6b73] max-md:hidden">
-                  <span>Feld</span>
-                  <span>Aktuell</span>
-                  <span>Vorgeschlagen</span>
+                  <span>{t("feed.colField")}</span>
+                  <span>{t("common.current")}</span>
+                  <span>{t("common.proposed")}</span>
                 </div>
 
                 <div>
@@ -296,18 +302,18 @@ export default async function FeedPage({
                       <div>
                         <p className="text-[13px] font-bold">{d.label}</p>
                         <p className="font-sdi-mono mt-1 text-[10.5px] uppercase text-[#6b6b73]">
-                          {d.kind}
+                          {t(`feed.kind.${d.kind}` as AdminI18nKey)}
                         </p>
                       </div>
                       <div>
                         <p className="font-sdi-mono mb-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#6b6b73] md:hidden">
-                          Aktuell
+                          {t("common.current")}
                         </p>
                         <ValueBlock before={d.before} after={d.after} kind={d.kind} tone="before" />
                       </div>
                       <div>
                         <p className="font-sdi-mono mb-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#1f8a5b] md:hidden">
-                          Vorgeschlagen
+                          {t("common.proposed")}
                         </p>
                         <ValueBlock before={d.before} after={d.after} kind={d.kind} tone="after" />
                       </div>

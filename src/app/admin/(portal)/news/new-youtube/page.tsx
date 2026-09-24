@@ -1,13 +1,15 @@
+import { getAdminT } from "@/lib/i18n-admin";
 import { NewsEditorPageShell } from "../NewsEditorPageShell";
 import { YoutubeNewsForm } from "../YoutubeNewsForm";
 import { createYoutubeNews } from "../actions";
 
-export default function NewYoutubeNewsPage() {
+export default async function NewYoutubeNewsPage() {
+  const { t } = await getAdminT();
   return (
     <NewsEditorPageShell
-      eyebrow="News"
-      title="YouTube Video verlinken"
-      description="Video-News mit Vorschau und derselben blockartigen Portal-Struktur erfassen."
+      eyebrow={t("news.title")}
+      title={t("news.pageYoutubeTitle")}
+      description={t("news.pageYoutubeDesc")}
     >
       <YoutubeNewsForm action={createYoutubeNews} />
     </NewsEditorPageShell>

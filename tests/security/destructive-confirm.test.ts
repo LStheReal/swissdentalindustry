@@ -7,7 +7,9 @@
 // (on delete cascade) — ohne Papierkorb.
 //
 // Statischer Scan: ein SubmitButton, dessen pendingLabel nach Löschen,
-// Entfernen, Verwerfen oder Offline-Nehmen klingt, braucht `confirm=`.
+// Entfernen, Verwerfen oder Offline-Nehmen klingt, braucht `confirm=`. Seit
+// die Oberfläche übersetzt ist, steht dort meist ein Wörterbuch-Schlüssel statt
+// eines deutschen Textes — beides wird erkannt.
 
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -23,7 +25,19 @@ function walk(dir: string): string[] {
   });
 }
 
-const DESTRUCTIVE_PENDING = /pendingLabel=(?:"[^"]*|\{copy\.)(gelöscht|entfernt|verworfen|offline|removing)/i;
+const DESTRUCTIVE_KEYS = [
+  "common.deleting",
+  "contacts.removing",
+  "admins.removing",
+  "publish.discarding",
+  "publish.takingOffline",
+];
+const DESTRUCTIVE_PENDING = new RegExp(
+  String.raw`pendingLabel=(?:"[^"]*(?:gelöscht|entfernt|verworfen|offline)|\{copy\.removing\}|\{t\("(?:` +
+    DESTRUCTIVE_KEYS.map((k) => k.replace(".", "\\.")).join("|") +
+    String.raw`)"\)\})`,
+  "i",
+);
 
 describe("Unumkehrbare Admin-Aktionen fragen nach", () => {
   const files = walk(ADMIN);
@@ -53,9 +67,9 @@ describe("Unumkehrbare Admin-Aktionen fragen nach", () => {
 
   it("Bearbeitungs-Link widerrufen und neu erzeugen fragen nach", () => {
     const src = readFileSync(join(ADMIN, "(portal)", "members", "EditLinkPanel.tsx"), "utf8");
-    expect(src).toMatch(/window\.confirm\([^)]*\)\)\s*run\(onRevoke\)/);
+    expect(src).toMatch(/window\.confirm\(t\("editLink\.revokeConfirm"\)\)\)\s*run\(onRevoke\)/);
     // "Neu" bei bestehendem Link macht den verschickten Link ungültig.
-    expect(src).toMatch(/window\.confirm\([^)]*\)\)\s*run\(onGenerate\)/);
+    expect(src).toMatch(/window\.confirm\(t\("editLink\.newConfirm"\)\)\)\s*run\(onGenerate\)/);
   });
 
   it("SubmitButton bricht das Absenden ab, wenn die Rückfrage verneint wird", () => {

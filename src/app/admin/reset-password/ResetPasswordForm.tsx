@@ -2,8 +2,10 @@
 
 import { useActionState } from "react";
 import { setNewPassword, type ResetState } from "./actions";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 export function ResetPasswordForm() {
+  const { t } = useAdminT();
   const [state, formAction, pending] = useActionState<ResetState, FormData>(
     setNewPassword,
     {},
@@ -13,7 +15,7 @@ export function ResetPasswordForm() {
     <form action={formAction} className="space-y-4">
       <label className="block">
         <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em]">
-          Neues Passwort
+          {t("reset.newPassword")}
         </span>
         <input
           name="password"
@@ -27,7 +29,7 @@ export function ResetPasswordForm() {
       </label>
       <label className="block">
         <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em]">
-          Passwort bestätigen
+          {t("reset.confirmPassword")}
         </span>
         <input
           name="confirm"
@@ -46,7 +48,7 @@ export function ResetPasswordForm() {
         disabled={pending}
         className="w-full rounded-[3px] bg-[#0a0a0b] px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
       >
-        {pending ? "Speichern…" : "Passwort speichern & einloggen"}
+        {pending ? t("common.saving") : t("reset.submit")}
       </button>
     </form>
   );

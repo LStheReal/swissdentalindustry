@@ -1,13 +1,15 @@
+import { getAdminT } from "@/lib/i18n-admin";
 import { NewsEditorPageShell } from "../NewsEditorPageShell";
 import { LinkNewsForm } from "../LinkNewsForm";
 import { createLinkNews } from "../actions";
 
-export default function NewLinkNewsPage() {
+export default async function NewLinkNewsPage() {
+  const { t } = await getAdminT();
   return (
     <NewsEditorPageShell
-      eyebrow="News"
-      title="Link einfügen"
-      description="Externe Inhalte im gleichen Portal-Raster anlegen."
+      eyebrow={t("news.title")}
+      title={t("news.pageLinkTitle")}
+      description={t("news.pageLinkDesc")}
     >
       <LinkNewsForm action={createLinkNews} />
     </NewsEditorPageShell>

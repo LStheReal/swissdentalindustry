@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { importMembers, type ImportMembersState } from "./actions";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 const initialState: ImportMembersState = {
   status: "idle",
@@ -15,6 +16,7 @@ const initialState: ImportMembersState = {
 };
 
 export function ImportMembersForm() {
+  const { t } = useAdminT();
   const [state, formAction, pending] = useActionState(importMembers, initialState);
 
   return (
@@ -22,22 +24,20 @@ export function ImportMembersForm() {
       <section className="border border-[#e2e2e7] bg-white">
         <div className="border-b border-[#e2e2e7] px-5 py-5 sm:px-7">
           <div className="font-sdi-mono mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#e1000f]">
-            | Firmen importieren
+            {t("import.eyebrow")}
           </div>
           <h1 className="text-[28px] font-extrabold tracking-[-0.025em]">
-            Spreadsheet hochladen
+            {t("import.title")}
           </h1>
           <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed text-[#6b6b73]">
-            Lade eine `.xlsx`, `.xls` oder `.csv` hoch. Für jede erkannte Firma wird ein
-            neues Firmenprofil als Entwurf angelegt, inklusive interner Kontaktdaten aus
-            der Tabelle. Bereits vorhandene Firmennamen werden übersprungen.
+            {t("import.intro")}
           </p>
         </div>
 
         <div className="space-y-6 px-5 py-5 sm:px-7">
           <label className="block">
             <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]">
-              Datei
+              {t("import.file")}
             </span>
             <input
               name="spreadsheet"
@@ -50,13 +50,10 @@ export function ImportMembersForm() {
 
           <div className="rounded-[3px] border border-[#e2e2e7] bg-[#fafaf8] p-4">
             <div className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]">
-              Erwartete Spalten
+              {t("import.expectedColumns")}
             </div>
             <p className="mt-2 text-[13px] leading-relaxed text-[#6b6b73]">
-              Typische Header wie `Company`, `Title`, `First Name`, `Last Name`,
-              `Job Title`, `Street Name`, `Street Number`, `Postal Code`, `City`,
-              `Country`, `Direct Phone Number` und `E-mail` werden direkt erkannt.
-              Unklare Header versucht die KI (Claude) zusätzlich semantisch zuzuordnen.
+              {t("import.columnsHelp")}
             </p>
           </div>
 
@@ -66,13 +63,13 @@ export function ImportMembersForm() {
               disabled={pending}
               className="rounded-[3px] bg-[#e1000f] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#c9000d] disabled:opacity-60"
             >
-              {pending ? "Import läuft ..." : "Firmen importieren"}
+              {pending ? t("import.running") : t("import.submit")}
             </button>
             <Link
               href="/admin/members"
               className="rounded-[3px] border border-[#c4c4cc] bg-white px-4 py-2 text-[12.5px] font-semibold hover:bg-[#fafaf8]"
             >
-              Zurück zur Liste
+              {t("import.backToList")}
             </Link>
           </div>
         </div>
@@ -89,8 +86,12 @@ export function ImportMembersForm() {
           <p className="font-semibold">{state.message}</p>
           {state.status === "success" && (
             <p className="mt-2 text-[13px]">
-              {state.importedCount} importiert · {state.updatedCount} aktualisiert · {state.duplicateCount} Duplikat
-              {state.duplicateCount === 1 ? "" : "e"} · {state.skippedCount} übersprungen
+              {t("import.counts", {
+                imported: state.importedCount,
+                updated: state.updatedCount,
+                duplicates: state.duplicateCount,
+                skipped: state.skippedCount,
+              })}
             </p>
           )}
           {state.details.length > 0 && (
@@ -99,7 +100,7 @@ export function ImportMembersForm() {
                 <p key={detail}>{detail}</p>
               ))}
               {state.details.length > 8 && (
-                <p>… und {state.details.length - 8} weitere Hinweise.</p>
+                <p>{t("import.moreHints", { count: state.details.length - 8 })}</p>
               )}
             </div>
           )}

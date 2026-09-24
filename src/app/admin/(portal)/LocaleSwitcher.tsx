@@ -4,14 +4,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/types";
 import { setAdminLocale } from "./locale-actions";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 export function LocaleSwitcher({ current }: { current: Locale }) {
+  const { t } = useAdminT();
   const [pending, startTransition] = useTransition();
   const pathname = usePathname();
   const router = useRouter();
 
   return (
-    <div className="grid grid-cols-4 gap-1" aria-label="Portal-Sprache">
+    <div className="grid grid-cols-4 gap-1" aria-label={t("nav.portalLanguage")}>
       {LOCALES.map((l) => (
         <button
           key={l}

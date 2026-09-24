@@ -1,7 +1,9 @@
+import { makeT, type AdminI18nKey } from "./admin-i18n";
 import {
   MEMBER_INTERNAL_PROFILE_KEYS,
-  MEMBER_INTERNAL_PROFILE_LABELS,
+  internalFieldLabel,
   normalizeMemberInternalProfile,
+  type Locale,
   type Member,
   type MemberEditableFields,
   type MemberInternalProfileFields,
@@ -54,17 +56,17 @@ export interface FieldDiff {
   after: string | Multilingual | null;
 }
 
-const FIELD_LABELS: Record<keyof MemberEditableFields, string> = {
-  logo_url: "Logo",
-  description: "Beschreibung",
-  street_name: "Strasse",
-  street_number: "Hausnummer",
-  postal_code: "PLZ",
-  city: "Ort",
-  phone: "Telefon",
-  email: "E-Mail",
-  website_url: "Website",
-  internal_profile: "Interne Kontaktdaten",
+const FIELD_LABELS: Record<keyof MemberEditableFields, AdminI18nKey> = {
+  logo_url: "field.logo",
+  description: "field.description",
+  street_name: "field.street",
+  street_number: "field.streetNumber",
+  postal_code: "field.postalCode",
+  city: "field.city",
+  phone: "field.phone",
+  email: "field.email",
+  website_url: "field.website",
+  internal_profile: "feed.internalContactData",
 };
 
 const MULTILINGUAL_FIELDS = new Set<keyof MemberEditableFields>(["description"]);
@@ -86,7 +88,9 @@ function valuesEqual(a: unknown, b: unknown): boolean {
 export function diffMemberChange(
   current: Member & { internal_profile?: MemberInternalProfileFields | null },
   proposed: Partial<MemberEditableFields>,
+  locale: Locale = "de",
 ): FieldDiff[] {
+  const t = makeT(locale);
   const diffs: FieldDiff[] = [];
 
   for (const key of Object.keys(proposed) as (keyof MemberEditableFields)[]) {
@@ -103,7 +107,7 @@ export function diffMemberChange(
         if (valuesEqual(before, next)) continue;
         diffs.push({
           field: `internal_profile.${internalKey}`,
-          label: MEMBER_INTERNAL_PROFILE_LABELS[internalKey],
+          label: internalFieldLabel(internalKey, locale),
           kind: "text",
           before,
           after: next,
@@ -121,7 +125,7 @@ export function diffMemberChange(
 
     diffs.push({
       field: key,
-      label: FIELD_LABELS[key] ?? key,
+      label: FIELD_LABELS[key] ? t(FIELD_LABELS[key]) : key,
       kind: MULTILINGUAL_FIELDS.has(key)
         ? "multilingual"
         : IMAGE_FIELDS.has(key)

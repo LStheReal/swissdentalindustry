@@ -2,8 +2,10 @@
 
 import { useActionState } from "react";
 import { setInvitedPassword, type AcceptState } from "./actions";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 export function AcceptInviteForm() {
+  const { t } = useAdminT();
   const [state, formAction, pending] = useActionState<AcceptState, FormData>(
     setInvitedPassword,
     {},
@@ -13,7 +15,7 @@ export function AcceptInviteForm() {
     <form action={formAction} className="space-y-4">
       <label className="block">
         <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em]">
-          Neues Passwort
+          {t("reset.newPassword")}
         </span>
         <input
           name="password"
@@ -26,7 +28,7 @@ export function AcceptInviteForm() {
       </label>
       <label className="block">
         <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em]">
-          Passwort bestätigen
+          {t("reset.confirmPassword")}
         </span>
         <input
           name="confirm"
@@ -45,7 +47,7 @@ export function AcceptInviteForm() {
         disabled={pending}
         className="w-full rounded-[3px] bg-[#0a0a0b] px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
       >
-        {pending ? "Speichern…" : "Passwort setzen & einloggen"}
+        {pending ? t("common.saving") : t("invite.submit")}
       </button>
     </form>
   );

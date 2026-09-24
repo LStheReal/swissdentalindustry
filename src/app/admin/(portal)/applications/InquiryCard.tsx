@@ -1,6 +1,7 @@
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import { buildInquiryReplyHref } from "@/lib/inquiry-reply";
-import type { MembershipApplication } from "@/lib/types";
+import type { Locale, MembershipApplication } from "@/lib/types";
+import { formatAdminDateTime, type AdminT } from "@/lib/admin-i18n";
 
 /**
  * Eine Kontaktanfrage. Bewusst anders gebaut als die Antrags-Karte: hier gibt
@@ -10,10 +11,14 @@ import type { MembershipApplication } from "@/lib/types";
  */
 export function InquiryCard({
   app,
+  t,
+  locale,
   archiveAction,
   deleteAction,
 }: {
   app: MembershipApplication;
+  t: AdminT;
+  locale: Locale;
   archiveAction: () => Promise<void>;
   deleteAction: () => Promise<void>;
 }) {
@@ -28,7 +33,7 @@ export function InquiryCard({
 
   // Herkunft: das Kontaktformular und das Mitwirken-Formular landen beide hier.
   const origin =
-    p.source === "public_mitwirken" ? "Mitwirken-Formular" : "Kontaktformular";
+    p.source === "public_mitwirken" ? t("inquiry.fromGetInvolved") : t("inquiry.fromContact");
 
   const replyHref = buildInquiryReplyHref(p);
 
@@ -40,11 +45,11 @@ export function InquiryCard({
             {origin}
           </span>
           <span className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
-            {new Date(app.created_at).toLocaleString("de-CH")}
+            {formatAdminDateTime(app.created_at, locale)}
           </span>
           {!isOpen && (
             <span className="rounded-[2px] bg-[#f2f2f0] px-2 py-1 text-[11px] font-bold text-[#6b6b73]">
-              Erledigt
+              {t("inquiry.done")}
             </span>
           )}
         </div>
@@ -55,33 +60,33 @@ export function InquiryCard({
               href={replyHref}
               className="rounded-[3px] bg-[#0a0a0b] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-black"
             >
-              Antworten
+              {t("inquiry.reply")}
             </a>
           ) : (
             <span
               className="rounded-[3px] border border-[#e2e2e7] px-3.5 py-2 text-[12.5px] font-semibold text-[#9595a0]"
-              title="Diese Anfrage enthält keine E-Mail-Adresse."
+              title={t("inquiry.noEmailHint")}
             >
-              Keine E-Mail-Adresse
+              {t("inquiry.noEmail")}
             </span>
           )}
           {isOpen ? (
             <form action={archiveAction}>
               <SubmitButton
-                pendingLabel="Moment …"
+                pendingLabel={t("common.pleaseWait")}
                 className="rounded-[3px] border border-[#c4c4cc] px-3.5 py-2 text-[12.5px] font-semibold hover:bg-[#f2f2f0]"
               >
-                Als erledigt markieren
+                {t("inquiry.markDone")}
               </SubmitButton>
             </form>
           ) : (
             <form action={deleteAction}>
               <SubmitButton
-                pendingLabel="Wird gelöscht …"
-                confirm="Diese Anfrage endgültig löschen?"
+                pendingLabel={t("common.deleting")}
+                confirm={t("inquiry.deleteConfirm")}
                 className="rounded-[3px] border border-[#e1000f] px-3.5 py-2 text-[12.5px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
               >
-                Löschen
+                {t("common.delete")}
               </SubmitButton>
             </form>
           )}
@@ -90,7 +95,7 @@ export function InquiryCard({
 
       <div className="px-5 py-4">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-[15px] font-bold">{sender || email || "Unbekannt"}</span>
+          <span className="text-[15px] font-bold">{sender || email || t("inquiry.unknownSender")}</span>
           {company && <span className="text-[13.5px] text-[#6b6b73]">{company}</span>}
         </div>
 
@@ -111,7 +116,7 @@ export function InquiryCard({
           <div className="mt-3 text-[14px] font-semibold text-[#0a0a0b]">{subject}</div>
         )}
         <div className="mt-1.5 whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-[#0a0a0b]">
-          {message || <span className="text-[#c4c4cc]">Keine Nachricht</span>}
+          {message || <span className="text-[#c4c4cc]">{t("inquiry.noMessage")}</span>}
         </div>
 
         <ExtraFields payload={p} />

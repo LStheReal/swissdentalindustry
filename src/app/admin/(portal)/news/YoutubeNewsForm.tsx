@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/types";
+import { useAdminT } from "@/components/admin/AdminI18n";
 import {
   editorHintClass,
   editorInputClass,
@@ -36,6 +37,7 @@ interface Props {
 
 export function YoutubeNewsForm({ action, initial }: Props) {
   const router = useRouter();
+  const { t } = useAdminT();
   const [pending, setPending] = useState(false);
   const [url, setUrl] = useState(initial?.youtube_url ?? "");
 
@@ -57,11 +59,11 @@ export function YoutubeNewsForm({ action, initial }: Props) {
           <div>
             <div className="mb-4 flex items-center gap-2.5">
               <span className="h-2 w-2 bg-[#e1000f]" />
-              <span className={editorSectionTitleClass}>01 — Videodaten</span>
+              <span className={editorSectionTitleClass}>{t("news.sectionVideo")}</span>
             </div>
 
             <label className="block">
-              <span className={editorLabelClass}>Ausgangssprache</span>
+              <span className={editorLabelClass}>{t("news.sourceLang")}</span>
               <select
                 name="source_lang"
                 defaultValue={initial?.source_lang ?? "de"}
@@ -74,30 +76,30 @@ export function YoutubeNewsForm({ action, initial }: Props) {
                 ))}
               </select>
               <span className={editorHintClass}>
-                Titel und Beschreibung werden automatisch in DE · FR · IT · EN übersetzt
+                {t("news.autoTranslateTitleBody")}
               </span>
             </label>
           </div>
 
           <label className="block">
-            <span className={editorLabelClass}>Titel</span>
+            <span className={editorLabelClass}>{t("field.title")}</span>
             <input name="title" required defaultValue={initial?.title} className={editorInputClass} />
           </label>
 
           <label className="block">
-            <span className={editorLabelClass}>Beschreibung (optional)</span>
+            <span className={editorLabelClass}>{t("news.descriptionOptional")}</span>
             <textarea
               name="body"
               rows={6}
               defaultValue={initial?.body}
-              placeholder="Kurze Beschreibung zum Video ..."
+              placeholder={t("news.videoDescPlaceholder")}
               className={`${editorInputClass} leading-relaxed`}
             />
-            <span className={editorHintClass}>Wird unter dem Video angezeigt</span>
+            <span className={editorHintClass}>{t("news.videoDescHint")}</span>
           </label>
 
           <label className="block">
-            <span className={editorLabelClass}>YouTube-URL</span>
+            <span className={editorLabelClass}>{t("news.youtubeUrl")}</span>
             <input
               name="youtube_url"
               type="url"
@@ -115,7 +117,7 @@ export function YoutubeNewsForm({ action, initial }: Props) {
       <div className="border-t border-[#e2e2e7] bg-[#fafaf8] p-5 sm:p-7">
         <div className="mb-3 flex items-center gap-2.5">
           <span className="h-2 w-2 bg-[#e1000f]" />
-          <span className={editorSectionTitleClass}>02 — Vorschau</span>
+          <span className={editorSectionTitleClass}>{t("news.sectionPreview")}</span>
         </div>
         <div className="overflow-hidden rounded-[2px] border border-[#e2e2e7] bg-white">
           {videoId ? (
@@ -123,7 +125,7 @@ export function YoutubeNewsForm({ action, initial }: Props) {
               <iframe
                 className="absolute inset-0 h-full w-full"
                 src={`https://www.youtube.com/embed/${videoId}`}
-                title="YouTube Vorschau"
+                title={t("news.youtubePreviewTitle")}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
@@ -131,12 +133,12 @@ export function YoutubeNewsForm({ action, initial }: Props) {
           ) : (
             <div className="flex min-h-[260px] items-center justify-center px-4 text-center">
               <span className="font-sdi-mono text-[11px] uppercase tracking-[0.08em] text-[#6b6b73]">
-                URL eingeben, um die Video-Vorschau zu sehen
+                {t("news.videoPreviewEmpty")}
               </span>
             </div>
           )}
         </div>
-        <p className={editorHintClass}>YouTube-Embed im News-Feed</p>
+        <p className={editorHintClass}>{t("news.youtubeHint")}</p>
 
         <div className="flex flex-wrap gap-2 pt-5">
           <button
@@ -144,14 +146,14 @@ export function YoutubeNewsForm({ action, initial }: Props) {
             disabled={pending}
             className="rounded-[3px] bg-[#e1000f] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#c9000d] disabled:opacity-60"
           >
-            {pending ? "Speichern ..." : "Speichern"}
+            {pending ? t("common.saving") : t("common.save")}
           </button>
           <button
             type="button"
             onClick={() => router.push("/admin/news")}
             className="rounded-[3px] border border-[#c4c4cc] bg-white px-4 py-2 text-[12.5px] font-semibold hover:bg-[#f2f2f0]"
           >
-            Abbrechen
+            {t("common.cancel")}
           </button>
         </div>
       </div>

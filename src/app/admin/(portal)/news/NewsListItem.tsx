@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { deleteNews, setNewsActive } from "./actions";
 import { SubmitButton } from "@/components/admin/SubmitButton";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 const BODY_PREVIEW_LENGTH = 260;
 
@@ -32,6 +33,7 @@ export function NewsListItem({
   thumbnail,
   isActive,
 }: Props) {
+  const { t } = useAdminT();
   const [expanded, setExpanded] = useState(false);
 
   const isTextNews = !youtubeUrl && !linkUrl;
@@ -68,7 +70,7 @@ export function NewsListItem({
               isActive ? "text-[#1f8a5b]" : "text-[#a66a00]"
             }`}
           >
-            ● {isActive ? "Aktiv" : "Pausiert"}
+            ● {isActive ? t("news.active") : t("news.paused")}
           </span>
         </div>
 
@@ -101,7 +103,7 @@ export function NewsListItem({
                 onClick={() => setExpanded((value) => !value)}
                 className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#e1000f] hover:text-[#c9000d]"
               >
-                {expanded ? "Weniger anzeigen" : "Ausklappen"}
+                {expanded ? t("news.showLess") : t("news.expand")}
               </button>
             ) : null}
           </div>
@@ -112,27 +114,27 @@ export function NewsListItem({
           href={`/admin/news/${id}`}
           className="rounded-[3px] border border-[#c4c4cc] px-3 py-1.5 text-[12.5px] font-semibold hover:bg-[#fafaf8]"
         >
-          Bearbeiten
+          {t("common.edit")}
         </Link>
         <form action={setNewsActive.bind(null, id, !isActive)}>
           <SubmitButton
-            pendingLabel="Moment …"
+            pendingLabel={t("common.pleaseWait")}
             className={`rounded-[3px] border px-3 py-1.5 text-[12.5px] font-semibold ${
               isActive
                 ? "border-[#f0cf8b] text-[#a66a00] hover:bg-[#fff8e8]"
                 : "border-[#b9dcbf] text-[#1f8a5b] hover:bg-[#eefaf1]"
             }`}
           >
-            {isActive ? "Pausieren" : "Aktivieren"}
+            {isActive ? t("news.pause") : t("news.activate")}
           </SubmitButton>
         </form>
         <form action={deleteNews.bind(null, id)}>
           <SubmitButton
-            pendingLabel="Wird gelöscht …"
-            confirm={`News „${title}“ endgültig löschen?`}
+            pendingLabel={t("common.deleting")}
+            confirm={t("news.deleteConfirm", { title })}
             className="rounded-[3px] border border-[#ffb6b6] px-3 py-1.5 text-[12.5px] font-semibold text-[#ff1d1d] hover:bg-[#fff1f1]"
           >
-            Löschen
+            {t("common.delete")}
           </SubmitButton>
         </form>
       </div>

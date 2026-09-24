@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { AdminI18nKey } from "@/lib/admin-i18n";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
-const tabs = [
-  { href: "/admin/settings", label: "Allgemein" },
-  { href: "/admin/settings/admins", label: "Admin-Benutzer" },
-  { href: "/admin/settings/mail-log", label: "Mail-Protokoll" },
+const tabs: { href: string; label: AdminI18nKey }[] = [
+  { href: "/admin/settings", label: "settings.tabGeneral" },
+  { href: "/admin/settings/admins", label: "settings.tabAdmins" },
+  { href: "/admin/settings/mail-log", label: "settings.tabMailLog" },
 ];
 
 export function SettingsTabs() {
   const pathname = usePathname();
+  const { t } = useAdminT();
   return (
     <nav className="flex gap-1 border-b border-slate-200">
       {tabs.map((tab) => {
@@ -25,7 +28,7 @@ export function SettingsTabs() {
                 : "border-transparent text-slate-500 hover:text-[#0a0a0b]"
             }`}
           >
-            {tab.label}
+            {t(tab.label)}
           </Link>
         );
       })}

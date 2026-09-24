@@ -2,14 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminT } from "@/lib/i18n-admin";
 import { sendAdminInviteMail } from "@/lib/email";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function inviteAdmin(formData: FormData) {
   await requireAdmin();
+  const { t } = await getAdminT();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error("Bitte eine gültige E-Mail-Adresse angeben.");
+    throw new Error(t("admins.errInvalidEmail"));
   }
 
   const supabase = createAdminClient();
@@ -40,7 +42,7 @@ export async function inviteAdmin(formData: FormData) {
     if (linkErr) throw new Error(linkErr.message);
     const inviteUrl = link.properties?.action_link;
     if (!inviteUrl) {
-      throw new Error("Einladungs-Link konnte nicht erstellt werden.");
+      throw new Error(t("admins.errInviteLink"));
     }
     await sendAdminInviteMail({ to: email, inviteUrl });
   } else {
@@ -54,12 +56,12 @@ export async function inviteAdmin(formData: FormData) {
     userId = invited.user?.id ?? null;
     const inviteUrl = invited.properties?.action_link;
     if (!inviteUrl) {
-      throw new Error("Einladungs-Link konnte nicht erstellt werden.");
+      throw new Error(t("admins.errInviteLink"));
     }
     await sendAdminInviteMail({ to: email, inviteUrl });
   }
 
-  if (!userId) throw new Error("Benutzer-ID konnte nicht ermittelt werden.");
+  if (!userId) throw new Error(t("admins.errUserId"));
 
   const { error: insErr } = await supabase
     .from("admins")
@@ -71,10 +73,11 @@ export async function inviteAdmin(formData: FormData) {
 
 export async function removeAdmin(formData: FormData) {
   const current = await requireAdmin();
+  const { t } = await getAdminT();
   const userId = String(formData.get("user_id") || "").trim();
-  if (!userId) throw new Error("user_id fehlt.");
+  if (!userId) throw new Error(t("admins.errMissingUserId"));
   if (userId === current.id) {
-    throw new Error("Du kannst dich nicht selbst entfernen.");
+    throw new Error(t("admins.errSelf"));
   }
 
   const supabase = createAdminClient();

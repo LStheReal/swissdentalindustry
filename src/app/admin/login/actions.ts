@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminT } from "@/lib/i18n-admin";
 
 export interface LoginState {
   error?: string;
@@ -11,6 +12,7 @@ export async function login(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
+  const { t } = await getAdminT();
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
   const redirectTo = String(formData.get("redirect") || "/admin");
@@ -22,7 +24,7 @@ export async function login(
   });
 
   if (error || !data.user) {
-    return { error: "E-Mail oder Passwort ist falsch." };
+    return { error: t("login.errWrong") };
   }
 
   // Prüfen, ob der User auch wirklich Superadmin ist.
@@ -33,7 +35,7 @@ export async function login(
 
   if (!isAdmin) {
     await supabase.auth.signOut();
-    return { error: "Dieses Konto hat keine Superadmin-Berechtigung." };
+    return { error: t("login.errNotAdmin") };
   }
 
   redirect(redirectTo.startsWith("/admin") ? redirectTo : "/admin");

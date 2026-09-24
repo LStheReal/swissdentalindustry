@@ -2,11 +2,9 @@
 
 import { useActionState, useRef, useState } from "react";
 import { SubmitButton } from "@/components/admin/SubmitButton";
-import {
-  MASS_MAIL_PLACEHOLDERS,
-  PLACEHOLDER_LABELS,
-  placeholderToken,
-} from "@/lib/mass-mail";
+import { MASS_MAIL_PLACEHOLDERS, placeholderToken } from "@/lib/mass-mail";
+import type { AdminI18nKey } from "@/lib/admin-i18n";
+import { useAdminT } from "@/components/admin/AdminI18n";
 import { previewMassMail, sendMassMail, type MassMailState } from "./actions";
 
 const input =
@@ -15,6 +13,8 @@ const label =
   "font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]";
 
 export function MassMailForm() {
+  const { t } = useAdminT();
+  const phLabel = (key: string) => t(`mail.ph.${key}` as AdminI18nKey);
   const [previewState, previewAction, previewPending] = useActionState<
     MassMailState,
     FormData
@@ -49,20 +49,19 @@ export function MassMailForm() {
     return (
       <div className="space-y-5">
         <div className="rounded-[3px] border border-[#c4e8d2] bg-[#eef9f3] p-6">
-          <h2 className="text-[17px] font-bold text-[#0e5934]">Versand abgeschlossen</h2>
+          <h2 className="text-[17px] font-bold text-[#0e5934]">{t("mail.sentTitle")}</h2>
           <p className="mt-2 text-[14px] text-[#0e5934]">
-            {sendState.sentCount} Mail{sendState.sentCount === 1 ? "" : "s"} übergeben
-            {sendState.failedCount ? `, ${sendState.failedCount} fehlgeschlagen` : ""}.
+            {t("mail.sentCount", { count: sendState.sentCount ?? 0 })}
+            {sendState.failedCount ? t("mail.failedCount", { count: sendState.failedCount }) : ""}.
           </p>
           <p className="mt-2 text-[13px] leading-relaxed text-[#0e5934]">
-            „Übergeben“ heisst vom Mailserver angenommen — ob zugestellt wurde, steht
-            im Mail-Protokoll unter Einstellungen.
+            {t("mail.handedOverExplain")}
           </p>
         </div>
 
         {!!sendState.failures?.length && (
           <div className="rounded-[3px] border border-[#f2c4c4] bg-[#fdecec] p-4">
-            <p className="text-[13px] font-bold text-[#b3000c]">Fehlgeschlagen</p>
+            <p className="text-[13px] font-bold text-[#b3000c]">{t("mail.failed")}</p>
             <ul className="mt-2 space-y-1 text-[12.5px] text-[#b3000c]">
               {sendState.failures.map((f) => (
                 <li key={f.email}>
@@ -77,7 +76,7 @@ export function MassMailForm() {
           href="/admin/mail"
           className="inline-block rounded-[3px] border border-[#c4c4cc] px-4 py-2.5 text-[13px] font-semibold hover:bg-[#fafaf8]"
         >
-          Neue Serienmail
+          {t("mail.newMail")}
         </a>
       </div>
     );
@@ -90,16 +89,16 @@ export function MassMailForm() {
       <div className="space-y-5">
         <div className="rounded-[3px] border-l-2 border-[#e1000f] bg-[#fafaf8] p-4">
           <p className="text-[14px] font-bold">
-            {p.recipients?.length} Empfänger — je Firma der Hauptkontakt
+            {t("mail.recipientsSummary", { count: p.recipients?.length ?? 0 })}
           </p>
           <p className="mt-1 text-[13px] leading-relaxed text-[#4a4a51]">
-            Noch wurde nichts verschickt. Prüfen Sie die Vorschau und bestätigen Sie unten.
+            {t("mail.nothingSentYet")}
           </p>
         </div>
 
         {!!p.unknownTokens?.length && (
           <div className="rounded-[2px] border border-[#f0d9a8] bg-[#fdf6e7] px-4 py-3 text-[13px] text-[#7a4f00]">
-            Unbekannte Platzhalter bleiben unersetzt im Text stehen:{" "}
+            {t("mail.unknownPlaceholders")}{" "}
             <span className="font-sdi-mono">{p.unknownTokens.join(", ")}</span>
           </div>
         )}
@@ -107,13 +106,12 @@ export function MassMailForm() {
         {!!p.gaps?.length && (
           <div className="rounded-[2px] border border-[#f0d9a8] bg-[#fdf6e7] px-4 py-3 text-[13px] text-[#7a4f00]">
             <p className="font-semibold">
-              Bei {p.gaps.length} Empfänger{p.gaps.length === 1 ? "" : "n"} bliebe ein
-              Platzhalter leer:
+              {t("mail.gaps", { count: p.gaps.length })}
             </p>
             <ul className="mt-1.5 space-y-0.5">
               {p.gaps.slice(0, 10).map((g) => (
                 <li key={g.company}>
-                  {g.company} — {g.missing.join(", ")}
+                  {g.company} — {g.missing.map(phLabel).join(", ")}
                 </li>
               ))}
             </ul>
@@ -123,7 +121,7 @@ export function MassMailForm() {
         {!!p.skipped?.length && (
           <div className="rounded-[2px] border border-[#e2e2e7] bg-white px-4 py-3 text-[13px] text-[#4a4a51]">
             <p className="font-semibold">
-              {p.skipped.length} Firma/Firmen werden übersprungen:
+              {t("mail.skipped", { count: p.skipped.length })}
             </p>
             <ul className="mt-1.5 space-y-0.5">
               {p.skipped.map((s) => (
@@ -137,7 +135,7 @@ export function MassMailForm() {
 
         <div className="rounded-[3px] border border-[#e2e2e7] bg-white">
           <div className="border-b border-[#e2e2e7] px-4 py-3">
-            <p className={label}>Vorschau für {sample.to}</p>
+            <p className={label}>{t("mail.previewFor", { email: sample.to })}</p>
           </div>
           <div className="px-4 py-3">
             <p className="text-[14px] font-bold">{sample.subject}</p>
@@ -149,7 +147,7 @@ export function MassMailForm() {
 
         <details className="rounded-[3px] border border-[#e2e2e7] bg-white px-4 py-3">
           <summary className="cursor-pointer text-[13px] font-semibold">
-            Alle {p.recipients?.length} Empfänger anzeigen
+            {t("mail.showAllRecipients", { count: p.recipients?.length ?? 0 })}
           </summary>
           <ul className="mt-3 space-y-1 text-[12.5px] text-[#4a4a51]">
             {p.recipients?.map((r) => (
@@ -178,28 +176,30 @@ export function MassMailForm() {
               className="mt-0.5 h-4 w-4 shrink-0 accent-[#e1000f]"
             />
             <span>
-              Ich habe die Vorschau geprüft und möchte diese Mail an{" "}
-              <strong>{p.recipients?.length} Empfänger</strong> verschicken.
+              {t("mail.confirmBefore")}{" "}
+              <strong>{t("mail.confirmRecipients", { count: p.recipients?.length ?? 0 })}</strong>
+              {t("mail.confirmAfter") === "." ? "" : " "}
+              {t("mail.confirmAfter")}
             </span>
           </label>
           <div className="flex flex-wrap gap-2">
             <SubmitButton
-              pendingLabel="Wird verschickt …"
+              pendingLabel={t("mail.sending")}
               className="rounded-[3px] bg-[#e1000f] px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-[#c9000d]"
             >
-              Jetzt verschicken
+              {t("mail.sendNow")}
             </SubmitButton>
             <a
               href="/admin/mail"
               className="rounded-[3px] border border-[#c4c4cc] px-4 py-2.5 text-[13px] font-semibold hover:bg-white"
             >
-              Zurück zum Text
+              {t("mail.backToText")}
             </a>
           </div>
         </form>
         {sendPending && (
           <p className="text-[13px] text-[#6b6b73]">
-            Der Versand läuft nacheinander — bitte das Fenster offen lassen.
+            {t("mail.keepOpen")}
           </p>
         )}
       </div>
@@ -209,7 +209,7 @@ export function MassMailForm() {
   return (
     <form action={previewAction} className="space-y-5">
       <label className="block">
-        <span className={label}>Betreff</span>
+        <span className={label}>{t("field.subject")}</span>
         <input
           name="subject"
           required
@@ -220,17 +220,17 @@ export function MassMailForm() {
       </label>
 
       <div className="block">
-        <span className={label}>Text</span>
+        <span className={label}>{t("news.text")}</span>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {MASS_MAIL_PLACEHOLDERS.map((key) => (
             <button
               key={key}
               type="button"
               onClick={() => insert(placeholderToken(key))}
-              title={`${placeholderToken(key)} einfügen`}
+              title={t("mail.insertPlaceholder", { token: placeholderToken(key) })}
               className="font-sdi-mono rounded-[2px] border border-[#c4c4cc] bg-white px-2.5 py-1.5 text-[11px] font-bold hover:bg-[#f2f2f0]"
             >
-              + {PLACEHOLDER_LABELS[key]}
+              + {phLabel(key)}
             </button>
           ))}
         </div>
@@ -242,11 +242,10 @@ export function MassMailForm() {
           value={body}
           onChange={(e) => setBody(e.target.value)}
           className={`${input} leading-relaxed`}
-          placeholder={"Guten Tag {{first_name}} {{last_name}}\n\n…\n\nIhre Firmendaten können Sie hier aktualisieren:\n{{edit_link}}"}
+          placeholder={t("mail.bodyPlaceholder")}
         />
         <p className="mt-1.5 text-[12px] text-[#6b6b73]">
-          Platzhalter werden je Empfänger ersetzt. Die Mail geht an den Hauptkontakt
-          jeder Firma.
+          {t("mail.placeholderHelp")}
         </p>
       </div>
 
@@ -261,7 +260,7 @@ export function MassMailForm() {
         disabled={previewPending}
         className="rounded-[3px] bg-[#0a0a0b] px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-black disabled:opacity-60"
       >
-        {previewPending ? "Vorschau wird erstellt …" : "Vorschau anzeigen"}
+        {previewPending ? t("mail.previewing") : t("mail.showPreview")}
       </button>
     </form>
   );

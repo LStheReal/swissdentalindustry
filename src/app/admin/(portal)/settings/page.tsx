@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAdminLocale } from "@/lib/i18n-admin";
+import { getAdminT } from "@/lib/i18n-admin";
 import { LocaleSwitcher } from "../LocaleSwitcher";
 import { saveSettings } from "./actions";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const [{ data }, locale] = await Promise.all([
+  const [{ data }, { locale, t }] = await Promise.all([
     supabase.from("app_settings").select("*").eq("id", 1).maybeSingle(),
-    getAdminLocale(),
+    getAdminT(),
   ]);
 
   return (
@@ -16,10 +16,10 @@ export default async function SettingsPage() {
       <section className="max-w-xl space-y-3 rounded-lg border border-slate-200 bg-white p-5">
         <div>
           <h2 className="text-sm font-semibold text-slate-700">
-            Portal-Sprache
+            {t("settings.portalLanguage")}
           </h2>
           <p className="text-xs text-slate-500">
-            Sprache der Admin-Oberfläche. Wird pro Benutzer im Browser gespeichert.
+            {t("settings.portalLanguageHint")}
           </p>
         </div>
         <LocaleSwitcher current={locale} />
@@ -28,16 +28,16 @@ export default async function SettingsPage() {
       <form action={saveSettings} className="max-w-xl space-y-5">
         <div>
           <h2 className="text-sm font-semibold text-slate-700">
-            Empfänger-E-Mail-Adressen
+            {t("settings.recipients")}
           </h2>
           <p className="text-xs text-slate-500">
-            An diese Adressen werden die ausgefüllten Formulare gesendet.
+            {t("settings.recipientsHint")}
           </p>
         </div>
 
         <label className="block">
           <span className="text-sm font-medium text-slate-700">
-            „Mitwirken“-Formular
+            {t("settings.getInvolvedForm")}
           </span>
           <input
             name="mitwirken_email"
@@ -50,7 +50,7 @@ export default async function SettingsPage() {
 
         <label className="block">
           <span className="text-sm font-medium text-slate-700">
-            „Mitglied werden“-Anträge
+            {t("settings.membershipForm")}
           </span>
           <input
             name="membership_email"
@@ -63,11 +63,10 @@ export default async function SettingsPage() {
 
         <label className="block">
           <span className="text-sm font-medium text-slate-700">
-            Admin-Benachrichtigungen (interne Alerts)
+            {t("settings.adminAlerts")}
           </span>
           <span className="block text-xs text-slate-500">
-            Erhält Mails bei eingereichten Änderungsvorschlägen aus dem
-            Self-Service.
+            {t("settings.adminAlertsHint")}
           </span>
           <input
             name="admin_notification_email"
@@ -81,13 +80,10 @@ export default async function SettingsPage() {
         <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
           <div>
             <h2 className="text-sm font-semibold text-amber-900">
-              Test-Modus E-Mail-Versand
+              {t("settings.testMode")}
             </h2>
             <p className="text-xs text-amber-800">
-              Solange aktiv, werden ausgehende Mails nur an die unten
-              aufgeführten Adressen zugestellt. Alle anderen Empfänger werden
-              stillschweigend verworfen. So lange einlassen, bis die Webseite
-              produktiv ist.
+              {t("settings.testModeHint")}
             </p>
           </div>
 
@@ -98,16 +94,15 @@ export default async function SettingsPage() {
               defaultChecked={data?.email_test_mode ?? true}
               className="h-4 w-4 rounded border-amber-400"
             />
-            Test-Modus aktiv (keine Mails an echte Empfänger)
+            {t("settings.testModeActive")}
           </label>
 
           <label className="block">
             <span className="text-sm font-medium text-amber-900">
-              Erlaubte Empfänger
+              {t("settings.allowedRecipients")}
             </span>
             <span className="block text-xs text-amber-800">
-              Eine oder mehrere Adressen, getrennt mit Komma, Semikolon oder
-              Zeilenumbruch.
+              {t("settings.allowedRecipientsHint")}
             </span>
             <textarea
               name="email_test_recipients"
@@ -120,10 +115,10 @@ export default async function SettingsPage() {
         </div>
 
         <SubmitButton
-          pendingLabel="Wird gespeichert …"
+          pendingLabel={t("contacts.saving")}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
         >
-          Speichern
+          {t("common.save")}
         </SubmitButton>
       </form>
     </div>

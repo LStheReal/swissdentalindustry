@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { translateDescriptionAction } from "./actions";
+import { useAdminT } from "@/components/admin/AdminI18n";
 import {
   LOCALES,
   type Locale,
@@ -49,6 +50,7 @@ export function MemberForm({
   mainContactName,
 }: Props) {
   const router = useRouter();
+  const { t } = useAdminT();
   const [pending, setPending] = useState(false);
   const [descLang, setDescLang] = useState<Locale>(initial?.source_lang ?? "de");
   const sourceLang = initial?.source_lang ?? "de";
@@ -94,16 +96,16 @@ export function MemberForm({
             <div className="mb-4 flex items-center gap-2.5">
               <span className="h-2 w-2 bg-[#e1000f]" />
               <span className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.14em]">
-                01 — Stammdaten
+                {t("form.sectionBasics")}
               </span>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className={label}>Firmenname</span>
+                <span className={label}>{t("field.companyName")}</span>
                 <input name="name" required defaultValue={initial?.name} className={input} />
               </label>
               <label className="block">
-                <span className={label}>Mitglied seit</span>
+                <span className={label}>{t("field.memberSince")}</span>
                 <input
                   name="member_since"
                   type="date"
@@ -116,9 +118,9 @@ export function MemberForm({
 
           <div>
             <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-              <span className={label}>Beschreibung</span>
+              <span className={label}>{t("field.description")}</span>
               <div className="flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.08em]">
-                <span className="mr-1 text-[#6b6b73]">AUTO-ÜBERSETZT —</span>
+                <span className="mr-1 text-[#6b6b73]">{t("form.autoTranslated")}</span>
                 {LOCALES.map((code) => (
                   <button
                     key={code}
@@ -154,10 +156,10 @@ export function MemberForm({
             <div className="mt-2 flex items-center justify-between gap-3">
               <span className="font-sdi-mono text-[10.5px] uppercase tracking-[0.04em] text-[#6b6b73]">
                 {skipTranslate
-                  ? `Übersetzt aus ${effectiveSourceLang.toUpperCase()} · bereit zum Speichern`
+                  ? t("form.translatedReady", { lang: effectiveSourceLang.toUpperCase() })
                   : descLang === effectiveSourceLang
-                  ? "Speichern löst automatische Übersetzung aus"
-                  : `Direkte Bearbeitung · ${effectiveSourceLang.toUpperCase()} = Quellsprache`}
+                  ? t("form.saveTriggersTranslation")
+                  : t("form.directEdit", { lang: effectiveSourceLang.toUpperCase() })}
               </span>
               <button
                 type="button"
@@ -170,14 +172,14 @@ export function MemberForm({
                     <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                     </svg>
-                    Übersetzen…
+                    {t("form.translating")}
                   </>
                 ) : (
                   <>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
-                    Übersetzen
+                    {t("form.translate")}
                   </>
                 )}
               </button>
@@ -197,18 +199,17 @@ export function MemberForm({
             <div className="mb-4 flex items-center gap-2.5">
               <span className="h-2 w-2 bg-[#e1000f]" />
               <span className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.14em]">
-                02 — Kontakt & Standort
+                {t("form.sectionContact")}
               </span>
             </div>
             {initial?.address_needs_review ? (
               <p className="mb-4 border-l-2 border-[#a66a00] bg-[#fdf6e7] px-4 py-3 text-[13px] leading-relaxed text-[#7a4f00]">
-                Diese Adresse liess sich beim Umstellen auf Einzelfelder nicht
-                sicher zerlegen. Bitte einmal prüfen und speichern.
+                {t("form.addressNeedsReview")}
               </p>
             ) : null}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_8rem]">
               <label className="block">
-                <span className={label}>Strasse</span>
+                <span className={label}>{t("field.street")}</span>
                 <input
                   name="street_name"
                   defaultValue={initial?.street_name ?? ""}
@@ -216,7 +217,7 @@ export function MemberForm({
                 />
               </label>
               <label className="block">
-                <span className={label}>Hausnummer</span>
+                <span className={label}>{t("field.streetNumber")}</span>
                 <input
                   name="street_number"
                   defaultValue={initial?.street_number ?? ""}
@@ -226,7 +227,7 @@ export function MemberForm({
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[8rem_1fr]">
               <label className="block">
-                <span className={label}>PLZ</span>
+                <span className={label}>{t("field.postalCode")}</span>
                 <input
                   name="postal_code"
                   inputMode="numeric"
@@ -235,22 +236,22 @@ export function MemberForm({
                 />
               </label>
               <label className="block">
-                <span className={label}>Ort</span>
+                <span className={label}>{t("field.city")}</span>
                 <input name="city" defaultValue={initial?.city ?? ""} className={input} />
               </label>
             </div>
             <span className="font-sdi-mono mt-1.5 block text-[10.5px] uppercase tracking-[0.04em] text-[#1f8a5b]">
-              Geocodierung erfolgt automatisch
+              {t("form.geocodingAuto")}
             </span>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className={label}>Telefon</span>
+              <span className={label}>{t("field.phone")}</span>
               <input name="phone" defaultValue={initial?.phone ?? ""} className={input} />
             </label>
             <label className="block">
-              <span className={label}>E-Mail</span>
+              <span className={label}>{t("field.email")}</span>
               <input
                 name="email"
                 type="email"
@@ -261,7 +262,7 @@ export function MemberForm({
           </div>
 
           <label className="block">
-            <span className={label}>Website</span>
+            <span className={label}>{t("field.website")}</span>
             <input
               name="website_url"
               defaultValue={initial?.website_url ?? ""}
@@ -275,23 +276,21 @@ export function MemberForm({
               <div className="flex items-center gap-2.5">
                 <span className="h-2 w-2 bg-[#0a0a0b]" />
                 <span className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.14em]">
-                  03 — Interne Firmendaten
+                  {t("form.sectionInternal")}
                 </span>
               </div>
               <span className="font-sdi-mono rounded-[2px] bg-[#0a0a0b] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
-                Nicht öffentlich
+                {t("common.notPublic")}
               </span>
             </div>
             <p className="mb-4 text-[13px] leading-relaxed text-[#6b6b73]">
-              Diese Angaben sind nur für das Admin-Portal und die Mitgliederverwaltung.
-              Sie werden nicht auf der Website angezeigt. Die Personen der Firma
-              werden separat unter „Kontakte“ gepflegt.
+              {t("form.internalIntro")}
             </p>
             {/* Firmen-interne Felder liegen seit Migration 0018 auf `members`
                 selbst — vorher hingen sie an der Zeile des Hauptkontakts. */}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className={label}>Mitarbeiterzahl</span>
+                <span className={label}>{t("field.employeeCount")}</span>
                 <input
                   name="employee_count"
                   type="number"
@@ -302,7 +301,7 @@ export function MemberForm({
                 />
               </label>
               <label className="block">
-                <span className={label}>Mitgliederbeitrag</span>
+                <span className={label}>{t("field.membershipFee")}</span>
                 <input
                   name="membership_fee"
                   defaultValue={initial?.membership_fee ?? ""}
@@ -310,13 +309,13 @@ export function MemberForm({
                 />
               </label>
               <label className="block sm:col-span-2">
-                <span className={label}>Hauptkontakt</span>
+                <span className={label}>{t("field.mainContact")}</span>
                 <p className="mt-2 rounded-[2px] border border-[#e2e2e7] bg-[#fafaf8] px-3 py-2.5 text-[13.5px] text-[#4a4a51]">
-                  {mainContactName || "Noch kein Hauptkontakt markiert — unter „Kontakte“ festlegen."}
+                  {mainContactName || t("form.noMainContact")}
                 </p>
               </label>
               <label className="block sm:col-span-2">
-                <span className={label}>Interne Notizen</span>
+                <span className={label}>{t("field.internalNotes")}</span>
                 <textarea
                   name="internal_notes"
                   rows={4}
@@ -333,14 +332,14 @@ export function MemberForm({
               disabled={pending}
               className="rounded-[3px] bg-[#e1000f] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#c9000d] disabled:opacity-60"
             >
-              {pending ? "Speichern ..." : "Speichern"}
+              {pending ? t("common.saving") : t("common.save")}
             </button>
             <button
               type="button"
               onClick={() => router.push("/admin/members")}
               className="rounded-[3px] border border-[#c4c4cc] bg-white px-4 py-2 text-[12.5px] font-semibold hover:bg-[#fafaf8]"
             >
-              Abbrechen
+              {t("common.cancel")}
             </button>
           </div>
       </div>

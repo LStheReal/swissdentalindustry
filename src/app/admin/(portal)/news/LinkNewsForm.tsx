@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/types";
+import { useAdminT } from "@/components/admin/AdminI18n";
 import {
   editorHintClass,
   editorInputClass,
@@ -21,6 +22,7 @@ interface Props {
 
 export function LinkNewsForm({ action, initial }: Props) {
   const router = useRouter();
+  const { t } = useAdminT();
   const [pending, setPending] = useState(false);
   const [url, setUrl] = useState(initial?.link_url ?? "");
 
@@ -47,11 +49,11 @@ export function LinkNewsForm({ action, initial }: Props) {
           <div>
             <div className="mb-4 flex items-center gap-2.5">
               <span className="h-2 w-2 bg-[#e1000f]" />
-              <span className={editorSectionTitleClass}>01 — Linkdaten</span>
+              <span className={editorSectionTitleClass}>{t("news.sectionLink")}</span>
             </div>
 
             <label className="block">
-              <span className={editorLabelClass}>Ausgangssprache</span>
+              <span className={editorLabelClass}>{t("news.sourceLang")}</span>
               <select
                 name="source_lang"
                 defaultValue={initial?.source_lang ?? "de"}
@@ -64,23 +66,23 @@ export function LinkNewsForm({ action, initial }: Props) {
                 ))}
               </select>
               <span className={editorHintClass}>
-                Titel wird automatisch in DE · FR · IT · EN übersetzt
+                {t("news.autoTranslateTitle")}
               </span>
             </label>
           </div>
 
           <label className="block">
-            <span className={editorLabelClass}>Titel</span>
+            <span className={editorLabelClass}>{t("field.title")}</span>
             <input name="title" required defaultValue={initial?.title} className={editorInputClass} />
           </label>
 
           <label className="block">
-            <span className={editorLabelClass}>Link (URL)</span>
+            <span className={editorLabelClass}>{t("news.linkUrl")}</span>
             <input
               name="link_url"
               type="url"
               required
-              placeholder="https://example.com/artikel"
+              placeholder={t("news.linkPlaceholder")}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className={editorInputClass}
@@ -93,20 +95,20 @@ export function LinkNewsForm({ action, initial }: Props) {
               disabled={pending}
               className="rounded-[3px] bg-[#e1000f] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#c9000d] disabled:opacity-60"
             >
-              {pending ? "Speichern ..." : "Speichern"}
+              {pending ? t("common.saving") : t("common.save")}
             </button>
             <button
               type="button"
               onClick={() => router.push("/admin/news")}
               className="rounded-[3px] border border-[#c4c4cc] bg-white px-4 py-2 text-[12.5px] font-semibold hover:bg-[#fafaf8]"
             >
-              Abbrechen
+              {t("common.cancel")}
             </button>
           </div>
         </div>
 
         <aside className="bg-[#fafaf8] p-5 sm:p-6">
-          <div className={editorLabelClass}>Vorschau</div>
+          <div className={editorLabelClass}>{t("news.preview")}</div>
           <div className="mt-3 rounded-[2px] border border-[#e2e2e7] bg-white p-4">
             {faviconDomain ? (
               <div className="flex items-center gap-3">
@@ -118,18 +120,18 @@ export function LinkNewsForm({ action, initial }: Props) {
                 />
                 <div className="min-w-0">
                   <p className="font-sdi-mono text-[10px] uppercase tracking-[0.1em] text-[#6b6b73]">
-                    Domain
+                    {t("news.domain")}
                   </p>
                   <p className="break-all text-sm font-semibold text-[#0a0a0b]">{faviconDomain}</p>
                 </div>
               </div>
             ) : (
               <p className="font-sdi-mono text-[11px] uppercase tracking-[0.08em] text-[#6b6b73]">
-                URL eingeben, um die Link-Vorschau zu sehen
+                {t("news.linkPreviewEmpty")}
               </p>
             )}
           </div>
-          <p className={editorHintClass}>Externer Artikel oder Ressource</p>
+          <p className={editorHintClass}>{t("news.linkHint")}</p>
         </aside>
       </div>
     </form>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { type News } from "@/lib/types";
+import { getAdminT } from "@/lib/i18n-admin";
 import { NewsEditorPageShell } from "../NewsEditorPageShell";
 import { NewsForm } from "../NewsForm";
 import { YoutubeNewsForm } from "../YoutubeNewsForm";
@@ -13,6 +14,7 @@ export default async function EditNewsPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const { t } = await getAdminT();
   const { data } = await supabase.from("news").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const news = data as News;
@@ -20,9 +22,9 @@ export default async function EditNewsPage({
   if (news.youtube_url) {
     return (
       <NewsEditorPageShell
-        eyebrow="News"
-        title="YouTube Video bearbeiten"
-        description="Bearbeitung im gleichen blockartigen Portal-Editor."
+        eyebrow={t("news.title")}
+        title={t("news.pageEditYoutubeTitle")}
+        description={t("news.pageEditYoutubeDesc")}
       >
         <YoutubeNewsForm
           action={updateYoutubeNews.bind(null, news.id)}
@@ -39,9 +41,9 @@ export default async function EditNewsPage({
 
   return (
     <NewsEditorPageShell
-      eyebrow="News"
-      title="News bearbeiten"
-      description="Inhalt und Medien im Portal-Look aktualisieren."
+      eyebrow={t("news.title")}
+      title={t("news.pageEditTitle")}
+      description={t("news.pageEditDesc")}
     >
       <NewsForm
         action={updateNews.bind(null, news.id)}

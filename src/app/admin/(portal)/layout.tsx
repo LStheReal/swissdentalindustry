@@ -53,7 +53,7 @@ export default async function PortalLayout({
             </div>
 
             <div className="font-sdi-mono mb-2 pl-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9595a0]">
-              Navigation
+              {t("nav.navigation")}
             </div>
             <NavLinks items={navItems} />
 

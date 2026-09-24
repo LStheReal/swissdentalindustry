@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAdminT } from "@/lib/i18n-admin";
+import { getAdminT, type AdminT } from "@/lib/i18n-admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Locale, Member, MembershipApplication } from "@/lib/types";
 
@@ -76,22 +76,22 @@ function formatActivityTime(iso: string, locale: Locale) {
   }).format(date);
 }
 
-function applicationName(app: MembershipApplication) {
+function applicationName(app: MembershipApplication, t: AdminT) {
   const keys = ["company", "company_name", "firma", "name", "unternehmen"];
   for (const key of keys) {
     const value = app.payload[key];
     if (value?.trim()) return value;
   }
-  return "Neuer Mitgliedsantrag";
+  return t("dashboard.newApplicationFallback");
 }
 
 /** Absender einer Kontaktanfrage: Person zuerst, dann Firma, dann E-Mail. */
-function inquiryName(app: MembershipApplication) {
+function inquiryName(app: MembershipApplication, t: AdminT) {
   for (const key of ["name", "contact_person", "company", "email"]) {
     const value = app.payload[key];
     if (value?.trim()) return value.trim();
   }
-  return "Unbekannter Absender";
+  return t("dashboard.unknownSender");
 }
 
 export default async function DashboardPage() {
@@ -222,7 +222,7 @@ export default async function DashboardPage() {
       href: "/admin/applications",
       time: formatActivityTime(application.created_at, locale),
       tag: "AN",
-      text: `${applicationName(application)} ${t("dashboard.wantsMembership")}`,
+      text: `${applicationName(application, t)} ${t("dashboard.wantsMembership")}`,
       status: t("dashboard.new"),
       statusColor: "text-[#e1000f]",
       date: application.created_at,
@@ -232,7 +232,7 @@ export default async function DashboardPage() {
       href: "/admin/applications?tab=inquiries",
       time: formatActivityTime(inquiry.created_at, locale),
       tag: "KO",
-      text: `${inquiryName(inquiry)} ${t("dashboard.sentInquiry")}`,
+      text: `${inquiryName(inquiry, t)} ${t("dashboard.sentInquiry")}`,
       status: t("dashboard.new"),
       statusColor: "text-[#e1000f]",
       date: inquiry.created_at,

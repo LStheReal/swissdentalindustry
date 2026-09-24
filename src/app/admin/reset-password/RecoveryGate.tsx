@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 type Status = "checking" | "working" | "invalid";
 
@@ -14,6 +15,7 @@ type Status = "checking" | "working" | "invalid";
  * damit die Serverkomponente die Session sieht und das Formular rendert.
  */
 export function RecoveryGate() {
+  const { t } = useAdminT();
   const [status, setStatus] = useState<Status>("checking");
 
   useEffect(() => {
@@ -46,19 +48,19 @@ export function RecoveryGate() {
   }, []);
 
   if (status === "checking" || status === "working") {
-    return <p className="text-[13px] text-[#4a4a51]">Wird geprüft…</p>;
+    return <p className="text-[13px] text-[#4a4a51]">{t("reset.checking")}</p>;
   }
 
   return (
     <>
       <p className="text-sm text-red-700">
-        Dieser Link ist ungültig, abgelaufen oder wurde bereits benutzt.
+        {t("reset.invalidLink")}
       </p>
       <Link
         href="/admin/forgot"
         className="inline-block text-[12px] font-semibold underline underline-offset-2"
       >
-        Neuen Link anfordern
+        {t("reset.requestAgain")}
       </Link>
     </>
   );

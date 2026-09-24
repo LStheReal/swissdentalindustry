@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 interface Props {
   formId: string;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function LogoUploadField({ formId, initialLogoUrl }: Props) {
+  const { t } = useAdminT();
   const [selectedObjectUrl, setSelectedObjectUrl] = useState<string | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +47,7 @@ export function LogoUploadField({ formId, initialLogoUrl }: Props) {
     ? null
     : selectedFileName
     ? selectedFileName
-    : "Kein Logo ausgewählt";
+    : t("logo.none");
 
   function handleRemove() {
     setRemoveLogo(true);
@@ -62,7 +64,7 @@ export function LogoUploadField({ formId, initialLogoUrl }: Props) {
   return (
     <section className="border border-[#e2e2e7] bg-[#fafaf8] p-4">
       <div className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]">
-        Logo
+        {t("field.logo")}
       </div>
 
       <div className="mt-3 flex h-[132px] items-center justify-center rounded-[2px] border border-[#e2e2e7] bg-white">
@@ -93,7 +95,7 @@ export function LogoUploadField({ formId, initialLogoUrl }: Props) {
           onClick={() => inputRef.current?.click()}
           className="shrink-0 rounded-[3px] border border-[#c4c4cc] bg-white px-3 py-2 text-[12px] font-semibold text-[#0a0a0b] hover:bg-[#f2f2f0] active:bg-[#e8e8e5]"
         >
-          {hasLogo ? "Logo ändern" : "Datei auswählen"}
+          {hasLogo ? t("logo.change") : t("logo.choose")}
         </button>
         {hasLogo && (
           <button
@@ -101,7 +103,7 @@ export function LogoUploadField({ formId, initialLogoUrl }: Props) {
             onClick={handleRemove}
             className="shrink-0 rounded-[3px] border border-[#e1000f] px-3 py-2 text-[12px] font-semibold text-[#e1000f] hover:bg-[#fdecec] active:bg-[#fad9d9]"
           >
-            Entfernen
+            {t("logo.remove")}
           </button>
         )}
         {statusText && (

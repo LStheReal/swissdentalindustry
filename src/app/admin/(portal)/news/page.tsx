@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAdminLocale } from "@/lib/i18n-admin";
+import { getAdminT } from "@/lib/i18n-admin";
 import { mlText, type News } from "@/lib/types";
 import { NewNewsMenu } from "./NewNewsMenu";
 import { NewsListItem } from "./NewsListItem";
@@ -26,7 +26,7 @@ function youtubeThumb(youtubeUrl: string) {
 
 export default async function NewsListPage() {
   const supabase = await createClient();
-  const locale = await getAdminLocale();
+  const { locale, t } = await getAdminT();
   const { data } = await supabase
     .from("news")
     .select("*")
@@ -38,16 +38,16 @@ export default async function NewsListPage() {
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           <div className="font-sdi-mono mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#e1000f]">
-            | News
+            {t("news.eyebrow")}
           </div>
-          <h1 className="text-[28px] font-extrabold tracking-[-0.025em]">News</h1>
+          <h1 className="text-[28px] font-extrabold tracking-[-0.025em]">{t("news.title")}</h1>
         </div>
         <NewNewsMenu />
       </div>
 
       {news.length === 0 ? (
         <div className="border border-[#e2e2e7] bg-[#fafaf8] p-8 text-sm text-[#6b6b73]">
-          Noch keine News vorhanden.
+          {t("news.empty")}
         </div>
       ) : (
         <ul className="space-y-3">

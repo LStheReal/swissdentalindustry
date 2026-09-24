@@ -69,7 +69,7 @@ export default async function EditMemberPage({
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const editUrl = token ? `${appUrl}/edit/${token.token}` : null;
-  const status = member.status === "published" ? "Publiziert" : "Entwurf";
+  const status = member.status === "published" ? t("common.published") : t("common.draft");
   const formId = `member-form-${member.id}`;
   // Bearbeitet wird immer der Entwurfsstand; öffentlich ist er erst nach
   // "Veröffentlichen".
@@ -86,7 +86,7 @@ export default async function EditMemberPage({
     <div className="overflow-hidden border border-[#e2e2e7] bg-white">
       <div className="border-b border-[#e2e2e7] px-5 py-5 sm:px-8">
         <div className="font-sdi-mono mb-2.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[#6b6b73]">
-          Mitglieder / {member.name}
+          {t("members.breadcrumb", { name: member.name })}
         </div>
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0 flex-1">
@@ -97,14 +97,14 @@ export default async function EditMemberPage({
               <span className={member.status === "published" ? "text-[#1f8a5b]" : "text-[#a66a00]"}>
                 ● {status}
               </span>
-              {hasDraft(member) && <span className="text-[#a66a00]">◐ Unveröffentlichte Änderung</span>}
+              {hasDraft(member) && <span className="text-[#a66a00]">{t("members.unpublishedChange")}</span>}
               {member.canton && <span>{member.canton}</span>}
-              {member.member_since && <span>Seit {member.member_since}</span>}
+              {member.member_since && <span>{t("members.since", { date: member.member_since })}</span>}
             </div>
             <div className="mt-4 max-w-sm">
               <label className="block">
                 <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]">
-                  Sprache der Firma
+                  {t("form.companyLanguage")}
                 </span>
                 <select
                   form={formId}
@@ -119,7 +119,7 @@ export default async function EditMemberPage({
                 </select>
               </label>
               <span className="font-sdi-mono mt-1.5 block text-[10.5px] uppercase tracking-[0.04em] text-[#6b6b73]">
-                Wird beim Speichern aus der Beschreibung automatisch erkannt · Auswahl dient nur als Fallback
+                {t("form.companyLanguageHint")}
               </span>
             </div>
 
@@ -161,7 +161,7 @@ export default async function EditMemberPage({
                     await sendEditLinkToMember(member.id);
                   } catch (err) {
                     return {
-                      error: err instanceof Error ? err.message : "Unbekannter Fehler",
+                      error: err instanceof Error ? err.message : t("common.unknownError"),
                     };
                   }
                 }}

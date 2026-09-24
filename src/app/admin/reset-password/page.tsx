@@ -5,11 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { AuthShell } from "../AuthShell";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 import { RecoveryGate } from "./RecoveryGate";
+import { getAdminT, type AdminT } from "@/lib/i18n-admin";
 
-export const metadata: Metadata = {
-  title: "Neues Passwort",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getAdminT();
+  return { title: t("reset.title"), robots: { index: false, follow: false } };
+}
 
 /**
  * Ziel des Links aus der Reset-Mail. Der Link liefert die Session als
@@ -32,16 +33,17 @@ export default async function ResetPasswordPage({
   const code = typeof params.code === "string" ? params.code : null;
 
   const supabase = await createClient();
+  const { t } = await getAdminT();
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       return (
-        <AuthShell subtitle="Neues Passwort">
+        <AuthShell subtitle={t("reset.title")}>
           <p className="text-sm text-red-700">
-            Der Link konnte nicht eingelöst werden: {error.message}
+            {t("reset.linkFailed", { message: error.message })}
           </p>
-          <RequestAgain />
+          <RequestAgain t={t} />
         </AuthShell>
       );
     }
@@ -54,9 +56,9 @@ export default async function ResetPasswordPage({
 
   if (user) {
     return (
-      <AuthShell subtitle="Neues Passwort">
+      <AuthShell subtitle={t("reset.title")}>
         <p className="text-[13px] text-[#4a4a51]">
-          Neues Passwort für {user.email} setzen. Mindestens 8 Zeichen.
+          {t("reset.forUser", { email: user.email ?? "" })}
         </p>
         <ResetPasswordForm />
       </AuthShell>
@@ -64,19 +66,19 @@ export default async function ResetPasswordPage({
   }
 
   return (
-    <AuthShell subtitle="Neues Passwort">
+    <AuthShell subtitle={t("reset.title")}>
       <RecoveryGate />
     </AuthShell>
   );
 }
 
-function RequestAgain() {
+function RequestAgain({ t }: { t: AdminT }) {
   return (
     <Link
       href="/admin/forgot"
       className="inline-block text-[12px] font-semibold underline underline-offset-2"
     >
-      Neuen Link anfordern
+      {t("reset.requestAgain")}
     </Link>
   );
 }

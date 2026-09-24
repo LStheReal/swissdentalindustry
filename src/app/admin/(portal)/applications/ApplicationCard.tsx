@@ -4,6 +4,8 @@ import { useState } from "react";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import type { MembershipApplication } from "@/lib/types";
 import { formatAddress } from "@/lib/address";
+import { formatAdminDateTime, type AdminI18nKey } from "@/lib/admin-i18n";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 /**
  * Ein Antrag als Karte: links die Vorschau, wie die Firma im Verzeichnis
@@ -23,6 +25,7 @@ export function ApplicationCard({
   archiveAction: () => Promise<void>;
   deleteAction: () => Promise<void>;
 }) {
+  const { t, locale } = useAdminT();
   const [rejecting, setRejecting] = useState(false);
   const p = app.payload;
   const isOpen = app.status === "new";
@@ -43,20 +46,20 @@ export function ApplicationCard({
           city: p.contact_city ?? null,
         });
 
-  const rows: [string, string | undefined][] = [
-    ["Firma", p.company],
-    ["Adresse", formatAddress(p) || undefined],
-    ["E-Mail", p.email],
-    ["Telefon", p.phone],
-    ["Website", p.website_url],
-    ["Mitarbeiterzahl", p.employee_count],
-    ["Beschreibung", p.description],
-    ["Nachricht", p.message],
-    ["Kontakt", contactName],
-    ["Funktion", p.contact_job_title],
-    ["Kontakt E-Mail", p.contact_email],
-    ["Kontakt Telefon", p.contact_phone],
-    ["Kontakt Adresse", contactAddress || undefined],
+  const rows: [AdminI18nKey, string | undefined][] = [
+    ["field.company", p.company],
+    ["field.address", formatAddress(p) || undefined],
+    ["field.email", p.email],
+    ["field.phone", p.phone],
+    ["field.website", p.website_url],
+    ["field.employeeCount", p.employee_count],
+    ["field.description", p.description],
+    ["field.message", p.message],
+    ["apps.contact", contactName],
+    ["apps.jobTitle", p.contact_job_title],
+    ["apps.contactEmail", p.contact_email],
+    ["apps.contactPhone", p.contact_phone],
+    ["apps.contactAddress", contactAddress || undefined],
   ];
 
   return (
@@ -64,19 +67,19 @@ export function ApplicationCard({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e2e2e7] bg-[#fafaf8] px-5 py-3">
         <div className="flex items-center gap-3">
           <span className="font-sdi-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
-            {new Date(app.created_at).toLocaleString("de-CH")}
+            {formatAdminDateTime(app.created_at, locale)}
           </span>
-          <StatusBadge status={app.status} />
+          <StatusBadge status={app.status} t={t} />
         </div>
 
         {isOpen && (
           <div className="flex flex-wrap gap-2">
             <form action={approveAction}>
               <SubmitButton
-                pendingLabel="Wird angelegt …"
+                pendingLabel={t("apps.approving")}
                 className="rounded-[3px] bg-[#0a0a0b] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-black"
               >
-                Annehmen &amp; Mitglied anlegen
+                {t("apps.approve")}
               </SubmitButton>
             </form>
             <button
@@ -84,14 +87,14 @@ export function ApplicationCard({
               onClick={() => setRejecting((v) => !v)}
               className="rounded-[3px] border border-[#e1000f] px-3.5 py-2 text-[12.5px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
             >
-              Ablehnen
+              {t("apps.reject")}
             </button>
             <form action={archiveAction}>
               <SubmitButton
-                pendingLabel="Wird archiviert …"
+                pendingLabel={t("apps.archiving")}
                 className="rounded-[3px] border border-[#c4c4cc] px-3.5 py-2 text-[12.5px] font-semibold hover:bg-[#f2f2f0]"
               >
-                Archivieren
+                {t("apps.archive")}
               </SubmitButton>
             </form>
           </div>
@@ -100,11 +103,11 @@ export function ApplicationCard({
         {!isOpen && (
           <form action={deleteAction}>
             <SubmitButton
-              pendingLabel="Wird gelöscht …"
-              confirm="Diesen Antrag endgültig löschen?"
+              pendingLabel={t("common.deleting")}
+              confirm={t("apps.deleteConfirm")}
               className="rounded-[3px] border border-[#e1000f] px-3.5 py-2 text-[12.5px] font-semibold text-[#e1000f] hover:bg-[#fdecec]"
             >
-              Löschen
+              {t("common.delete")}
             </SubmitButton>
           </form>
         )}
@@ -117,28 +120,28 @@ export function ApplicationCard({
         >
           <label className="block">
             <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#0a0a0b]">
-              Begründung (optional — wird der Firma per E-Mail mitgeteilt)
+              {t("apps.reasonLabel")}
             </span>
             <textarea
               name="reason"
               rows={3}
               className="mt-1.5 w-full rounded-[2px] border border-[#c4c4cc] bg-white px-3 py-2 text-[13.5px] outline-none focus:border-[#0a0a0b]"
-              placeholder="z.B. Das Unternehmen erfüllt die Aufnahmekriterien nicht, weil …"
+              placeholder={t("apps.reasonPlaceholder")}
             />
           </label>
           <div className="mt-3 flex gap-2">
             <SubmitButton
-              pendingLabel="Wird abgelehnt …"
+              pendingLabel={t("apps.rejecting")}
               className="rounded-[3px] bg-[#e1000f] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-[#c9000d]"
             >
-              Ablehnen &amp; benachrichtigen
+              {t("apps.rejectAndNotify")}
             </SubmitButton>
             <button
               type="button"
               onClick={() => setRejecting(false)}
               className="rounded-[3px] border border-[#c4c4cc] px-3.5 py-2 text-[12.5px] font-semibold hover:bg-white"
             >
-              Abbrechen
+              {t("common.cancel")}
             </button>
           </div>
         </form>
@@ -148,7 +151,7 @@ export function ApplicationCard({
         {/* Vorschau: so erscheint die Firma im Verzeichnis. */}
         <div>
           <div className="font-sdi-mono mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6b6b73]">
-            Vorschau
+            {t("apps.preview")}
           </div>
           <div className="overflow-hidden rounded-[3px] border border-[#e2e2e7]">
             <div className="flex h-[150px] items-center justify-center bg-white p-4">
@@ -159,7 +162,7 @@ export function ApplicationCard({
                   href={app.logo_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="Logo in voller Grösse öffnen"
+                  title={t("apps.openLogo")}
                   className="flex h-full w-full items-center justify-center"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -171,21 +174,21 @@ export function ApplicationCard({
                 </a>
               ) : app.logo_error ? (
                 <span className="px-2 text-center text-[12px] font-semibold leading-relaxed text-[#b3000c]">
-                  Logo-Upload fehlgeschlagen
+                  {t("apps.logoUploadFailed")}
                   <span className="mt-1 block font-normal text-[11px] text-[#6b6b73]">
                     {app.logo_error}
                   </span>
                 </span>
               ) : (
-                <span className="font-sdi-mono text-[13px] font-bold text-[#c4c4cc]">
-                  KEIN LOGO HOCHGELADEN
+                <span className="font-sdi-mono text-[13px] font-bold uppercase text-[#c4c4cc]">
+                  {t("apps.noLogo")}
                 </span>
               )}
             </div>
             <div className="border-t border-[#e2e2e7] px-4 py-3">
               <div className="text-[14px] font-bold">{p.company || "—"}</div>
               <div className="mt-1 line-clamp-4 text-[12.5px] leading-relaxed text-[#6b6b73]">
-                {p.description || "Keine Beschreibung"}
+                {p.description || t("apps.noDescription")}
               </div>
             </div>
           </div>
@@ -194,9 +197,9 @@ export function ApplicationCard({
         {/* Vollständige Angaben aus dem Antrag. */}
         <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-[13.5px] sm:grid-cols-2">
           {rows.map(([label, value]) => (
-            <div key={label} className={label === "Beschreibung" || label === "Nachricht" ? "sm:col-span-2" : ""}>
+            <div key={label} className={label === "field.description" || label === "field.message" ? "sm:col-span-2" : ""}>
               <dt className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#9595a0]">
-                {label}
+                {t(label)}
               </dt>
               <dd className="mt-0.5 whitespace-pre-wrap break-words text-[#0a0a0b]">
                 {value?.trim() ? value : <span className="text-[#c4c4cc]">—</span>}
@@ -208,7 +211,7 @@ export function ApplicationCard({
 
       {app.status === "rejected" && app.rejection_reason && (
         <div className="border-t border-[#e2e2e7] bg-[#fdecec]/40 px-5 py-3 text-[13px]">
-          <span className="font-semibold">Begründung: </span>
+          <span className="font-semibold">{t("apps.reason")} </span>
           {app.rejection_reason}
         </div>
       )}
@@ -216,13 +219,19 @@ export function ApplicationCard({
   );
 }
 
-function StatusBadge({ status }: { status: MembershipApplication["status"] }) {
+function StatusBadge({
+  status,
+  t,
+}: {
+  status: MembershipApplication["status"];
+  t: ReturnType<typeof useAdminT>["t"];
+}) {
   const map: Record<string, { label: string; cls: string }> = {
-    new: { label: "Offen", cls: "bg-[#fff4d6] text-[#8a5a00]" },
-    approved: { label: "Angenommen", cls: "bg-[#e6f6ec] text-[#1a7f43]" },
-    converted: { label: "Angenommen (alt)", cls: "bg-[#e6f6ec] text-[#1a7f43]" },
-    rejected: { label: "Abgelehnt", cls: "bg-[#fdecec] text-[#e1000f]" },
-    archived: { label: "Archiviert", cls: "bg-[#f2f2f0] text-[#6b6b73]" },
+    new: { label: t("apps.statusNew"), cls: "bg-[#fff4d6] text-[#8a5a00]" },
+    approved: { label: t("apps.statusApproved"), cls: "bg-[#e6f6ec] text-[#1a7f43]" },
+    converted: { label: t("apps.statusConverted"), cls: "bg-[#e6f6ec] text-[#1a7f43]" },
+    rejected: { label: t("apps.statusRejected"), cls: "bg-[#fdecec] text-[#e1000f]" },
+    archived: { label: t("apps.statusArchived"), cls: "bg-[#f2f2f0] text-[#6b6b73]" },
   };
   const s = map[status] ?? { label: status, cls: "bg-[#f2f2f0] text-[#6b6b73]" };
   return (

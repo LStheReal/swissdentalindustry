@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { formatAdminDateTime, getAdminT, type AdminI18nKey } from "@/lib/i18n-admin";
 
 interface MailLogRow {
   id: string;
@@ -10,12 +11,6 @@ interface MailLogRow {
   created_at: string;
 }
 
-const STATUS_LABEL: Record<MailLogRow["status"], string> = {
-  sent: "Angenommen",
-  failed: "Fehlgeschlagen",
-  dropped_test_mode: "Test-Modus · verworfen",
-};
-
 const STATUS_CLASS: Record<MailLogRow["status"], string> = {
   sent: "text-[#1f8a5b]",
   failed: "text-[#e1000f]",
@@ -24,6 +19,7 @@ const STATUS_CLASS: Record<MailLogRow["status"], string> = {
 
 export default async function MailLogPage() {
   const supabase = await createClient();
+  const { t, locale } = await getAdminT();
   const { data } = await supabase
     .from("mail_log")
     .select("*")
@@ -36,35 +32,30 @@ export default async function MailLogPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-[17px] font-bold">Mail-Protokoll</h2>
+        <h2 className="text-[17px] font-bold">{t("mailLog.title")}</h2>
         <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-[#6b6b73]">
-          Die letzten 200 Sendeversuche. „Angenommen“ heisst, der SMTP-Server hat
-          die Nachricht entgegengenommen — <strong>nicht</strong>, dass sie im
-          Postfach des Empfängers angekommen ist. Genau diese Unterscheidung war
-          hier lange das Problem: der Server quittierte mit „250 queued“ und
-          stellte trotzdem nicht zu.
+          {t("mailLog.intro")}
         </p>
       </div>
 
       {failed > 0 && (
         <p className="rounded-[2px] border-l-2 border-[#e1000f] bg-[#fdecec] px-4 py-3 text-[13px] text-[#b3000c]">
-          {failed} fehlgeschlagene{failed === 1 ? "r" : ""} Versand
-          {failed === 1 ? "" : "e"} in den letzten 200 Einträgen.
+          {t("mailLog.failedCount", { count: failed })}
         </p>
       )}
 
       {rows.length === 0 ? (
-        <p className="text-[13.5px] text-[#6b6b73]">Noch keine Sendeversuche protokolliert.</p>
+        <p className="text-[13.5px] text-[#6b6b73]">{t("mailLog.empty")}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-[#e2e2e7] text-left">
-                <Th>Zeitpunkt</Th>
-                <Th>Empfänger</Th>
-                <Th>Betreff</Th>
-                <Th>Status</Th>
-                <Th>Antwort / Fehler</Th>
+                <Th>{t("mailLog.colTime")}</Th>
+                <Th>{t("mailLog.colRecipient")}</Th>
+                <Th>{t("field.subject")}</Th>
+                <Th>{t("field.status")}</Th>
+                <Th>{t("mailLog.colResponse")}</Th>
               </tr>
             </thead>
             <tbody>
@@ -72,7 +63,7 @@ export default async function MailLogPage() {
                 <tr key={row.id} className="border-b border-[#f0f0f2] align-top">
                   <Td>
                     <span className="font-sdi-mono whitespace-nowrap text-[11.5px] text-[#6b6b73]">
-                      {new Date(row.created_at).toLocaleString("de-CH")}
+                      {formatAdminDateTime(row.created_at, locale)}
                     </span>
                   </Td>
                   <Td>
@@ -81,7 +72,7 @@ export default async function MailLogPage() {
                   <Td>{row.subject}</Td>
                   <Td>
                     <span className={`font-semibold ${STATUS_CLASS[row.status]}`}>
-                      {STATUS_LABEL[row.status]}
+                      {t(`mailLog.status.${row.status}` as AdminI18nKey)}
                     </span>
                   </Td>
                   <Td>

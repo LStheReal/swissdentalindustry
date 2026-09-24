@@ -3,8 +3,10 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { requestPasswordReset, type ForgotState } from "./actions";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 export function ForgotForm() {
+  const { t } = useAdminT();
   const [state, formAction, pending] = useActionState<ForgotState, FormData>(
     requestPasswordReset,
     {},
@@ -14,18 +16,16 @@ export function ForgotForm() {
     return (
       <div className="space-y-4">
         <p className="text-[13px] text-[#4a4a51]">
-          Falls für diese Adresse ein Superadmin-Konto existiert, ist eine
-          E-Mail mit einem Link zum Zurücksetzen unterwegs. Der Link ist
-          einmalig gültig und läuft nach einer Stunde ab.
+          {t("forgot.sent")}
         </p>
         <p className="text-[12px] text-[#6b6b73]">
-          Nichts erhalten? Auch den Spam-Ordner prüfen.
+          {t("forgot.checkSpam")}
         </p>
         <Link
           href="/admin/login"
           className="inline-block text-[12px] font-semibold underline underline-offset-2"
         >
-          Zurück zur Anmeldung
+          {t("forgot.backToLogin")}
         </Link>
       </div>
     );
@@ -35,7 +35,7 @@ export function ForgotForm() {
     <form action={formAction} className="space-y-4">
       <label className="block">
         <span className="font-sdi-mono text-[10px] font-bold uppercase tracking-[0.14em]">
-          E-Mail
+          {t("login.email")}
         </span>
         <input
           name="email"
@@ -54,14 +54,14 @@ export function ForgotForm() {
         disabled={pending}
         className="w-full rounded-[3px] bg-[#0a0a0b] px-3 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
       >
-        {pending ? "Wird gesendet…" : "Link zum Zurücksetzen senden"}
+        {pending ? t("forgot.sending") : t("forgot.submit")}
       </button>
 
       <Link
         href="/admin/login"
         className="block text-center text-[12px] text-[#6b6b73] underline underline-offset-2"
       >
-        Zurück zur Anmeldung
+        {t("forgot.backToLogin")}
       </Link>
     </form>
   );

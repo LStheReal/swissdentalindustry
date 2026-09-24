@@ -16,6 +16,7 @@ type Client = ReturnType<typeof createAdminClient>;
 export const EXPORT_FILTERS = ["main", "billing", "all"] as const;
 export type ExportFilter = (typeof EXPORT_FILTERS)[number];
 
+/** Deutsch — für den HTTP-Header des Downloads. Die Seite übersetzt selbst. */
 export const EXPORT_FILTER_LABELS: Record<ExportFilter, string> = {
   main: "Nur Hauptkontakte",
   billing: "Nur Rechnungskontakte",

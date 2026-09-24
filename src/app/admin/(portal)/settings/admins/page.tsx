@@ -2,10 +2,12 @@ import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inviteAdmin, removeAdmin } from "./actions";
 import { SubmitButton } from "@/components/admin/SubmitButton";
+import { formatAdminDate, getAdminT } from "@/lib/i18n-admin";
 
 export default async function AdminUsersPage() {
   const current = await requireAdmin();
   const supabase = createAdminClient();
+  const { t, locale } = await getAdminT();
 
   const { data: admins } = await supabase
     .from("admins")
@@ -17,11 +19,10 @@ export default async function AdminUsersPage() {
       <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
         <div>
           <h2 className="text-sm font-semibold text-slate-700">
-            Neuen Admin einladen
+            {t("admins.inviteTitle")}
           </h2>
           <p className="text-xs text-slate-500">
-            Es wird ein Einladungs-E-Mail an die Adresse gesendet. Existiert
-            bereits ein Konto, wird es direkt als Superadmin freigeschaltet.
+            {t("admins.inviteHint")}
           </p>
         </div>
         <form action={inviteAdmin} className="flex gap-2">
@@ -29,14 +30,14 @@ export default async function AdminUsersPage() {
             name="email"
             type="email"
             required
-            placeholder="name@firma.ch"
+            placeholder={t("admins.emailPlaceholder")}
             className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
           <SubmitButton
-            pendingLabel="Wird eingeladen …"
+            pendingLabel={t("admins.inviting")}
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
           >
-            Einladen
+            {t("admins.invite")}
           </SubmitButton>
         </form>
       </section>
@@ -44,7 +45,7 @@ export default async function AdminUsersPage() {
       <section className="rounded-lg border border-slate-200 bg-white">
         <div className="border-b border-slate-200 p-5">
           <h2 className="text-sm font-semibold text-slate-700">
-            Bestehende Admins ({admins?.length ?? 0})
+            {t("admins.existing", { count: admins?.length ?? 0 })}
           </h2>
         </div>
         <ul className="divide-y divide-slate-200">
@@ -57,26 +58,26 @@ export default async function AdminUsersPage() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-slate-800">
-                    {a.email ?? "(ohne E-Mail)"}
+                    {a.email ?? t("admins.noEmail")}
                     {isSelf && (
                       <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                        Du
+                        {t("admins.you")}
                       </span>
                     )}
                   </p>
                   <p className="text-xs text-slate-500">
-                    seit {new Date(a.created_at).toLocaleDateString("de-CH")}
+                    {t("admins.since", { date: formatAdminDate(a.created_at, locale) })}
                   </p>
                 </div>
                 {!isSelf && (
                   <form action={removeAdmin}>
                     <input type="hidden" name="user_id" value={a.user_id} />
                     <SubmitButton
-                      pendingLabel="Wird entfernt …"
-                      confirm={`${a.email ?? "Diese Person"} als Admin entfernen? Der Zugang zum Portal geht sofort verloren.`}
+                      pendingLabel={t("admins.removing")}
+                      confirm={t("admins.removeConfirm", { who: a.email ?? t("admins.thisPerson") })}
                       className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-red-400 hover:bg-red-50 hover:text-red-700"
                     >
-                      Entfernen
+                      {t("admins.remove")}
                     </SubmitButton>
                   </form>
                 )}
@@ -85,7 +86,7 @@ export default async function AdminUsersPage() {
           })}
           {(!admins || admins.length === 0) && (
             <li className="p-4 text-sm text-slate-500">
-              Noch keine Admins eingetragen.
+              {t("admins.empty")}
             </li>
           )}
         </ul>

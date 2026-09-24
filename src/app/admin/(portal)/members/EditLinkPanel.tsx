@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAdminT } from "@/components/admin/AdminI18n";
 
 interface Props {
   url: string | null;
@@ -17,9 +18,10 @@ export function EditLinkPanel({
   onRevoke,
   onSendMail,
 }: Props) {
+  const { t } = useAdminT();
   const [copied, setCopied] = useState(false);
   const [pending, setPending] = useState(false);
-  const [mailStatus, setMailStatus] = useState<string | null>(null);
+  const [mailStatus, setMailStatus] = useState<{ ok: boolean; text: string } | null>(null);
 
   async function run(fn: () => Promise<void>) {
     setPending(true);
@@ -36,12 +38,15 @@ export function EditLinkPanel({
     try {
       const res = await onSendMail();
       if (res && "error" in res && res.error) {
-        setMailStatus(`Fehler: ${res.error}`);
+        setMailStatus({ ok: false, text: t("common.error", { message: res.error }) });
       } else {
-        setMailStatus("Link an Firma gesendet");
+        setMailStatus({ ok: true, text: t("editLink.sent") });
       }
     } catch (err) {
-      setMailStatus(`Fehler: ${err instanceof Error ? err.message : "unbekannt"}`);
+      setMailStatus({
+        ok: false,
+        text: t("common.error", { message: err instanceof Error ? err.message : t("common.unknownError") }),
+      });
     } finally {
       setPending(false);
     }
@@ -50,7 +55,7 @@ export function EditLinkPanel({
   return (
     <div className="w-full max-w-md">
       <div className="font-sdi-mono mb-2 text-[10px] font-bold uppercase tracking-[0.14em]">
-        Self-Service-Link
+        {t("editLink.title")}
       </div>
       {url ? (
         <>
@@ -67,16 +72,16 @@ export function EditLinkPanel({
               }}
               className="rounded-[3px] border border-[#c4c4cc] bg-white px-3 py-1.5 text-[11.5px] font-semibold"
             >
-              {copied ? "Kopiert" : "Kopieren"}
+              {copied ? t("common.copied") : t("common.copy")}
             </button>
             <button
               type="button"
               disabled={pending || !hasEmail}
-              title={hasEmail ? "" : "Keine E-Mail-Adresse hinterlegt"}
+              title={hasEmail ? "" : t("editLink.noEmailHint")}
               onClick={runSend}
               className="rounded-[3px] border border-[#c4c4cc] bg-white px-3 py-1.5 text-[11.5px] font-semibold disabled:opacity-60"
             >
-              Mailen
+              {t("editLink.mail")}
             </button>
             <button
               type="button"
@@ -84,21 +89,21 @@ export function EditLinkPanel({
               onClick={() => {
                 // Ein neuer Link macht den bisherigen ungültig — auch den, den
                 // die Firma bereits per Mail bekommen hat.
-                if (window.confirm("Neuen Link erzeugen? Der bisherige Link funktioniert danach nicht mehr — auch nicht der, den die Firma schon per Mail bekommen hat.")) run(onGenerate);
+                if (window.confirm(t("editLink.newConfirm"))) run(onGenerate);
               }}
               className="rounded-[3px] border border-[#c4c4cc] bg-white px-3 py-1.5 text-[11.5px] font-semibold disabled:opacity-60"
             >
-              Neu
+              {t("editLink.new")}
             </button>
             <button
               type="button"
               disabled={pending}
               onClick={() => {
-                if (window.confirm("Link widerrufen? Die Firma kann ihr Profil danach nicht mehr über diesen Link bearbeiten.")) run(onRevoke);
+                if (window.confirm(t("editLink.revokeConfirm"))) run(onRevoke);
               }}
               className="rounded-[3px] border border-[#e1000f] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#e1000f] disabled:opacity-60"
             >
-              Widerrufen
+              {t("editLink.revoke")}
             </button>
           </div>
         </>
@@ -110,16 +115,16 @@ export function EditLinkPanel({
             onClick={() => run(onGenerate)}
             className="rounded-[3px] bg-[#0a0a0b] px-3.5 py-2 text-xs font-semibold text-white disabled:opacity-60"
           >
-            Link erstellen
+            {t("editLink.create")}
           </button>
           <button
             type="button"
             disabled={pending || !hasEmail}
-            title={hasEmail ? "" : "Keine E-Mail-Adresse hinterlegt"}
+            title={hasEmail ? "" : t("editLink.noEmailHint")}
             onClick={runSend}
             className="rounded-[3px] border border-[#c4c4cc] bg-white px-3.5 py-2 text-xs font-semibold disabled:opacity-60"
           >
-            Erstellen und mailen
+            {t("editLink.createAndMail")}
           </button>
         </div>
       )}
@@ -127,10 +132,10 @@ export function EditLinkPanel({
       {mailStatus && (
         <p
           className={`font-sdi-mono mt-2 text-[10.5px] uppercase tracking-[0.04em] ${
-            mailStatus.startsWith("Fehler") ? "text-[#e1000f]" : "text-[#1f8a5b]"
+            mailStatus.ok ? "text-[#1f8a5b]" : "text-[#e1000f]"
           }`}
         >
-          {mailStatus}
+          {mailStatus.text}
         </p>
       )}
     </div>

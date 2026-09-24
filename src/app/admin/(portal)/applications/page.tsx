@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MembershipApplication } from "@/lib/types";
+import { getAdminT, type AdminI18nKey } from "@/lib/i18n-admin";
 import { ApplicationCard } from "./ApplicationCard";
 import { InquiryCard } from "./InquiryCard";
 import {
@@ -11,10 +12,10 @@ import {
 
 type Tab = "open" | "decided" | "inquiries";
 
-const TABS: { key: Tab; href: string; label: string }[] = [
-  { key: "open", href: "/admin/applications", label: "Offen" },
-  { key: "decided", href: "/admin/applications?tab=decided", label: "Entschieden" },
-  { key: "inquiries", href: "/admin/applications?tab=inquiries", label: "Kontaktanfragen" },
+const TABS: { key: Tab; href: string; label: AdminI18nKey }[] = [
+  { key: "open", href: "/admin/applications", label: "apps.tabOpen" },
+  { key: "decided", href: "/admin/applications?tab=decided", label: "apps.tabDecided" },
+  { key: "inquiries", href: "/admin/applications?tab=inquiries", label: "apps.tabInquiries" },
 ];
 
 export default async function ApplicationsPage({
@@ -23,6 +24,7 @@ export default async function ApplicationsPage({
   searchParams?: Promise<{ tab?: string }>;
 }) {
   const params = (await searchParams) ?? {};
+  const { t, locale } = await getAdminT();
   const tab: Tab =
     params.tab === "decided" ? "decided" : params.tab === "inquiries" ? "inquiries" : "open";
 
@@ -58,36 +60,23 @@ export default async function ApplicationsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">
-          {tab === "inquiries" ? "Kontaktanfragen" : "Mitglieds-Anträge"}
+          {tab === "inquiries" ? t("apps.titleInquiries") : t("apps.titleApplications")}
         </h1>
         <p className="mt-1 text-[13px] text-[#6b6b73]">
-          {tab === "inquiries" ? (
-            <>
-              Nachrichten aus dem Kontakt- und dem Mitwirken-Formular. Hier gibt es
-              nichts freizuschalten — „Antworten“ öffnet dein Mailprogramm mit der
-              zitierten Nachricht.
-            </>
-          ) : (
-            <>
-              Angenommene Anträge legen die Firma an, schalten sie live und schicken der
-              Kontaktperson den Self-Service-Link. Abgelehnte erhalten eine Absage.
-              Die Übersetzung der Beschreibung und der Mailversand laufen im Hintergrund
-              weiter — bis die Übersetzung da ist, steht überall der Originaltext.
-            </>
-          )}
+          {tab === "inquiries" ? t("apps.introInquiries") : t("apps.introApplications")}
         </p>
       </div>
 
       <div className="inline-flex overflow-hidden rounded-[3px] border border-[#c4c4cc] bg-white">
-        {TABS.map((t, i) => (
+        {TABS.map((tabItem, i) => (
           <a
-            key={t.key}
-            href={t.href}
+            key={tabItem.key}
+            href={tabItem.href}
             className={`px-4 py-2 text-[12.5px] font-semibold ${i > 0 ? "border-l border-[#c4c4cc]" : ""} ${
-              tab === t.key ? "bg-[#0a0a0b] text-white" : "text-[#0a0a0b] hover:bg-[#fafaf8]"
+              tab === tabItem.key ? "bg-[#0a0a0b] text-white" : "text-[#0a0a0b] hover:bg-[#fafaf8]"
             }`}
           >
-            {t.label}
+            {t(tabItem.label)}
           </a>
         ))}
       </div>
@@ -95,10 +84,10 @@ export default async function ApplicationsPage({
       {apps.length === 0 ? (
         <p className="text-sm text-[#6b6b73]">
           {tab === "open"
-            ? "Keine offenen Anträge."
+            ? t("apps.emptyOpen")
             : tab === "decided"
-              ? "Noch keine entschiedenen Anträge."
-              : "Keine Kontaktanfragen."}
+              ? t("apps.emptyDecided")
+              : t("apps.emptyInquiries")}
         </p>
       ) : (
         <ul className="space-y-4">
@@ -107,6 +96,8 @@ export default async function ApplicationsPage({
               <InquiryCard
                 key={app.id}
                 app={app}
+                t={t}
+                locale={locale}
                 archiveAction={archiveApplication.bind(null, app.id)}
                 deleteAction={deleteApplication.bind(null, app.id)}
               />

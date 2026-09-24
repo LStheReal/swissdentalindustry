@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminT } from "@/lib/i18n-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { translateToAll } from "@/lib/translate";
 import {
@@ -462,12 +463,13 @@ export async function importMembers(
   formData: FormData,
 ): Promise<ImportMembersState> {
   await requireAdmin();
+  const { t } = await getAdminT();
 
   const file = formData.get("spreadsheet");
   if (!(file instanceof File) || !file.size) {
     return {
       status: "error",
-      message: "Bitte eine Spreadsheet-Datei auswählen.",
+      message: t("import.noFile"),
       importedCount: 0,
       updatedCount: 0,
       duplicateCount: 0,
@@ -480,7 +482,7 @@ export async function importMembers(
     const supabase = createAdminClient();
     await ensureInternalProfilesTableAvailable(supabase);
 
-    const parsed = await parseMemberImportSpreadsheet(file);
+    const parsed = await parseMemberImportSpreadsheet(file, t);
     const { data: existingRows, error: existingError } = await supabase
       .from("members")
       .select("id, name");
@@ -502,7 +504,7 @@ export async function importMembers(
       const key = getImportedMemberKey(row.name);
       if (!key) {
         skippedCount += 1;
-        details.push(`Zeile ${row.rowNumber}: Firmenname leer.`);
+        details.push(t("import.rowNameEmpty", { row: row.rowNumber }));
         continue;
       }
 
@@ -524,23 +526,23 @@ export async function importMembers(
         } catch (err) {
           skippedCount += 1;
           details.push(
-            `Zeile ${row.rowNumber}: "${row.name}" konnte nicht aktualisiert werden (${
-              err instanceof Error ? err.message : String(err)
-            }).`,
+            t("import.rowUpdateFailed", {
+              row: row.rowNumber,
+              name: row.name,
+              error: err instanceof Error ? err.message : String(err),
+            }),
           );
           continue;
         }
 
         const internalSaved = await saveInternalProfile(supabase, existing.id, row.internalProfile);
         if (!internalSaved) {
-          throw new Error(
-            "Interne Kontaktdaten konnten nicht gespeichert werden, weil public.member_internal_profiles fehlt.",
-          );
+          throw new Error(t("import.profilesTableMissing"));
         }
 
         duplicateCount += 1;
         updatedCount += 1;
-        details.push(`Zeile ${row.rowNumber}: "${row.name}" aktualisiert.`);
+        details.push(t("import.rowUpdated", { row: row.rowNumber, name: row.name }));
         continue;
       }
 
@@ -567,7 +569,7 @@ export async function importMembers(
 
       if (error) {
         skippedCount += 1;
-        details.push(`Zeile ${row.rowNumber}: "${row.name}" konnte nicht angelegt werden (${error.message}).`);
+        details.push(t("import.rowCreateFailed", { row: row.rowNumber, name: row.name, error: error.message }));
         continue;
       }
 
@@ -577,25 +579,23 @@ export async function importMembers(
       });
       const internalSaved = await saveInternalProfile(supabase, data.id, row.internalProfile);
       if (!internalSaved) {
-        throw new Error(
-          "Interne Kontaktdaten konnten nicht gespeichert werden, weil public.member_internal_profiles fehlt.",
-        );
+        throw new Error(t("import.profilesTableMissing"));
       }
       existingByName.set(key, { id: data.id, name: row.name });
       importedCount += 1;
     }
 
     if (parsed.aiApplied) {
-      details.unshift("KI (Claude) wurde für das Header-Mapping des Imports verwendet.");
+      details.unshift(t("import.aiUsed"));
     } else {
-      details.unshift("Die KI wurde für diesen Import nicht erreicht; Heuristiken wurden als Fallback verwendet.");
+      details.unshift(t("import.aiUnavailable"));
     }
 
     revalidatePath("/admin/members");
 
     return {
       status: "success",
-      message: "Import abgeschlossen. Firmen wurden angelegt oder mit Spreadsheet-Daten aktualisiert.",
+      message: t("import.done"),
       importedCount,
       updatedCount,
       duplicateCount,
@@ -605,7 +605,7 @@ export async function importMembers(
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "Der Import ist fehlgeschlagen.",
+      message: error instanceof Error ? error.message : t("import.failed"),
       importedCount: 0,
       updatedCount: 0,
       duplicateCount: 0,
@@ -638,6 +638,7 @@ export async function generateEditLink(memberId: string) {
 // frischen Link. Fehler werden geworfen, damit das UI Feedback geben kann.
 export async function sendEditLinkToMember(memberId: string) {
   await requireAdmin();
+  const { t } = await getAdminT();
   const supabase = createAdminClient();
 
   const { data: member, error: memErr } = await supabase
@@ -646,9 +647,9 @@ export async function sendEditLinkToMember(memberId: string) {
     .eq("id", memberId)
     .maybeSingle();
   if (memErr) throw new Error(memErr.message);
-  if (!member) throw new Error("Firma nicht gefunden.");
+  if (!member) throw new Error(t("editLink.memberNotFound"));
   if (!member.email) {
-    throw new Error("Keine E-Mail-Adresse für diese Firma hinterlegt.");
+    throw new Error(t("editLink.noEmail"));
   }
 
   const memberLocale = (LOCALES.includes(member.source_lang as Locale) ? member.source_lang : "de") as Locale;

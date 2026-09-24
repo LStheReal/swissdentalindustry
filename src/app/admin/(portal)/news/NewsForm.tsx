@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/types";
+import { useAdminT } from "@/components/admin/AdminI18n";
 import {
   editorHintClass,
   editorInputClass,
@@ -22,6 +23,7 @@ interface Props {
 
 export function NewsForm({ action, initial }: Props) {
   const router = useRouter();
+  const { t } = useAdminT();
   const [pending, setPending] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
   const imageInputId = useId();
@@ -42,11 +44,11 @@ export function NewsForm({ action, initial }: Props) {
           <div>
             <div className="mb-4 flex items-center gap-2.5">
               <span className="h-2 w-2 bg-[#e1000f]" />
-              <span className={editorSectionTitleClass}>01 — Inhalt</span>
+              <span className={editorSectionTitleClass}>{t("news.sectionContent")}</span>
             </div>
 
             <label className="block">
-              <span className={editorLabelClass}>Ausgangssprache</span>
+              <span className={editorLabelClass}>{t("news.sourceLang")}</span>
               <select
                 name="source_lang"
                 defaultValue={initial?.source_lang ?? "de"}
@@ -59,18 +61,18 @@ export function NewsForm({ action, initial }: Props) {
                 ))}
               </select>
               <span className={editorHintClass}>
-                Wird beim Speichern automatisch in DE · FR · IT · EN übersetzt
+                {t("news.autoTranslateAll")}
               </span>
             </label>
           </div>
 
           <label className="block">
-            <span className={editorLabelClass}>Titel</span>
+            <span className={editorLabelClass}>{t("field.title")}</span>
             <input name="title" required defaultValue={initial?.title} className={editorInputClass} />
           </label>
 
           <label className="block">
-            <span className={editorLabelClass}>Text</span>
+            <span className={editorLabelClass}>{t("news.text")}</span>
             <textarea
               name="body"
               rows={10}
@@ -86,20 +88,20 @@ export function NewsForm({ action, initial }: Props) {
               disabled={pending}
               className="rounded-[3px] bg-[#e1000f] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#c9000d] disabled:opacity-60"
             >
-              {pending ? "Speichern ..." : "Speichern"}
+              {pending ? t("common.saving") : t("common.save")}
             </button>
             <button
               type="button"
               onClick={() => router.push("/admin/news")}
               className="rounded-[3px] border border-[#c4c4cc] bg-white px-4 py-2 text-[12.5px] font-semibold hover:bg-[#fafaf8]"
             >
-              Abbrechen
+              {t("common.cancel")}
             </button>
           </div>
         </div>
 
         <aside className="bg-[#fafaf8] p-5 sm:p-6">
-          <div className={editorLabelClass}>Bild</div>
+          <div className={editorLabelClass}>{t("news.image")}</div>
           <div className="mt-3 flex min-h-[160px] items-center justify-center rounded-[2px] border border-[#e2e2e7] bg-white">
             {initial?.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -110,7 +112,7 @@ export function NewsForm({ action, initial }: Props) {
               />
             ) : (
               <span className="font-sdi-mono px-4 text-center text-[11px] uppercase tracking-[0.14em] text-[#6b6b73]">
-                Kein Bild ausgewählt
+                {t("news.noImage")}
               </span>
             )}
           </div>
@@ -133,10 +135,10 @@ export function NewsForm({ action, initial }: Props) {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span>Bild hochladen</span>
+              <span>{t("news.uploadImage")}</span>
             </label>
             <span className="text-xs text-[#6b6b73]">
-              {selectedFileName || "Keine Datei ausgewählt"}
+              {selectedFileName || t("news.noFile")}
             </span>
           </div>
           <input
@@ -147,10 +149,10 @@ export function NewsForm({ action, initial }: Props) {
             className="sr-only"
             onChange={(event) => setSelectedFileName(event.target.files?.[0]?.name ?? "")}
           />
-          <p className={editorHintClass}>Titelbild für den News-Eintrag</p>
+          <p className={editorHintClass}>{t("news.imageHint")}</p>
           {initial?.image_url ? (
             <p className="mt-5 text-xs leading-relaxed text-[#6b6b73]">
-              Ohne neue Datei bleibt das aktuelle Bild erhalten.
+              {t("news.keepImage")}
             </p>
           ) : null}
         </aside>

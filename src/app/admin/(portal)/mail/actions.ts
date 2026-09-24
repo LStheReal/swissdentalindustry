@@ -2,6 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { requireAdmin } from "@/lib/auth";
+import { getAdminT, type AdminT } from "@/lib/i18n-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendMail } from "@/lib/email";
 import { renderMassMail } from "@/lib/email-templates";
@@ -45,7 +46,7 @@ export interface MassMailState {
  * Vorschau namentlich aufgeführt — stillschweigend auszulassen wäre das
  * Schlimmste, was ein Serienbrief tun kann.
  */
-async function collectRecipients(): Promise<{
+async function collectRecipients(t: AdminT): Promise<{
   recipients: MassMailRecipient[];
   skipped: { company: string; reason: string }[];
 }> {
@@ -76,8 +77,8 @@ async function collectRecipients(): Promise<{
       skipped.push({
         company: member.name,
         reason: main
-          ? "Hauptkontakt ohne E-Mail-Adresse"
-          : "Kein Hauptkontakt hinterlegt und keine Firmen-Adresse",
+          ? t("mail.skipMainNoEmail")
+          : t("mail.skipNoMainNoEmail"),
       });
       continue;
     }
@@ -124,16 +125,17 @@ export async function previewMassMail(
   formData: FormData,
 ): Promise<MassMailState> {
   await requireAdmin();
+  const { t } = await getAdminT();
 
   const subject = String(formData.get("subject") || "").trim();
   const body = String(formData.get("body") || "").trim();
   if (!subject || !body) {
-    return { step: "compose", subject, body, error: "Betreff und Text werden gebraucht." };
+    return { step: "compose", subject, body, error: t("mail.errMissing") };
   }
 
-  const { recipients, skipped } = await collectRecipients();
+  const { recipients, skipped } = await collectRecipients(t);
   if (recipients.length === 0) {
-    return { step: "compose", subject, body, error: "Es gibt keine erreichbaren Empfänger." };
+    return { step: "compose", subject, body, error: t("mail.errNoRecipients") };
   }
 
   const sample = recipients[0];
@@ -161,18 +163,19 @@ export async function sendMassMail(
   formData: FormData,
 ): Promise<MassMailState> {
   await requireAdmin();
+  const { t } = await getAdminT();
 
   const subject = String(formData.get("subject") || "").trim();
   const body = String(formData.get("body") || "").trim();
   // Ausdrückliche Bestätigung — ohne sie wird nicht verschickt.
   if (formData.get("confirm") !== "1") {
-    return { step: "preview", subject, body, error: "Bitte den Versand bestätigen." };
+    return { step: "preview", subject, body, error: t("mail.errConfirm") };
   }
   if (!subject || !body) {
-    return { step: "compose", subject, body, error: "Betreff und Text werden gebraucht." };
+    return { step: "compose", subject, body, error: t("mail.errMissing") };
   }
 
-  const { recipients, skipped } = await collectRecipients();
+  const { recipients, skipped } = await collectRecipients(t);
 
   let sentCount = 0;
   const failures: { company: string; email: string; error: string }[] = [];

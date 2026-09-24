@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminT } from "@/lib/i18n-admin";
 
 export interface AcceptState {
   error?: string;
@@ -11,14 +12,15 @@ export async function setInvitedPassword(
   _prev: AcceptState,
   formData: FormData,
 ): Promise<AcceptState> {
+  const { t } = await getAdminT();
   const password = String(formData.get("password") || "");
   const confirm = String(formData.get("confirm") || "");
 
   if (password.length < 8) {
-    return { error: "Das Passwort muss mindestens 8 Zeichen lang sein." };
+    return { error: t("reset.errTooShort") };
   }
   if (password !== confirm) {
-    return { error: "Die Passwörter stimmen nicht überein." };
+    return { error: t("reset.errMismatch") };
   }
 
   const supabase = await createClient();
@@ -26,7 +28,7 @@ export async function setInvitedPassword(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return { error: "Einladungs-Sitzung ist abgelaufen. Bitte erneut den Link aus der E-Mail öffnen." };
+    return { error: t("invite.errExpired") };
   }
 
   const { error } = await supabase.auth.updateUser({ password });

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getSiteUrl } from "@/lib/site-url";
 import { rateLimit } from "@/lib/rate-limit";
+import { getAdminT } from "@/lib/i18n-admin";
 
 export interface ForgotState {
   sent?: boolean;
@@ -22,12 +23,13 @@ export async function requestPasswordReset(
   _prev: ForgotState,
   formData: FormData,
 ): Promise<ForgotState> {
+  const { t } = await getAdminT();
   const email = String(formData.get("email") || "")
     .trim()
     .toLowerCase();
 
   if (!email || !email.includes("@")) {
-    return { error: "Bitte eine gültige E-Mail-Adresse eingeben." };
+    return { error: t("forgot.errInvalidEmail") };
   }
 
   // Der Endpunkt ist öffentlich: pro IP und pro Adresse begrenzen, damit
@@ -35,7 +37,7 @@ export async function requestPasswordReset(
   const ip =
     (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!rateLimit(`forgot:ip:${ip}`, 5, 15 * 60_000)) {
-    return { error: "Zu viele Versuche. Bitte später erneut probieren." };
+    return { error: t("forgot.errTooMany") };
   }
   if (!rateLimit(`forgot:mail:${email}`, 3, 60 * 60_000)) {
     return { sent: true };

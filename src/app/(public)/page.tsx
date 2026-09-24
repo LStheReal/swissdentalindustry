@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { V2Hero } from "@/components/v2/Hero";
-import { V2Marquee } from "@/components/v2/Marquee";
+import { V2LogoRows } from "@/components/v2/Marquee";
 import { V2ExpertiseAccordion } from "@/components/v2/ExpertiseAccordion";
 import { ArrowRight, V2BtnLink, V2Eyebrow, V2SectionHead } from "@/components/v2/ui";
 import { getPublishedMembers, getPublishedNews, excerpt, newsFaviconUrl, youtubeThumbnailUrl } from "@/lib/public-data";
@@ -94,10 +94,7 @@ export default async function HomePage() {
   const locale = await getPublicLocale();
   const copy = getPublicCopy(locale);
 
-  // Alle aktiven Mitglieder laden: die Statistik zeigt die echte Anzahl,
-  // das Logo-Band nur die ersten acht.
   const [members, news] = await Promise.all([getPublishedMembers(), getPublishedNews(12)]);
-  const marqueeMembers = members.slice(0, 8);
   const visibleNews = news.slice(0, 2);
   const hiddenNews = news.slice(2);
 
@@ -230,9 +227,18 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {marqueeMembers.length > 0 ? (
+        {members.length > 0 ? (
           <div data-v2-reveal>
-            <V2Marquee members={marqueeMembers} />
+            <V2LogoRows members={members} />
+            <div className="v2-container mt-[clamp(28px,3.5vw,44px)] flex justify-center">
+              <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-default)] bg-white px-5 py-[10px]">
+                <span className="inline-block h-[7px] w-[7px] rounded-full bg-[color:var(--red-500)] v2-pulse" aria-hidden />
+                <span className="text-[12.5px] font-bold tracking-[0.06em]" style={{ fontFamily: "var(--font-mono)" }}>
+                  {String(members.length).padStart(2, "0")}
+                </span>
+                <span className="text-[13px] text-[color:var(--text-secondary)]">{copy.members.activeLabel}</span>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="v2-container">

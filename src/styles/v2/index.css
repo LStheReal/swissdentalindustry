@@ -17,6 +17,12 @@
    resolve correctly, plus v2-only additions.
    ------------------------------------------------------------ */
 .v2-root {
+  /* Seitlich verschobene Reveal-Elemente (data-v2-reveal="right") ragen vor
+     dem Einblenden über den Rand. overflow-x auf body reicht in iOS Safari
+     nicht — die Seite liess sich dann seitlich verschieben. clip statt
+     hidden, damit kein Scroll-Container entsteht (sticky Header bleibt). */
+  overflow-x: clip;
+
   /* Brand */
   --red-50:  #fff1f1;
   --red-100: #ffd9da;

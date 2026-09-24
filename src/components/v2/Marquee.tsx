@@ -4,8 +4,11 @@ import type { Member } from "@/lib/types";
 export function V2Marquee({ members }: { members: Member[] }) {
   if (members.length === 0) return null;
 
-  // Ensure the track is long enough for a seamless loop.
-  const repeat = Math.max(2, Math.ceil(30 / members.length));
+  // Eine Hälfte des Bands muss breiter sein als der breiteste Bildschirm,
+  // sonst sieht man die Naht der Schleife. Items haben feste Breiten (CSS),
+  // ~16 Logos pro Hälfte reichen dafür. Mehr nicht: sehr breite animierte
+  // Ebenen verwirft iOS Safari stückweise, dann bleiben Lücken im Band.
+  const repeat = Math.max(1, Math.ceil(16 / members.length));
   const track = Array.from({ length: repeat }, () => members).flat();
 
   return (
@@ -14,10 +17,12 @@ export function V2Marquee({ members }: { members: Member[] }) {
         {[...track, ...track].map((member, i) => (
           <div key={`${member.id}-${i}`} className="v2-marquee__item">
             {member.logo_url ? (
+              // Kein loading="lazy": Die Logos kommen per transform ins Bild, das
+              // erkennt Safari nicht als "sichtbar" und lädt sie zu spät oder nie.
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={member.logo_url} alt={member.name} loading="lazy" />
+              <img src={member.logo_url} alt={member.name} decoding="async" />
             ) : (
-              <span className="whitespace-nowrap text-[15px] font-bold tracking-[-0.01em] text-[color:var(--ink-600)]">
+              <span className="line-clamp-2 text-center text-[14px] font-bold leading-tight tracking-[-0.01em] text-[color:var(--ink-600)]">
                 {member.name}
               </span>
             )}
